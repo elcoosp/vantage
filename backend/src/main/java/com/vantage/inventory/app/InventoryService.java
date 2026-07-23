@@ -1,5 +1,6 @@
 package com.vantage.inventory.app;
 
+import com.vantage.core.exception.ResourceNotFoundException;
 import com.vantage.inventory.domain.Inventory;
 import com.vantage.inventory.domain.InventoryRepository;
 import com.vantage.inventory.ui.dto.InventoryResponse;
@@ -22,7 +23,7 @@ public class InventoryService {
     @Transactional
     public InventoryResponse updateInventory(UUID productId, Long ifMatch, InventoryUpdateRequest request) {
         Inventory inventory = inventoryRepository.findByProductId(productId)
-                .orElseThrow(() -> new InventoryConflictException("Inventory not found for product: " + productId));
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for product: " + productId));
 
         if (!inventory.getVersion().equals(ifMatch)) {
             throw new InventoryConflictException("Version mismatch. Expected: " + ifMatch + ", Actual: " + inventory.getVersion());

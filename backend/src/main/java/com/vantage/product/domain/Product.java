@@ -6,6 +6,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "products")
 @Getter
@@ -13,5 +15,5 @@ import lombok.Setter;
 public class Product extends BaseTenantEntity {
     private String name;
     private String description;
-    private Double price;
+    private BigDecimal price;
 }

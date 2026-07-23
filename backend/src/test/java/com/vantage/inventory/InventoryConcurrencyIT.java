@@ -9,6 +9,7 @@ import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,12 +59,10 @@ class InventoryConcurrencyIT {
         authHeaders.setBearerAuth(token);
         authHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        ProductRequest productReq = new ProductRequest("Test Product", "Description", 100.0);
+        ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("100.0"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
         ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity("/api/v1/products", productEntity, ProductResponse.class);
         UUID productId = productRes.getBody().id();
-
-        Thread.sleep(1000);
 
         HttpHeaders updateHeaders = new HttpHeaders();
         updateHeaders.setBearerAuth(token);
