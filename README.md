@@ -1,5 +1,9 @@
 # Vantage
 
+<p align="center">
+  <img src="docs/logo.png" alt="Vantage Logo" width="200" />
+</p>
+
 > A production-grade, multi-tenant SaaS platform enabling independent merchants to manage operations, with distributed order orchestration, AI-driven forecasting, and end-to-end observability.
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
