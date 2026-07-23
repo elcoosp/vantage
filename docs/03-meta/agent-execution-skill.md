@@ -183,7 +183,7 @@ echo "=== Creating PR ==="
 gh pr create \
   --base "$BASE_BRANCH" \
   --title "feat(core): implement task ${TASK_ID}" \
-  --body "$(cat << 'EOF'
+  --body "$(cat << EOF
 ## Summary
 Implementation of ${TASK_ID}.
 
