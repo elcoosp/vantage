@@ -30,7 +30,7 @@ set -euo pipefail
 
 REPO_ROOT="<REPO_ROOT_PATH>" # e.g., /Users/user/vantage
 BRANCH="agent-1/TASK-001"    # Convention: agent-<N>/<TASK-ID>
-WORKTREE_PATH="../vantage-agent-1-task-001" # Path outside the main repo root
+WORKTREE_PATH="../vantage-worktrees/agent-1-task-001" # Path outside the main repo root
 
 cd "$REPO_ROOT"
 
@@ -128,7 +128,7 @@ Each script you output should perform one logical unit of work, run the quality 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-WT="../vantage-agent-1-task-001"
+WT="../vantage-worktrees/agent-1-task-001"
 cd "$WT"
 
 # 1. Write the test file (cat > ...)
@@ -144,7 +144,7 @@ git commit -m "test(order): add failing test for outbox transaction"
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-WT="../vantage-agent-1-task-001"
+WT="../vantage-worktrees/agent-1-task-001"
 cd "$WT"
 
 # 1. Patch or create OrderService.java, OutboxEvent.java, etc.
@@ -165,7 +165,7 @@ Only after all tests pass and the task is complete, emit a PR creation script.
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-WT="../vantage-agent-1-task-001"
+WT="../vantage-worktrees/agent-1-task-001"
 BRANCH="agent-1/TASK-001"
 BASE_BRANCH="main"
 TASK_ID="TASK-001"
