@@ -1,3 +1,4 @@
+// backend/src/main/java/com/vantage/core/messaging/domain/OutboxEvent.java
 package com.vantage.core.messaging.domain;
 
 import com.vantage.core.domain.BaseTenantEntity;

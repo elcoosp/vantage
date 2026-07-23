@@ -1,3 +1,4 @@
+// backend/src/main/java/com/vantage/core/messaging/domain/OutboxRepository.java
 package com.vantage.core.messaging.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;

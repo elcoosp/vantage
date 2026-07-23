@@ -1,3 +1,4 @@
+// backend/src/main/java/com/vantage/order/app/OrderService.java
 package com.vantage.order.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,7 +36,7 @@ public class OrderService {
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
 
-        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), order.getProductId(), order.getQuantity());
+        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), order.getTenantId(), order.getProductId(), order.getQuantity());
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);

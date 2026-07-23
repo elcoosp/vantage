@@ -1,3 +1,4 @@
+// backend/src/main/java/com/vantage/core/messaging/app/RabbitPublisherConfirmCallback.java
 package com.vantage.core.messaging.app;
 
 import com.vantage.core.messaging.domain.OutboxEvent;

@@ -1,3 +1,4 @@
+// backend/src/main/java/com/vantage/order/app/OrderSerializationException.java
 package com.vantage.order.app;
 
 import com.vantage.core.exception.VantageDomainException;

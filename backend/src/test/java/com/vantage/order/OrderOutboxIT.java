@@ -1,3 +1,4 @@
+// backend/src/test/java/com/vantage/order/OrderOutboxIT.java
 package com.vantage.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -126,6 +127,7 @@ class OrderOutboxIT {
         String body = new String(message.getBody(), StandardCharsets.UTF_8);
         OrderCreatedPayload payload = objectMapper.readValue(body, OrderCreatedPayload.class);
         assertThat(payload.orderId()).isEqualTo(orderId);
+        assertThat(payload.tenantId()).isEqualTo(tenantId);
         assertThat(payload.productId()).isEqualTo(productId);
         assertThat(payload.quantity()).isEqualTo(5);
     }

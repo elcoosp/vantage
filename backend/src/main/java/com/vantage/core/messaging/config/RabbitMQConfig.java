@@ -1,3 +1,4 @@
+// backend/src/main/java/com/vantage/core/messaging/config/RabbitMQConfig.java
 package com.vantage.core.messaging.config;
 
 import org.springframework.amqp.core.Binding;
