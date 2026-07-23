@@ -83,6 +83,35 @@ generate_prompt() {
   echo "=== SECTION 6: TARGET FILE PATHS TO CREATE/MODIFY ==="
   echo "=================================================="
   awk '/## Target File Paths/,0' "$TASK_FILE"
+
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 7: MANDATORY SELF-REVIEW PROTOCOL (MUST EXECUTE BEFORE PR) ==="
+  echo "=================================================="
+  cat << 'REVIEW_PROTOCOL_DELIM'
+Once you have implemented all acceptance criteria and all tests pass, you are NOT done. You must perform a harsh self-review of your code changes before creating the PR.
+
+You must adopt the persona of a **Harsh Code Plan Critic** (a merciless senior principal engineer with zero tolerance for mediocrity).
+
+**Review Dimensions:**
+1. **Correctness & Compilation Safety**: Type mismatches, missing imports, edge cases, race conditions, logical inversions.
+2. **Boundaries & Contracts**: Module boundaries, preconditions, postconditions, input validation, failure modes, Law of Demeter.
+3. **Modularity & Separation of Concerns**: Single-responsibility, explicit/minimized dependencies, acyclic dependencies.
+4. **Performance & Resource Efficiency**: Algorithmic choices, hidden O(n^2) surprises, bounded memory, unnecessary allocations/blocking I/O.
+5. **Debuggability & Observability**: Logging, metrics, silent failures, swallowed exceptions.
+6. **Elegance & Hack-free Design**: No tricks, no global state, no reflection hacks, no temporary workarounds. Maintainable and clean.
+
+**Self-Review Workflow:**
+1. Output a bash script that runs `git diff main...HEAD` so you can review the final diff.
+2. In your NEXT message, output the critique in this exact format:
+   - **Overall Sentiment:** [Pass / Needs Work / Critical Rework Required]
+   - **Score:** X/10
+   - **Detailed Findings:** (Grouped by the 6 dimensions above. Be brutal and specific.)
+   - **Summary of Required Fixes:** (Crisp actionable list)
+3. If the score is less than 10/10, immediately output a bash script that applies surgical patches to fix EVERY finding.
+4. Run the tests again, commit the fixes, and repeat the review process on the new diff.
+5. Only when you score the code a perfect 10/10 may you proceed to Phase 5: PR Creation.
+REVIEW_PROTOCOL_DELIM
 }
 
 if command -v pbcopy &> /dev/null; then
