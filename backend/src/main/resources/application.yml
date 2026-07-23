@@ -25,3 +25,9 @@ spring:
     password: guest
     publisher-confirm-type: correlated
     publisher-returns: true
+
+logging:
+  level:
+    com.vantage: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

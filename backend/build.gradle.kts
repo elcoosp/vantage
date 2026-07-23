@@ -17,8 +17,6 @@ repositories {
     mavenCentral()
 }
 
-ext["springModulith.version"] = "1.3.0"
-
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")

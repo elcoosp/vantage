@@ -1,13 +1,15 @@
 package com.vantage.core.tenant;
 
-public class TenantContext {
-    private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();
+import java.util.UUID;
 
-    public static void setTenantId(String tenantId) {
+public class TenantContext {
+    private static final ThreadLocal<UUID> CURRENT_TENANT = new ThreadLocal<>();
+
+    public static void setTenantId(UUID tenantId) {
         CURRENT_TENANT.set(tenantId);
     }
 
-    public static String getTenantId() {
+    public static UUID getTenantId() {
         return CURRENT_TENANT.get();
     }
 
