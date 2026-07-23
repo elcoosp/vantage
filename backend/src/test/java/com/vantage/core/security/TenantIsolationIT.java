@@ -4,7 +4,7 @@ import com.vantage.core.tenant.TenantContext;
 import com.vantage.vendor.app.VendorService;
 import com.vantage.vendor.domain.Vendor;
 import com.vantage.vendor.domain.VendorRepository;
-import com.vantage.vendor.ui.dto.AuthResponse;
+import com.vantage.vendor.app.VendorRegistrationResult;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +44,8 @@ class TenantIsolationIT {
 
     @Test
     void should_block_cross_tenant_access_when_querying_vendor() {
-        AuthResponse tenantA = vendorService.register(new VendorRegistrationRequest("a@vantage.com", "pass", "A"));
-        vendorService.register(new VendorRegistrationRequest("b@vantage.com", "pass", "B"));
+        VendorRegistrationResult tenantA = vendorService.register(new VendorRegistrationRequest("a@vantage.com", "securePassword123", "A"));
+        vendorService.register(new VendorRegistrationRequest("b@vantage.com", "securePassword123", "B"));
 
         UUID vendorAId = vendorRepository.findByEmail("a@vantage.com").orElseThrow().getId();
 
@@ -57,7 +57,7 @@ class TenantIsolationIT {
             TenantContext.clear();
         }
 
-        AuthResponse tenantB = vendorService.register(new VendorRegistrationRequest("b2@vantage.com", "pass", "B2"));
+        VendorRegistrationResult tenantB = vendorService.register(new VendorRegistrationRequest("b2@vantage.com", "securePassword123", "B2"));
         TenantContext.setTenantId(tenantB.tenantId());
         try {
             Optional<Vendor> found = vendorRepository.findById(vendorAId);
