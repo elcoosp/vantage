@@ -30,7 +30,7 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
-    implementation("io.github.resilience4j:resilience4j-spring-boot3")
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
     compileOnly("org.projectlombok:lombok")
