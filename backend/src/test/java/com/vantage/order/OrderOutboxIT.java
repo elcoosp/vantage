@@ -10,6 +10,7 @@ import com.vantage.order.app.event.OrderCreatedPayload;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.order.ui.dto.OrderResponse;
+import com.vantage.core.messaging.config.RabbitMQConfig;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
@@ -77,7 +78,7 @@ class OrderOutboxIT {
     private ObjectMapper objectMapper;
 
     @Test
-    void should_persist_order_and_outbox_and_publish_to_rabbitmq_when_create_order() throws Exception {
+    void should_persist_order_and_outbox_and_publish_to_rabbitmq_when_creating_order() throws Exception {
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest("order@vantage.com", "securePassword123", "Vantage Inc.");
         ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorReq, AuthResponse.class);
         String token = vendorRes.getBody().token();
@@ -122,7 +123,7 @@ class OrderOutboxIT {
                 assertThat(event.getPublishedAt()).isNotNull();
             });
 
-        Message message = rabbitTemplate.receive("vantage.order.events", 5000);
+        Message message = rabbitTemplate.receive(RabbitMQConfig.QUEUE, 5000);
         assertThat(message).isNotNull();
         String body = new String(message.getBody(), StandardCharsets.UTF_8);
         OrderCreatedPayload payload = objectMapper.readValue(body, OrderCreatedPayload.class);
