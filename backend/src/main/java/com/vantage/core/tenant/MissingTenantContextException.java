@@ -1,6 +1,8 @@
 package com.vantage.core.tenant;
 
-public class MissingTenantContextException extends RuntimeException {
+import com.vantage.core.exception.VantageDomainException;
+
+public class MissingTenantContextException extends VantageDomainException {
     public MissingTenantContextException(String message) {
         super(message);
     }

@@ -1,15 +1,15 @@
 package com.vantage.core.domain;
 
-import com.vantage.core.tenant.MissingTenantContextException;
-import com.vantage.core.tenant.TenantContext;
+import com.vantage.core.tenant.TenantEntityListener;
 import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.UUID;
 
@@ -18,19 +18,9 @@ import java.util.UUID;
 @MappedSuperclass
 @FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+@EntityListeners({AuditingEntityListener.class, TenantEntityListener.class})
 public abstract class BaseTenantEntity extends BaseEntity {
 
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.tenantId == null) {
-            UUID tenantId = TenantContext.getTenantId();
-            if (tenantId == null) {
-                throw new MissingTenantContextException("Tenant ID must be present in context for persistence");
-            }
-            this.tenantId = tenantId;
-        }
-    }
 }
