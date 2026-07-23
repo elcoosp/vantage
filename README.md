@@ -30,15 +30,15 @@ Vantage is built as a Modular Monolith using Spring Modulith. This provides stri
 
 ```mermaid
 graph TD
-    subgraph Client
+    subgraph "Client"
         React[React 19 SPA<br/>Vite + TailwindCSS]
     end
 
-    subgraph Vantage Backend Spring Boot 3.4 Java 21
+    subgraph "Vantage Backend (Spring Boot 3.4 / Java 21)"
         API[REST & GraphQL API]
         WS[WebSocket STOMP]
 
-        subgraph Domain Modules
+        subgraph "Domain Modules"
             Order[Order Module<br/>Saga Orchestrator]
             Inventory[Inventory Module<br/>Optimistic Locking]
             Payment[Payment Module<br/>Resilience4j]
@@ -48,28 +48,37 @@ graph TD
         Outbox[Transactional Outbox<br/>PostgreSQL Advisory Locks]
     end
 
-    subgraph Data & Messaging
+    subgraph "Data & Messaging"
         PG[(PostgreSQL 16<br/>Neon.tech)]
         RMQ{{RabbitMQ<br/>CloudAMQP}}
     end
 
-    subgraph External Services
+    subgraph "External Services"
         Pay[Mock Payment Gateway]
         Geo[Nominatim Geocoding]
     end
 
-    React -- HTTPS / JWT --> API
-    React -- WSS --> WS
+    React -->|HTTPS / JWT| API
+    React -->|WSS| WS
 
-    API -- JPA / Hibernate Filters --> PG
-    API --> Domain Modules
+    API -->|JPA / Hibernate Filters| PG
+    API --> Order
+    API --> Inventory
+    API --> Payment
+    API --> Analytics
 
-    Domain Modules <--> Outbox
-    Outbox -- AMQP --> RMQ
-    RMQ -- AMQP --> Domain Modules
+    Order <--> Outbox
+    Inventory <--> Outbox
+    Payment <--> Outbox
+    Analytics <--> Outbox
 
-    Payment -- HTTPS --> Pay
-    Inventory -- HTTPS --> Geo
+    Outbox -->|AMQP| RMQ
+    RMQ -->|AMQP| Order
+    RMQ -->|AMQP| Inventory
+    RMQ -->|AMQP| Payment
+
+    Payment -->|HTTPS| Pay
+    Inventory -->|HTTPS| Geo
 ```
 
 ---
