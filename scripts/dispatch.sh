@@ -68,13 +68,10 @@ generate_prompt() {
   echo "Below is the current state of all tracked files in the backend and frontend directories. Use this context to apply surgical patches (Pattern B) instead of rewriting files from scratch."
   echo ""
 
-  # Use git ls-files to safely list all tracked files in backend/ and frontend/, avoiding node_modules, build, etc.
-  git ls-files backend frontend | while read -r file; do
-    # Skip .gitignore as requested
-    if [[ "$file" == *".gitignore"* ]]; then
-      continue
-    fi
+  echo "Using git ls-files to list tracked files, then filtering strictly for source code."
+  echo "Excluding lock files, binaries, and wrappers to avoid bloating the AI context."
 
+  git ls-files backend frontend | grep -iE '\.(java|kt|kts|yml|yaml|properties|xml|sql|ts|tsx|js|jsx|css|html|json|md)$|Dockerfile|Makefile|gradlew$' | grep -viE 'package-lock.json|pnpm-lock.yaml|yarn.lock|gradle-wrapper.jar|gradle-wrapper.properties' | while read -r file; do
     echo ""
     echo "--- EXISTING FILE: $file ---"
     cat "$file"
