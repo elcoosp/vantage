@@ -3,6 +3,7 @@ package com.vantage.inventory.ui;
 import com.vantage.inventory.app.InventoryService;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,7 +26,7 @@ public class InventoryController {
     @PutMapping("/{productId}")
     public InventoryResponse update(@PathVariable UUID productId,
                                     @RequestHeader("If-Match") String ifMatch,
-                                    @RequestBody InventoryUpdateRequest request) {
+                                    @Valid @RequestBody InventoryUpdateRequest request) {
         return inventoryService.updateInventory(productId, Long.parseLong(ifMatch), request);
     }
 }

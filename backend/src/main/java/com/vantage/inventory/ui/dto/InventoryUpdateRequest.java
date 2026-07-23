@@ -1,4 +1,9 @@
 package com.vantage.inventory.ui.dto;
 
-public record InventoryUpdateRequest(Integer quantity) {
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+
+public record InventoryUpdateRequest(
+    @NotNull @PositiveOrZero Integer quantity
+) {
 }

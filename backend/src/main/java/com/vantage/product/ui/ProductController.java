@@ -3,6 +3,7 @@ package com.vantage.product.ui;
 import com.vantage.product.app.ProductService;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +20,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ProductResponse create(@RequestBody ProductRequest request) {
+    public ProductResponse create(@Valid @RequestBody ProductRequest request) {
         return productService.createProduct(request);
     }
 }
