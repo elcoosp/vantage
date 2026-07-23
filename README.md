@@ -30,30 +30,30 @@ Vantage is built as a Modular Monolith using Spring Modulith. This provides stri
 
 ```mermaid
 graph TD
-    subgraph "Client"
-        React[React 19 SPA<br/>Vite + TailwindCSS]
+    subgraph Client
+        React[React 19 SPA]
     end
 
-    subgraph "Vantage Backend (Spring Boot 3.4 / Java 21)"
+    subgraph Vantage Backend
         API[REST & GraphQL API]
         WS[WebSocket STOMP]
 
-        subgraph "Domain Modules"
-            Order[Order Module<br/>Saga Orchestrator]
-            Inventory[Inventory Module<br/>Optimistic Locking]
-            Payment[Payment Module<br/>Resilience4j]
-            Analytics[Analytics Module<br/>Holt-Winters Forecasting]
+        subgraph Domain Modules
+            Order[Order Saga]
+            Inventory[Optimistic Locking]
+            Payment[Resilience4j]
+            Analytics[Holt-Winters]
         end
 
-        Outbox[Transactional Outbox<br/>PostgreSQL Advisory Locks]
+        Outbox[Transactional Outbox]
     end
 
-    subgraph "Data & Messaging"
-        PG[(PostgreSQL 16<br/>Neon.tech)]
-        RMQ{{RabbitMQ<br/>CloudAMQP}}
+    subgraph Data and Messaging
+        PG[(PostgreSQL)]
+        RMQ{{RabbitMQ}}
     end
 
-    subgraph "External Services"
+    subgraph External Services
         Pay[Mock Payment Gateway]
         Geo[Nominatim Geocoding]
     end
