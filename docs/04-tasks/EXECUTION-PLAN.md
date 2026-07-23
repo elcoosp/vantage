@@ -1,11 +1,3 @@
-#!/usr/bin/env bash
-set -uo pipefail
-
-COMPILE_OK=true
-INCOMPLETE=false
-
-echo "Writing docs/04-tasks/EXECUTION-PLAN.md"
-cat > docs/04-tasks/EXECUTION-PLAN.md << 'EXEC_PLAN_DELIM'
 # Vantage: 8-Agent Parallel Execution Plan
 
 This document defines the exact execution sequence to build Vantage using up to 8 AI agents in parallel with ZERO merge conflicts.
@@ -142,19 +134,3 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [ ] `TASK-042`: End-to-End (E2E) Testing with Playwright
   - [ ] `TASK-050`: Final Integration & E2E Smoke Test
   - [ ] Merge to `main`
-EXEC_PLAN_DELIM
-
-echo "Skipping compile check (documentation files)"
-COMPILE_OK=true
-
-if [ "$INCOMPLETE" = true ] || [ "$COMPILE_OK" = false ]; then
-  echo "Skipping tests and commit due to incomplete files or compilation errors"
-  exit 1
-fi
-
-echo "Running tests"
-echo "Skipping tests (documentation files)"
-
-echo "All tests passed. Committing."
-git add -A
-git commit -m "docs(tasks): add 8-agent parallel execution plan for zero conflicts"
