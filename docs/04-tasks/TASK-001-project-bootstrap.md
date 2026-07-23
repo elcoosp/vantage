@@ -18,8 +18,7 @@ Initialize the Vantage monorepo. Scaffold the Spring Boot 3.4 backend with Java 
 ## Acceptance Criteria
 
 ### 1. Root Repository Setup
-1. Create a root `README.md` with the project title "Vantage" and a placeholder for the architecture diagram.
-2. Create a `docker-compose.yml` at the root provisioning:
+1. Create a `docker-compose.yml` at the root provisioning:
    - `postgres:16-alpine` (User: `vantage`, DB: `vantage_dev`, Password: `vantage_pw`)
    - `rabbitmq:3.13-management` (Standard ports)
 

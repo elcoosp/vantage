@@ -15,34 +15,37 @@ if [ -z "$TASK_FILE" ]; then
 fi
 
 echo "Dispatching $TASK_FILE..."
-PROMPT_FILE=".dispatch_prompt_${TASK_ID}.txt"
 
-echo "# AI AGENT TASK ASSIGNMENT" > "$PROMPT_FILE"
-echo "" >> "$PROMPT_FILE"
-cat "$TASK_FILE" >> "$PROMPT_FILE"
-echo "" >> "$PROMPT_FILE"
-echo "--- INJECTED CONTEXT FILES ---" >> "$PROMPT_FILE"
+generate_prompt() {
+  echo "# AI AGENT TASK ASSIGNMENT"
+  echo ""
+  cat "$TASK_FILE"
+  echo ""
+  echo "--- INJECTED CONTEXT FILES ---"
 
-awk '/## Context Files to Inject/,/## Acceptance Criteria/' "$TASK_FILE" | grep -E '^\- \`' | sed -E 's/^- `(.*)`.*$/\1/' | while read -r file; do
-  if [ -f "$file" ]; then
-    echo "" >> "$PROMPT_FILE"
-    echo "=== FILE: $file ===" >> "$PROMPT_FILE"
-    cat "$file" >> "$PROMPT_FILE"
-    echo "=== END FILE ===" >> "$PROMPT_FILE"
-  else
-    echo "" >> "$PROMPT_FILE"
-    echo "=== WARNING: FILE NOT FOUND: $file ===" >> "$PROMPT_FILE"
-  fi
-done
-
-echo "Prompt generated at $PROMPT_FILE"
+  awk '/## Context Files to Inject/,/## Acceptance Criteria/' "$TASK_FILE" | grep -E '^\- `' | sed -E 's/^- `(.*)`.*$/\1/' | while read -r file; do
+    if [ -f "$file" ]; then
+      echo ""
+      echo "=== FILE: $file ==="
+      cat "$file"
+      echo "=== END FILE ==="
+    else
+      echo ""
+      echo "=== WARNING: FILE NOT FOUND: $file ==="
+    fi
+  done
+}
 
 if command -v pbcopy &> /dev/null; then
-  cat "$PROMPT_FILE" | pbcopy
-  echo "Copied to clipboard (macOS)."
+  generate_prompt | pbcopy
+  echo "Prompt for $TASK_ID copied to clipboard (macOS)."
 elif command -v xclip &> /dev/null; then
-  cat "$PROMPT_FILE" | xclip -selection clipboard
-  echo "Copied to clipboard (Linux)."
+  generate_prompt | xclip -selection clipboard
+  echo "Prompt for $TASK_ID copied to clipboard (Linux)."
+elif command -v clip.exe &> /dev/null; then
+  generate_prompt | clip.exe
+  echo "Prompt for $TASK_ID copied to clipboard (Windows/WSL)."
 else
-  echo "Clipboard tool not found. Please open $PROMPT_FILE and copy manually."
+  echo "Clipboard tool not found. Outputting to stdout:"
+  generate_prompt
 fi
