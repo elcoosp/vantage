@@ -1,0 +1,204 @@
+asyncapi: 3.0.0
+info:
+  title: Vantage Async Events API
+  version: 1.0.0
+  description: |
+    Defines the asynchronous event contracts for the Vantage Order Saga.
+    AI agents must use these schemas to generate Java Records for RabbitMQ message payloads.
+  contact:
+    name: Vantage Architecture Team
+servers:
+  production:
+    host: "cloudamqp.com"
+    protocol: amqp
+    description: CloudAMQP RabbitMQ broker
+channels:
+  order.events:
+    address: "vantage.order.events"
+    messages:
+      OrderCreatedEvent:
+        $ref: "#/components/messages/OrderCreatedEvent"
+      PaymentFailedEvent:
+        $ref: "#/components/messages/PaymentFailedEvent"
+  inventory.events:
+    address: "vantage.inventory.events"
+    messages:
+      InventoryReservedEvent:
+        $ref: "#/components/messages/InventoryReservedEvent"
+      InventoryReleasedEvent:
+        $ref: "#/components/messages/InventoryReleasedEvent"
+  payment.events:
+    address: "vantage.payment.events"
+    messages:
+      PaymentSucceededEvent:
+        $ref: "#/components/messages/PaymentSucceededEvent"
+operations:
+  publishOrderCreated:
+    action: send
+    channel:
+      $ref: "#/channels/order.events"
+    messages:
+      - $ref: "#/components/messages/OrderCreatedEvent"
+  publishPaymentFailed:
+    action: send
+    channel:
+      $ref: "#/channels/order.events"
+    messages:
+      - $ref: "#/components/messages/PaymentFailedEvent"
+  publishInventoryReserved:
+    action: send
+    channel:
+      $ref: "#/channels/inventory.events"
+    messages:
+      - $ref: "#/components/messages/InventoryReservedEvent"
+  publishInventoryReleased:
+    action: send
+    channel:
+      $ref: "#/channels/inventory.events"
+    messages:
+      - $ref: "#/components/messages/InventoryReleasedEvent"
+  publishPaymentSucceeded:
+    action: send
+    channel:
+      $ref: "#/channels/payment.events"
+    messages:
+      - $ref: "#/components/messages/PaymentSucceededEvent"
+components:
+  messages:
+    OrderCreatedEvent:
+      name: OrderCreatedEvent
+      title: Order Created
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/OrderCreatedPayload"
+    InventoryReservedEvent:
+      name: InventoryReservedEvent
+      title: Inventory Reserved
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/InventoryReservedPayload"
+    PaymentSucceededEvent:
+      name: PaymentSucceededEvent
+      title: Payment Succeeded
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PaymentSucceededPayload"
+    PaymentFailedEvent:
+      name: PaymentFailedEvent
+      title: Payment Failed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PaymentFailedPayload"
+    InventoryReleasedEvent:
+      name: InventoryReleasedEvent
+      title: Inventory Released (Compensating Transaction)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/InventoryReleasedPayload"
+  schemas:
+    EventMetadata:
+      type: object
+      required:
+        - eventId
+        - occurredAt
+        - tenantId
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Unique identifier for the event, used for consumer idempotency.
+        occurredAt:
+          type: string
+          format: date-time
+        tenantId:
+          type: string
+          format: uuid
+    OrderCreatedPayload:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/EventMetadata"
+        - type: object
+          required:
+            - orderId
+            - productId
+            - quantity
+          properties:
+            orderId:
+              type: string
+              format: uuid
+            productId:
+              type: string
+              format: uuid
+            quantity:
+              type: integer
+              minimum: 1
+    InventoryReservedPayload:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/EventMetadata"
+        - type: object
+          required:
+            - orderId
+            - productId
+            - reservedQuantity
+          properties:
+            orderId:
+              type: string
+              format: uuid
+            productId:
+              type: string
+              format: uuid
+            reservedQuantity:
+              type: integer
+    PaymentSucceededPayload:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/EventMetadata"
+        - type: object
+          required:
+            - orderId
+            - transactionId
+            - amount
+          properties:
+            orderId:
+              type: string
+              format: uuid
+            transactionId:
+              type: string
+            amount:
+              type: number
+              format: double
+    PaymentFailedPayload:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/EventMetadata"
+        - type: object
+          required:
+            - orderId
+            - reason
+          properties:
+            orderId:
+              type: string
+              format: uuid
+            reason:
+              type: string
+              enum: [INSUFFICIENT_FUNDS, GATEWAY_TIMEOUT, CIRCUIT_OPEN]
+    InventoryReleasedPayload:
+      type: object
+      description: Payload for compensating transaction when payment fails.
+      allOf:
+        - $ref: "#/components/schemas/EventMetadata"
+        - type: object
+          required:
+            - orderId
+            - productId
+            - releasedQuantity
+          properties:
+            orderId:
+              type: string
+              format: uuid
+            productId:
+              type: string
+              format: uuid
+            releasedQuantity:
+              type: integer

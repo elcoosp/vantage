@@ -1,0 +1,304 @@
+openapi: 3.1.0
+info:
+  title: Vantage REST API
+  version: 1.0.0
+  description: |
+    API contracts for Vantage platform. AI agents must use these schemas to generate
+    Spring Boot REST Controllers and React Query hooks.
+  contact:
+    name: Vantage Architecture Team
+servers:
+  - url: "https://api.vantage.io"
+    description: Production server
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+paths:
+  /api/v1/vendors/register:
+    post:
+      summary: Register a new Vendor (Tenant)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorRegistrationRequest"
+      responses:
+        "201":
+          description: Vendor created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Tenant slug already exists
+
+  /api/v1/products:
+    post:
+      summary: Create a Product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+
+  /api/v1/inventory/{productId}:
+    put:
+      summary: Update inventory quantity (Optimistic Locking)
+      description: |
+        Uses the `If-Match` header with the current entity version.
+        If the version does not match, returns 409 Conflict.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: If-Match
+          in: header
+          required: true
+          description: The current version of the inventory entity.
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryUpdateRequest"
+      responses:
+        "200":
+          description: Inventory updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryResponse"
+        "409":
+          description: Conflict - Inventory was modified by another transaction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/orders:
+    post:
+      summary: Place an Order (Triggers Saga)
+      description: Initiates the distributed transaction. Returns 202 Accepted immediately.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRequest"
+      responses:
+        "202":
+          description: Order accepted and processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+
+  /api/v1/payments:
+    post:
+      summary: Process Payment (Idempotent)
+      description: |
+        Requires an Idempotency-Key header. If a duplicate key is sent within 24h,
+        the original cached response is returned without reprocessing the payment.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique client-generated UUID for exactly-once payment processing.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+      responses:
+        "200":
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "429":
+          description: Rate limit exceeded
+
+  /api/v1/analytics/forecast/{productId}:
+    get:
+      summary: Get 7-day Demand Forecast
+      description: Uses pure Java Holt-Winters Exponential Smoothing.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Forecast generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForecastResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+    VendorRegistrationRequest:
+      type: object
+      required: [email, password, storeName, tenantSlug]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        storeName:
+          type: string
+        tenantSlug:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tenantId:
+          type: string
+          format: uuid
+    ProductRequest:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        sku:
+          type: string
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        price:
+          type: number
+        sku:
+          type: string
+    InventoryUpdateRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+    InventoryResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        version:
+          type: integer
+          description: The new version number to be used in future If-Match headers.
+    OrderRequest:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+    OrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [CREATED]
+    PaymentRequest:
+      type: object
+      required: [orderId, amount]
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        currency:
+          type: string
+    PaymentResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        status:
+          type: string
+          enum: [SUCCESS, FAILED]
+    ForecastResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        forecast:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              predictedQuantity:
+                type: integer
+              lowerBound:
+                type: integer
+              upperBound:
+                type: integer
