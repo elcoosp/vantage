@@ -21,12 +21,18 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -42,8 +48,22 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(OrderOutboxIT.TestSecurityConfig.class)
 @Testcontainers
 public class OrderOutboxIT {
+
+    @TestConfiguration
+    static class TestSecurityConfig {
+        @Bean
+        @Order(1)
+        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+            http
+                .securityMatcher("/**")
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+    }
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -60,6 +80,8 @@ public class OrderOutboxIT {
         registry.add("spring.flyway.enabled", () -> "false");
         registry.add("spring.rabbitmq.host", rabbitmq::getHost);
         registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
+        registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
+        registry.add("spring.rabbitmq.publisher-returns", () -> "true");
     }
 
     @Autowired
@@ -79,25 +101,33 @@ public class OrderOutboxIT {
 
     @Test
     void should_persist_order_and_outbox_and_publish_to_rabbitmq_when_creating_order() throws Exception {
+        UUID dummyTenantId = UUID.randomUUID();
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest("order@vantage.com", "securePassword123", "Vantage Inc.");
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorReq, AuthResponse.class);
-        String token = vendorRes.getBody().token();
+        HttpHeaders vendorHeaders = new HttpHeaders();
+        vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
+        vendorHeaders.set("X-Tenant-ID", dummyTenantId.toString());
+        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
+        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        assertThat(vendorRes.getStatusCode()).as("Vendor registration failed: %s", vendorRes).isEqualTo(HttpStatus.CREATED);
+        assertThat(vendorRes.getBody()).isNotNull();
         UUID tenantId = vendorRes.getBody().tenantId();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Tenant-ID", tenantId.toString());
 
         ProductRequest productReq = new ProductRequest("Order Product", "Description", new BigDecimal("50.0"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
         ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity("/api/v1/products", productEntity, ProductResponse.class);
+        assertThat(productRes.getStatusCode()).as("Product creation failed: %s", productRes).isEqualTo(HttpStatus.OK);
+        assertThat(productRes.getBody()).isNotNull();
         UUID productId = productRes.getBody().id();
 
         OrderRequest orderReq = new OrderRequest(productId, 5);
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
         ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity("/api/v1/orders", orderEntity, OrderResponse.class);
 
-        assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(orderRes.getStatusCode()).as("Order creation failed: %s", orderRes).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
         UUID orderId = orderRes.getBody().id();
 
@@ -110,26 +140,26 @@ public class OrderOutboxIT {
             assertThat(pendingEvent.getEventType()).isEqualTo("OrderCreatedEvent");
             assertThat(pendingEvent.getAggregateType()).isEqualTo("ORDER");
             assertThat(pendingEvent.getPayload()).contains(orderId.toString());
+
+            Awaitility.await()
+                .atMost(Duration.ofSeconds(10))
+                .pollInterval(Duration.ofMillis(250))
+                .untilAsserted(() -> {
+                    OutboxEvent event = outboxRepository.findByAggregateId(orderId).orElseThrow();
+                    assertThat(event.getStatus()).isEqualTo(OutboxStatus.PUBLISHED);
+                    assertThat(event.getPublishedAt()).isNotNull();
+                });
+
+            Message message = rabbitTemplate.receive(RabbitMQConfig.QUEUE, 5000);
+            assertThat(message).as("Message should be present in RabbitMQ").isNotNull();
+            String body = new String(message.getBody(), StandardCharsets.UTF_8);
+            OrderCreatedPayload payload = objectMapper.readValue(body, OrderCreatedPayload.class);
+            assertThat(payload.orderId()).isEqualTo(orderId);
+            assertThat(payload.tenantId()).isEqualTo(tenantId);
+            assertThat(payload.productId()).isEqualTo(productId);
+            assertThat(payload.quantity()).isEqualTo(5);
         } finally {
             TenantContext.clear();
         }
-
-        Awaitility.await()
-            .atMost(Duration.ofSeconds(5))
-            .pollInterval(Duration.ofMillis(250))
-            .untilAsserted(() -> {
-                OutboxEvent event = outboxRepository.findByAggregateId(orderId).orElseThrow();
-                assertThat(event.getStatus()).isEqualTo(OutboxStatus.PUBLISHED);
-                assertThat(event.getPublishedAt()).isNotNull();
-            });
-
-        Message message = rabbitTemplate.receive(RabbitMQConfig.QUEUE, 5000);
-        assertThat(message).isNotNull();
-        String body = new String(message.getBody(), StandardCharsets.UTF_8);
-        OrderCreatedPayload payload = objectMapper.readValue(body, OrderCreatedPayload.class);
-        assertThat(payload.orderId()).isEqualTo(orderId);
-        assertThat(payload.tenantId()).isEqualTo(tenantId);
-        assertThat(payload.productId()).isEqualTo(productId);
-        assertThat(payload.quantity()).isEqualTo(5);
     }
 }

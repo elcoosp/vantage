@@ -10,14 +10,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.connection.CorrelationData.Confirm;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class OutboxPoller {
@@ -41,8 +44,21 @@ public class OutboxPoller {
                     .withBody(event.getPayload().getBytes(StandardCharsets.UTF_8))
                     .setContentType(MessageProperties.CONTENT_TYPE_JSON)
                     .build();
-            log.info("Publishing outbox event {} to RabbitMQ", event.getId());
-            rabbitTemplate.send(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message, correlationData);
+            try {
+                log.info("Publishing outbox event {} to RabbitMQ", event.getId());
+                rabbitTemplate.send(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message, correlationData);
+                Confirm confirm = correlationData.getFuture().get(5, TimeUnit.SECONDS);
+                if (confirm != null && confirm.isAck()) {
+                    event.setStatus(OutboxStatus.PUBLISHED);
+                    event.setPublishedAt(Instant.now());
+                    outboxRepository.save(event);
+                    log.info("Successfully published and confirmed outbox event {}", event.getId());
+                } else {
+                    log.warn("Outbox event {} publish confirm returned NACK or null", event.getId());
+                }
+            } catch (Exception e) {
+                log.error("Failed to publish or confirm outbox event {}", event.getId(), e);
+            }
         }
     }
 }
