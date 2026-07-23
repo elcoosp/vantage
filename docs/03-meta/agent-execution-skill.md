@@ -1,11 +1,3 @@
-#!/usr/bin/env bash
-set -uo pipefail
-
-COMPILE_OK=true
-INCOMPLETE=false
-
-echo "Writing docs/03-meta/agent-execution-skill.md"
-cat > docs/03-meta/agent-execution-skill.md << 'SKILL_DELIM'
 # AI Agent Execution Skill (TDD & Patch-Driven Workflow)
 
 ## Overview
@@ -185,19 +177,3 @@ Examples:
 4. If the output contains errors, output a single ` ```bash ` script that surgically patches the error.
 5. If the step succeeds, output the next ` ```bash ` script for the subsequent step.
 6. Once all acceptance criteria are met and the final commit is made, output a final script that prints the git log and exits.
-SKILL_DELIM
-
-echo "Skipping compile check (documentation files)"
-COMPILE_OK=true
-
-if [ "$INCOMPLETE" = true ] || [ "$COMPILE_OK" = false ]; then
-  echo "Skipping tests and commit due to incomplete files or compilation errors"
-  exit 1
-fi
-
-echo "Running tests"
-echo "Skipping tests (documentation files)"
-
-echo "All tests passed. Committing."
-git add -A
-git commit -m "docs(meta): add AI agent execution skill for TDD and patch workflow"
