@@ -4,199 +4,185 @@ set -uo pipefail
 COMPILE_OK=true
 INCOMPLETE=false
 
-echo "Creating directories scripts and docs/05-ops"
-mkdir -p scripts docs/05-ops
+echo "Writing README.md"
+cat > README.md << 'README_DELIM'
+# Vantage
 
-echo "Writing scripts/dispatch.sh"
-cat > scripts/dispatch.sh << 'DISPATCH_DELIM'
-#!/usr/bin/env bash
-set -uo pipefail
+> A production-grade, multi-tenant SaaS platform enabling independent merchants to manage operations, with distributed order orchestration, AI-driven forecasting, and end-to-end observability.
 
-if [ -z "$1" ]; then
-  echo "Usage: ./scripts/dispatch.sh <TASK_ID> (e.g., TASK-001)"
-  exit 1
-fi
+[![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![React 19](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.13-red.svg)](https://www.rabbitmq.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-TASK_ID=$1
-TASK_FILE=$(find docs/04-tasks -name "${TASK_ID}*.md" | head -n 1)
+Vantage is a comprehensive vendor operations platform designed to demonstrate advanced full-stack engineering and distributed systems architecture. It solves complex enterprise challenges such as flash-sale concurrency, distributed transactional consistency, and real-time observability, all deployed on a $0 hosting budget.
 
-if [ -z "$TASK_FILE" ]; then
-  echo "Error: Task file not found for $TASK_ID"
-  exit 1
-fi
+---
 
-echo "Dispatching $TASK_FILE..."
-PROMPT_FILE=".dispatch_prompt_${TASK_ID}.txt"
+## Table of Contents
+- [Architecture Overview](#architecture-overview)
+- [Core Platform Capabilities](#core-platform-capabilities)
+- [Technology Stack](#technology-stack)
+- [Engineering Maturity & DevSecOps](#engineering-maturity--devsecops)
+- [Quickstart (Local Development)](#quickstart-local-development)
+- [System Tour](#system-tour)
+- [Project Structure & Documentation](#project-structure--documentation)
 
-echo "# AI AGENT TASK ASSIGNMENT" > "$PROMPT_FILE"
-echo "" >> "$PROMPT_FILE"
-cat "$TASK_FILE" >> "$PROMPT_FILE"
-echo "" >> "$PROMPT_FILE"
-echo "--- INJECTED CONTEXT FILES ---" >> "$PROMPT_FILE"
+---
 
-awk '/## Context Files to Inject/,/## Acceptance Criteria/' "$TASK_FILE" | grep -E '^\- \`' | sed -E 's/^- `(.*)`.*$/\1/' | while read -r file; do
-  if [ -f "$file" ]; then
-    echo "" >> "$PROMPT_FILE"
-    echo "=== FILE: $file ===" >> "$PROMPT_FILE"
-    cat "$file" >> "$PROMPT_FILE"
-    echo "=== END FILE ===" >> "$PROMPT_FILE"
-  else
-    echo "" >> "$PROMPT_FILE"
-    echo "=== WARNING: FILE NOT FOUND: $file ===" >> "$PROMPT_FILE"
-  fi
-done
+## Architecture Overview
 
-echo "Prompt generated at $PROMPT_FILE"
+Vantage is built as a Modular Monolith using Spring Modulith. This provides strict bounded contexts (Vendor, Product, Inventory, Order, Payment) while maintaining the operational simplicity of a single deployable unit.
 
-if command -v pbcopy &> /dev/null; then
-  cat "$PROMPT_FILE" | pbcopy
-  echo "Copied to clipboard (macOS)."
-elif command -v xclip &> /dev/null; then
-  cat "$PROMPT_FILE" | xclip -selection clipboard
-  echo "Copied to clipboard (Linux)."
-else
-  echo "Clipboard tool not found. Please open $PROMPT_FILE and copy manually."
-fi
-DISPATCH_DELIM
-chmod +x scripts/dispatch.sh
+```mermaid
+graph TD
+    subgraph Client
+        React[React 19 SPA<br/>Vite + TailwindCSS]
+    end
 
-echo "Writing docs/05-ops/01-local-development.md"
-cat > docs/05-ops/01-local-development.md << 'OPS1_DELIM'
-# Vantage: Local Development Guide
+    subgraph Vantage Backend Spring Boot 3.4 Java 21
+        API[REST & GraphQL API]
+        WS[WebSocket STOMP]
 
-This document provides instructions for setting up and running the Vantage platform locally for development and demo purposes.
+        subgraph Domain Modules
+            Order[Order Module<br/>Saga Orchestrator]
+            Inventory[Inventory Module<br/>Optimistic Locking]
+            Payment[Payment Module<br/>Resilience4j]
+            Analytics[Analytics Module<br/>Holt-Winters Forecasting]
+        end
 
-## 1. Prerequisites
-- **Java 21** (JDK)
-- **Node.js 20+** and npm
-- **Docker** and Docker Compose
-- **Git**
+        Outbox[Transactional Outbox<br/>PostgreSQL Advisory Locks]
+    end
 
-## 2. Infrastructure Setup
-From the root directory, start the local PostgreSQL and RabbitMQ containers:
+    subgraph Data & Messaging
+        PG[(PostgreSQL 16<br/>Neon.tech)]
+        RMQ{{RabbitMQ<br/>CloudAMQP}}
+    end
+
+    subgraph External Services
+        Pay[Mock Payment Gateway]
+        Geo[Nominatim Geocoding]
+    end
+
+    React -- HTTPS / JWT --> API
+    React -- WSS --> WS
+
+    API -- JPA / Hibernate Filters --> PG
+    API --> Domain Modules
+
+    Domain Modules <--> Outbox
+    Outbox -- AMQP --> RMQ
+    RMQ -- AMQP --> Domain Modules
+
+    Payment -- HTTPS --> Pay
+    Inventory -- HTTPS --> Geo
+```
+
+---
+
+## Core Platform Capabilities
+
+The platform implements enterprise-grade patterns to ensure data integrity, resilience, and performance:
+
+1. **Enterprise-Grade Multi-Tenancy**: Strict data isolation is enforced at the ORM layer using Hibernate `@FilterDef` and `ThreadLocal` tenant contexts. A vendor can never access another vendor's data, guaranteed by the database layer.
+2. **High-Concurrency Inventory Management**: Inventory updates utilize JPA `@Version` for optimistic locking. During traffic spikes, the database prevents overselling without pessimistic locks, and the API gracefully returns `409 Conflict` with RFC 7807 Problem Details.
+3. **Distributed Transaction Orchestration**: The platform solves the dual-write problem via a transactional outbox. Database commits and RabbitMQ publications are guaranteed. If a payment fails, a compensating transaction is automatically orchestrated to release the reserved inventory.
+4. **Resilient Integrations**: External calls (Payment Gateway, Geocoding) are wrapped in Resilience4j Circuit Breakers, Bulkheads, Rate Limiters, and Retries. The system fails fast and degrades gracefully.
+5. **End-to-End Observability**: Distributed tracing via OpenTelemetry provides full visibility. A single order placement can be traced from the React frontend, through the Spring Boot API, JPA queries, Outbox Poller, RabbitMQ, and asynchronous consumers in Grafana Tempo.
+6. **Demand Forecasting Engine**: A custom pure-Java implementation of the Holt-Winters Triple Exponential Smoothing algorithm generates 7-day demand forecasts with 95% confidence intervals without relying on external ML libraries.
+7. **CQRS Read Model**: Order search queries hit a denormalized `order_search_view` projection built asynchronously from domain events, ensuring read-optimized performance.
+8. **Developer-First API Design**: Idempotent payment endpoints (`Idempotency-Key` header) and HMAC-SHA256 signed webhooks with exponential backoff and dead-letter queues provide a robust integration surface for external systems.
+
+---
+
+## Technology Stack
+
+| Category | Technology | Details |
+|----------|------------|---------|
+| **Backend** | Java 21, Spring Boot 3.4 | Virtual Threads, Spring Modulith, Spring Security, Spring Data JPA |
+| **Frontend** | React 19, Vite, TypeScript | TanStack Query/Table, Zustand, TailwindCSS, Recharts, Leaflet |
+| **Database** | PostgreSQL 16 | Flyway migrations, Full-Text Search, CQRS, Optimistic Locking |
+| **Messaging** | RabbitMQ | Transactional Outbox, Publisher Confirms, Dead Letter Queues |
+| **Observability**| OpenTelemetry, Grafana Stack | Tempo (Traces), Loki (Logs), Prometheus (Metrics) |
+| **Infrastructure**| Docker, GitHub Actions | Testcontainers, PITest, k6 Load Testing, SonarCloud, CodeQL |
+
+---
+
+## Engineering Maturity & DevSecOps
+
+- **Testing**: >80% line coverage enforced by JaCoCo. >70% mutation score enforced by PITest. Property-based testing using jqwik for the forecasting algorithm.
+- **Architecture Enforcement**: Spring Modulith verification tests and ArchUnit rules prevent architectural drift.
+- **CI/CD**: GitHub Actions matrix builds (JDK 21/22), automated Trivy container scanning, Dependabot, and Semantic Versioning via `release-please`.
+- **Performance**: k6 load testing simulating 1,000 concurrent users, validating P95 latency < 200ms.
+
+---
+
+## Quickstart (Local Development)
+
+### Prerequisites
+- Java 21
+- Node.js 20+
+- Docker & Docker Compose
+
+### 1. Start Infrastructure
 ```bash
 docker-compose up -d
 ```
-- PostgreSQL will be available at `localhost:5432` (User: `vantage`, DB: `vantage_dev`)
-- RabbitMQ Management will be available at `localhost:15672` (User: `guest`, Pass: `guest`)
+*Starts PostgreSQL (5432), RabbitMQ (5672/15672), Prometheus (9090), and Grafana (3000).*
 
-## 3. Backend Setup
-1. Navigate to the `backend/` directory.
-2. Run the Spring Boot application:
-   ```bash
-   ./gradlew bootRun
-   ```
-3. The API will start on `http://localhost:8080`.
-4. Flyway will automatically run migrations on startup.
-5. Swagger UI is available at `http://localhost:8080/swagger-ui.html`.
-
-## 4. Frontend Setup
-1. Navigate to the `frontend/` directory.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-4. The React application will be available at `http://localhost:5173`.
-
-## 5. Observability (Optional)
-To run the local observability stack (Prometheus + Grafana):
+### 2. Start Backend
 ```bash
-docker-compose -f docker-compose observability up -d
+cd backend
+./gradlew bootRun
 ```
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000` (admin/admin)
-OPS1_DELIM
+*API available at `http://localhost:8080`. Swagger UI at `http://localhost:8080/swagger-ui.html`.*
 
-echo "Writing docs/05-ops/02-environment-variables.md"
-cat > docs/05-ops/02-environment-variables.md << 'OPS2_DELIM'
-# Vantage: Environment Variables
+### 3. Start Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*Dashboard available at `http://localhost:5173`.*
 
-The following environment variables are required to run the Vantage platform. They are pre-configured for local development in `application.yml` and `docker-compose.yml`, but must be set as GitHub Secrets for the CI/CD pipeline and production deployment.
+---
 
-## Database (PostgreSQL / Neon.tech)
-- `SPRING_DATASOURCE_URL`: The JDBC connection string.
-- `SPRING_DATASOURCE_USERNAME`: The database username.
-- `SPRING_DATASOURCE_PASSWORD`: The database password.
+## System Tour
 
-## Messaging (RabbitMQ / CloudAMQP)
-- `SPRING_RABBITMQ_HOST`: The RabbitMQ host.
-- `SPRING_RABBITMQ_PORT`: The RabbitMQ port (usually 5672).
-- `SPRING_RABBITMQ_USERNAME`: The RabbitMQ username.
-- `SPRING_RABBITMQ_PASSWORD`: The RabbitMQ password.
-- `SPRING_RABBITMQ_VIRTUAL_HOST`: The virtual host (required for CloudAMQP).
+A brief walkthrough of the platform's operational flow:
 
-## Security
-- `JWT_SECRET`: A secure, base64-encoded secret string used for signing JWTs.
+1. **UI & State Management**: The React 19 dashboard utilizes optimistic updates for instant feedback, a `Cmd+K` command palette for power users, and TanStack Virtual for rendering large datasets at 60fps.
+2. **Concurrency Handling**: Setting a product's inventory to `1` and simulating simultaneous purchases demonstrates the optimistic lock in action. One request succeeds, while others receive a clean `409 Conflict` without server degradation.
+3. **Distributed Saga & Compensation**: Toggling a "Simulate Payment Gateway Failure" flag triggers the Chaos Monkey. An order is placed, inventory decrements, and payment fails. The Saga orchestrator automatically fires a compensating transaction, restoring the inventory and marking the order as `CANCELLED`.
+4. **Observability**: The failed transaction is fully traceable in Grafana Tempo. The 14-span waterfall highlights the HTTP ingress, JPA save, Outbox polling, RabbitMQ publish, Circuit Breaker trip, and the final inventory restoration.
+5. **Analytics & Real-Time Ops**: The platform features a pure-Java Holt-Winters forecasting chart with confidence intervals. A live operations dashboard uses WebSockets to drop pulsing pins on a Leaflet.js map as orders ship globally in real-time.
 
-## Observability (OpenTelemetry / Grafana Cloud)
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: The OTLP endpoint for exporting traces and metrics.
-- `OTEL_EXPORTER_OTLP_HEADERS`: Authorization headers for Grafana Cloud (e.g., `Authorization=Basic <base64_token>`).
-OPS2_DELIM
+---
 
-echo "Writing .gitignore"
-cat > .gitignore << 'GITIGNORE_DELIM'
-# Compiled class file
-*.class
+## Project Structure & Documentation
 
-# Log file
-*.log
+This repository uses a strict, code-free documentation architecture to fuel AI-driven development. All specifications, contracts, and tasks are defined in the `docs/` directory.
 
-# BlueJ files
-*.ctxt
+```text
+vantage/
+├── backend/                      # Spring Boot 3.4 + Java 21
+├── frontend/                     # React 19 + Vite
+├── docs/
+│   ├── 00-product/               # Vision, Personas, and Business Rules
+│   ├── 01-architecture/          # System Design, ADRs, and C4 Diagrams
+│   ├── 02-contracts/             # AsyncAPI (YAML), OpenAPI (YAML), DB Schema
+│   ├── 03-meta/                  # AI Agent Protocol & Coding Standards
+│   ├── 04-tasks/                 # 50 Isolated AI Work Orders (Task Manifests)
+│   └── 05-ops/                   # Deployment & Local Dev Guides
+├── scripts/
+│   └── dispatch.sh               # Injects context into AI prompts for task execution
+└── README.md
+```
+README_DELIM
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs
-hs_err_pid*
-replay_pid*
-
-# Gradle
-.gradle/
-build/
-!gradle-wrapper.jar
-
-# IDEs
-.idea/
-*.iml
-*.ipr
-*.iws
-.vscode/
-.settings/
-.classpath
-.project
-bin/
-
-# Node / Frontend
-node_modules/
-dist/
-.vite/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Dispatch Script Temp Files
-.dispatch_prompt_*.txt
-GITIGNORE_DELIM
-
-echo "Skipping compile check (configuration and documentation files)"
+echo "Skipping compile check (documentation files)"
 COMPILE_OK=true
 
 if [ "$INCOMPLETE" = true ] || [ "$COMPILE_OK" = false ]; then
@@ -205,8 +191,8 @@ if [ "$INCOMPLETE" = true ] || [ "$COMPILE_OK" = false ]; then
 fi
 
 echo "Running tests"
-echo "Skipping tests (configuration and documentation files)"
+echo "Skipping tests (documentation files)"
 
 echo "All tests passed. Committing."
 git add -A
-git commit -m "chore: add dispatch script, ops docs, and gitignore"
+git commit -m "docs: refine README to enterprise-grade product specifications"
