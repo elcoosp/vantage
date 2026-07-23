@@ -1,0 +1,4 @@
+REPO_ROOT=/Users/adm/Documents/Repos/vantage
+BRANCH=agent-1/TASK-001
+WORKTREE_PATH=../vantage-worktrees/agent-1-task-001
+TASK_ID=TASK-001

@@ -1,0 +1,2 @@
+-- V1__init.sql
+-- Flyway baseline migration. Schema will be added incrementally as entities are implemented.
