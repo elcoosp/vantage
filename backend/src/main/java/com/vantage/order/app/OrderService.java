@@ -12,6 +12,7 @@ import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;
 import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.order.ui.dto.OrderResponse;
+import com.vantage.core.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +37,7 @@ public class OrderService {
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
 
-        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), order.getTenantId(), order.getProductId(), order.getQuantity());
+        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), TenantContext.getTenantId(), order.getProductId(), order.getQuantity());
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);
