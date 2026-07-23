@@ -45,10 +45,10 @@ generate_prompt() {
   cat "$TASK_FILE"
   echo ""
   echo "=================================================="
-  echo "=== SECTION 4: INJECTED CONTEXT & SOURCE FILES ==="
+  echo "=== SECTION 4: INJECTED CONTEXT & CONTRACT FILES ==="
   echo "=================================================="
 
-  # Extract file paths from the task manifest
+  # Extract explicit context files (like YAML contracts and DB schema) from the task manifest
   awk '/## Context Files to Inject/,/## Acceptance Criteria/' "$TASK_FILE" | grep -E '^\- `' | sed -E 's/^- `(.*)`.*$/\1/' | while read -r file; do
     if [ -f "$file" ]; then
       echo ""
@@ -61,10 +61,29 @@ generate_prompt() {
     fi
   done
 
-  # Also inject the target file paths section so the AI knows what to create
   echo ""
   echo "=================================================="
-  echo "=== SECTION 5: TARGET FILE PATHS TO CREATE/MODIFY ==="
+  echo "=== SECTION 5: CURRENT SOURCE CODE STATE (DO NOT REWRITE, PATCH ONLY) ==="
+  echo "=================================================="
+  echo "Below is the current state of all tracked files in the backend and frontend directories. Use this context to apply surgical patches (Pattern B) instead of rewriting files from scratch."
+  echo ""
+
+  # Use git ls-files to safely list all tracked files in backend/ and frontend/, avoiding node_modules, build, etc.
+  git ls-files backend frontend | while read -r file; do
+    # Skip .gitignore as requested
+    if [[ "$file" == *".gitignore"* ]]; then
+      continue
+    fi
+
+    echo ""
+    echo "--- EXISTING FILE: $file ---"
+    cat "$file"
+    echo "--- END EXISTING FILE: $file ---"
+  done
+
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 6: TARGET FILE PATHS TO CREATE/MODIFY ==="
   echo "=================================================="
   awk '/## Target File Paths/,0' "$TASK_FILE"
 }

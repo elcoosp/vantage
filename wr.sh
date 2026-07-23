@@ -4,42 +4,117 @@ set -uo pipefail
 COMPILE_OK=true
 INCOMPLETE=false
 
-echo "Patching docs/03-meta/agent-execution-skill.md: update WORKTREE_PATH"
-OLD_TMP=$(mktemp) || { echo "ERROR: cannot create temp file"; exit 1; }
-NEW_TMP=$(mktemp)
+echo "Overwriting scripts/dispatch.sh to inject all tracked backend and frontend source files"
+cat > scripts/dispatch.sh << 'DISPATCH_DELIM'
+#!/usr/bin/env bash
+set -uo pipefail
 
-cat > "$OLD_TMP" << 'OLD_DELIM_UNIQUE'
-../vantage-agent-1-task-001
-OLD_DELIM_UNIQUE
-
-cat > "$NEW_TMP" << 'NEW_DELIM_UNIQUE'
-../vantage-worktrees/agent-1-task-001
-NEW_DELIM_UNIQUE
-
-if python3 - "$OLD_TMP" "$NEW_TMP" docs/03-meta/agent-execution-skill.md << 'PYEOF'
-import sys
-with open(sys.argv[1], 'r') as f: old = f.read().strip()
-with open(sys.argv[2], 'r') as f: new = f.read().strip()
-with open(sys.argv[3], 'r') as f: content = f.read()
-
-if old not in content:
-    print(f"ERROR: Anchor not found in {sys.argv[3]}. Aborting patch.")
-    sys.exit(1)
-
-content = content.replace(old, new)
-with open(sys.argv[3], 'w') as f: f.write(content)
-print(f"Successfully patched {sys.argv[3]}")
-PYEOF
-then
-  echo "Python patch succeeded for docs/03-meta/agent-execution-skill.md"
-  rm "$OLD_TMP" "$NEW_TMP"
-else
-  echo "ERROR: Python patch failed for docs/03-meta/agent-execution-skill.md"
-  rm -f "$OLD_TMP" "$NEW_TMP"
-  COMPILE_OK=false
+if [ -z "$1" ]; then
+  echo "Usage: ./scripts/dispatch.sh <TASK_ID> (e.g., TASK-001)"
+  exit 1
 fi
 
-echo "Skipping compile check (documentation files)"
+TASK_ID=$1
+TASK_FILE=$(find docs/04-tasks -name "${TASK_ID}*.md" | head -n 1)
+
+if [ -z "$TASK_FILE" ]; then
+  echo "Error: Task file not found for $TASK_ID"
+  exit 1
+fi
+
+echo "Dispatching $TASK_FILE..."
+
+generate_prompt() {
+  echo "# AI AGENT TASK ASSIGNMENT"
+  echo ""
+  echo "You are an autonomous AI engineering agent. You must follow the Execution Skill and Protocol strictly. Output ONLY one bash script per message that patches files, runs tests, and commits."
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 1: AI AGENT EXECUTION SKILL (MUST READ) ==="
+  echo "=================================================="
+  if [ -f "docs/03-meta/agent-execution-skill.md" ]; then
+    cat "docs/03-meta/agent-execution-skill.md"
+  else
+    echo "WARNING: docs/03-meta/agent-execution-skill.md not found."
+  fi
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 2: AI AGENT PROTOCOL & STANDARDS (MUST READ) ==="
+  echo "=================================================="
+  if [ -f "docs/03-meta/agent-protocol.md" ]; then
+    cat "docs/03-meta/agent-protocol.md"
+  else
+    echo "WARNING: docs/03-meta/agent-protocol.md not found."
+  fi
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 3: TASK MANIFEST ==="
+  echo "=================================================="
+  cat "$TASK_FILE"
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 4: INJECTED CONTEXT & CONTRACT FILES ==="
+  echo "=================================================="
+
+  # Extract explicit context files (like YAML contracts and DB schema) from the task manifest
+  awk '/## Context Files to Inject/,/## Acceptance Criteria/' "$TASK_FILE" | grep -E '^\- `' | sed -E 's/^- `(.*)`.*$/\1/' | while read -r file; do
+    if [ -f "$file" ]; then
+      echo ""
+      echo "--- FILE: $file ---"
+      cat "$file"
+      echo "--- END FILE: $file ---"
+    else
+      echo ""
+      echo "--- WARNING: FILE NOT FOUND: $file ---"
+    fi
+  done
+
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 5: CURRENT SOURCE CODE STATE (DO NOT REWRITE, PATCH ONLY) ==="
+  echo "=================================================="
+  echo "Below is the current state of all tracked files in the backend and frontend directories. Use this context to apply surgical patches (Pattern B) instead of rewriting files from scratch."
+  echo ""
+
+  # Use git ls-files to safely list all tracked files in backend/ and frontend/, avoiding node_modules, build, etc.
+  git ls-files backend frontend | while read -r file; do
+    # Skip .gitignore as requested
+    if [[ "$file" == *".gitignore"* ]]; then
+      continue
+    fi
+
+    echo ""
+    echo "--- EXISTING FILE: $file ---"
+    cat "$file"
+    echo "--- END EXISTING FILE: $file ---"
+  done
+
+  echo ""
+  echo "=================================================="
+  echo "=== SECTION 6: TARGET FILE PATHS TO CREATE/MODIFY ==="
+  echo "=================================================="
+  awk '/## Target File Paths/,0' "$TASK_FILE"
+}
+
+if command -v pbcopy &> /dev/null; then
+  generate_prompt | pbcopy
+  echo "Prompt for $TASK_ID copied to clipboard (macOS)."
+elif command -v xclip &> /dev/null; then
+  generate_prompt | xclip -selection clipboard
+  echo "Prompt for $TASK_ID copied to clipboard (Linux)."
+elif command -v clip.exe &> /dev/null; then
+  generate_prompt | clip.exe
+  echo "Prompt for $TASK_ID copied to clipboard (Windows/WSL)."
+else
+  echo "Clipboard tool not found. Outputting to stdout:"
+  generate_prompt
+fi
+DISPATCH_DELIM
+
+chmod +x scripts/dispatch.sh
+
+echo "Skipping compile check (bash script)"
+COMPILE_OK=true
 
 if [ "$INCOMPLETE" = true ] || [ "$COMPILE_OK" = false ]; then
   echo "Skipping tests and commit due to incomplete files or compilation errors"
@@ -47,8 +122,8 @@ if [ "$INCOMPLETE" = true ] || [ "$COMPILE_OK" = false ]; then
 fi
 
 echo "Running tests"
-echo "Skipping tests (documentation files)"
+echo "Skipping tests (bash script)"
 
 echo "All tests passed. Committing."
 git add -A
-git commit -m "docs(meta): standardize worktree path to ../vantage-worktrees/"
+git commit -m "fix(scripts): inject all tracked source files into dispatch context to prevent rewrites"
