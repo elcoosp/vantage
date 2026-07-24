@@ -1,4 +1,3 @@
-// backend/src/main/java/com/vantage/core/messaging/config/RabbitMQConfig.java
 package com.vantage.core.messaging.config;
 
 import org.springframework.amqp.core.Binding;
@@ -20,6 +19,12 @@ public class RabbitMQConfig {
     public static final String INVENTORY_QUEUE = "vantage.inventory.events";
     public static final String INVENTORY_RESERVED_ROUTING_KEY = "InventoryReservedEvent";
     public static final String INVENTORY_FAILED_ROUTING_KEY = "InventoryReservationFailedEvent";
+
+    // Webhook delivery exchange and queue with DLX
+    public static final String WEBHOOK_DELIVERY_EXCHANGE = "vantage.webhook.delivery.exchange";
+    public static final String WEBHOOK_DELIVERY_QUEUE = "vantage.webhook.delivery.queue";
+    public static final String WEBHOOK_DELIVERY_ROUTING_KEY = "webhook.delivery";
+    public static final String WEBHOOK_DLX = "vantage.webhook.dlx";
 
     @Bean
     public DirectExchange vantageEventsExchange() {
@@ -50,13 +55,6 @@ public class RabbitMQConfig {
     public Binding inventoryFailedBinding(DirectExchange vantageEventsExchange, Queue inventoryEventsQueue) {
         return BindingBuilder.bind(inventoryEventsQueue).to(vantageEventsExchange()).with(INVENTORY_FAILED_ROUTING_KEY);
     }
-}
-
-    // Webhook delivery exchange and queue with DLX
-    public static final String WEBHOOK_DELIVERY_EXCHANGE = "vantage.webhook.delivery.exchange";
-    public static final String WEBHOOK_DELIVERY_QUEUE = "vantage.webhook.delivery.queue";
-    public static final String WEBHOOK_DELIVERY_ROUTING_KEY = "webhook.delivery";
-    public static final String WEBHOOK_DLX = "vantage.webhook.dlx";
 
     @Bean
     public DirectExchange webhookDeliveryExchange() {
@@ -90,4 +88,4 @@ public class RabbitMQConfig {
     public Binding webhookDlxBinding(DirectExchange webhookDlxExchange, Queue webhookDlq) {
         return BindingBuilder.bind(webhookDlq).to(webhookDlxExchange()).with("webhook.dlq");
     }
-
+}
