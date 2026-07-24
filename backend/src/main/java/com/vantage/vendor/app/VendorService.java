@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import com.vantage.core.exception.ResourceNotFoundException;
 
 @Service
 public class VendorService {
@@ -42,5 +43,17 @@ public class VendorService {
 
         String token = jwtService.generateToken(tenantId);
         return new VendorRegistrationResult(tenantId, token);
+    }
+
+    @Transactional
+    public String updateWebhookUrl(UUID tenantId, String webhookUrl) {
+        Vendor vendor = vendorRepository.findByTenantId(tenantId)
+            .orElseThrow(() -> new ResourceNotFoundException("Vendor not found for tenant: " + tenantId));
+        vendor.setWebhookUrl(webhookUrl);
+        String secret = UUID.randomUUID().toString();
+        vendor.setWebhookSecret(secret);
+        vendorRepository.save(vendor);
+        log.info("Updated webhook URL for tenant {}", tenantId);
+        return secret;
     }
 }

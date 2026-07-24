@@ -73,7 +73,7 @@ public class WebhookDeliveryIT {
     private TestRestTemplate restTemplate;
 
     @Test
-    void should_return_secret_and_update_vendor_when_updating_webhook() {
+    public void should_return_secret_and_update_vendor_when_updating_webhook() {
         // Register a vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
             "webhook-" + UUID.randomUUID() + "@vantage.com",
