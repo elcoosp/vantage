@@ -75,6 +75,12 @@ public class WebhookRegistrationTest {
             entity,
             WebhookUpdateResponse.class);
 
+        // Debug output
+        if (response.getStatusCode() != HttpStatus.OK) {
+            System.err.println("Webhook update failed with status: " + response.getStatusCode());
+            System.err.println("Response body: " + response.getBody());
+        }
+
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().secret()).isNotBlank();
