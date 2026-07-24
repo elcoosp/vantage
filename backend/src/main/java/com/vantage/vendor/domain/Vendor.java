@@ -21,4 +21,10 @@ public class Vendor extends BaseTenantEntity {
 
     @Column(name = "company_name")
     private String companyName;
+
+    @Column(name = "webhook_url")
+    private String webhookUrl;
+
+    @Column(name = "webhook_secret")
+    private String webhookSecret;
 }
