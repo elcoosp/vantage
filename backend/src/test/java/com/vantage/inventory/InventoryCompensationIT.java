@@ -29,6 +29,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -168,11 +169,15 @@ class InventoryCompensationIT {
         HttpHeaders updateHeaders = new HttpHeaders();
         updateHeaders.setBearerAuth(token);
         updateHeaders.setContentType(MediaType.APPLICATION_JSON);
+        updateHeaders.set("X-Tenant-ID", tenantId.toString());
         updateHeaders.setIfMatch("0");
         InventoryUpdateRequest initReq = new InventoryUpdateRequest(initialQuantity);
         HttpEntity<InventoryUpdateRequest> initEntity = new HttpEntity<>(initReq, updateHeaders);
-        restTemplate.exchange(
+        ResponseEntity<InventoryResponse> initRes = restTemplate.exchange(
             "/api/v1/inventory/" + productId, HttpMethod.PUT, initEntity, InventoryResponse.class);
+        assertThat(initRes.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(initRes.getBody()).isNotNull();
+        assertThat(initRes.getBody().quantity()).isEqualTo(initialQuantity);
 
         return new TestSetup(tenantId, productId);
     }
