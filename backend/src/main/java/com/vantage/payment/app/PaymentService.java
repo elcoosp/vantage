@@ -17,9 +17,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class PaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private static final long TTL_HOURS = 24;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
@@ -46,8 +50,10 @@ public class PaymentService {
 
     private PaymentResponse handleExistingKey(IdempotencyKey existing, String requestHash, PaymentRequest request) {
         if (!existing.getRequestHash().equals(requestHash)) {
+            log.warn("Idempotency key {} payload mismatch - tampering detected", existing.getIdempotencyKey());
             throw new IdempotencyConflictException("Payload tampering detected for idempotency key: " + existing.getIdempotencyKey());
         }
+        log.info("Cache hit for idempotency key {}", existing.getIdempotencyKey());
         return deserializeResponse(existing.getResponseBody());
     }
 
@@ -63,7 +69,9 @@ public class PaymentService {
             key.setResponseBody(responseJson);
             key.setExpiresAt(Instant.now().plusSeconds(TTL_HOURS * 3600));
             idempotencyKeyRepository.save(key);
+            log.info("Stored idempotency key {} for tenant {}", idempotencyKey, tenantId);
         } catch (JsonProcessingException e) {
+            log.error("Failed to serialize response for key {}", idempotencyKey, e);
             throw new IllegalStateException("Failed to serialize payment response", e);
         }
         return response;

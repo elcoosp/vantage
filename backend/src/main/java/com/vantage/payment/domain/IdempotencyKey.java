@@ -15,7 +15,7 @@ import java.time.Instant;
 @Setter
 public class IdempotencyKey extends BaseTenantEntity {
 
-    @Column(name = "idempotency_key", nullable = false, unique = true)
+    @Column(name = "idempotency_key", nullable = false)
     private String idempotencyKey;
 
     @Column(name = "request_hash", nullable = false)

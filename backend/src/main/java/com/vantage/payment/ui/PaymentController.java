@@ -26,6 +26,9 @@ public class PaymentController {
     public ResponseEntity<PaymentResponse> createPayment(
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody PaymentRequest request) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("Idempotency-Key header must not be blank");
+        }
         PaymentResponse response = paymentService.processPayment(idempotencyKey, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
