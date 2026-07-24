@@ -1,0 +1,12 @@
+logging:
+  level:
+    org.springframework.security: TRACE
+    org.springframework.web: DEBUG
+    org.springframework.boot.web.servlet.support: DEBUG
+    com.vantage: DEBUG
+    root: INFO
+server:
+  error:
+    include-stacktrace: always
+    include-message: always
+    include-exception: true
