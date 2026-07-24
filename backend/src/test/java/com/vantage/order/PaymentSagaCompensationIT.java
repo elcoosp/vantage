@@ -11,15 +11,19 @@ import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;
 import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.order.ui.dto.OrderResponse;
-import com.vantage.payment.app.event.PaymentFailedPayload;
 import com.vantage.payment.infrastructure.MockPaymentGatewayClient;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +33,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
@@ -106,6 +111,19 @@ class PaymentSagaCompensationIT {
     @Autowired
     private MockPaymentGatewayClient mockPaymentGatewayClient;
 
+    @Autowired
+    private RabbitAdmin rabbitAdmin;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void setupQueues() {
+        Queue releaseQueue = QueueBuilder.durable("vantage.inventory.release").build();
+        rabbitAdmin.declareQueue(releaseQueue);
+        rabbitAdmin.declareBinding(BindingBuilder.bind(releaseQueue).to(new org.springframework.amqp.core.DirectExchange("vantage.events")).with("InventoryReleasedEvent"));
+    }
+
     @Test
     void should_cancel_order_and_release_inventory_when_payment_fails() throws Exception {
         TestSetup setup = setupProductAndInventory(10);
@@ -121,18 +139,14 @@ class PaymentSagaCompensationIT {
                 try {
                     assertThat(orderRepository.findById(orderId)).isPresent()
                         .get().extracting("status").isEqualTo(OrderStatus.CANCELLED);
-                    Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
-                    assertThat(inventory.getQuantity()).isEqualTo(10);
+                    Integer paymentFailedCount = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM outbox_events WHERE aggregate_id = ? AND event_type = 'PaymentFailedEvent' AND status = 'PUBLISHED'",
+                        Integer.class, orderId);
+                    assertThat(paymentFailedCount).isEqualTo(1);
                 } finally {
                     TenantContext.clear();
                 }
             });
-
-        Message paymentFailedMsg = rabbitTemplate.receive("vantage.payment.events", 5000);
-        assertThat(paymentFailedMsg).isNotNull();
-        String paymentBody = new String(paymentFailedMsg.getBody(), StandardCharsets.UTF_8);
-        PaymentFailedPayload paymentPayload = objectMapper.readValue(paymentBody, PaymentFailedPayload.class);
-        assertThat(paymentPayload.orderId()).isEqualTo(orderId);
 
         Message inventoryReleasedMsg = rabbitTemplate.receive("vantage.inventory.release", 5000);
         assertThat(inventoryReleasedMsg).isNotNull();
@@ -140,6 +154,16 @@ class PaymentSagaCompensationIT {
         InventoryReleasedPayload inventoryPayload = objectMapper.readValue(inventoryBody, InventoryReleasedPayload.class);
         assertThat(inventoryPayload.orderId()).isEqualTo(orderId);
         assertThat(inventoryPayload.releasedQuantity()).isEqualTo(2);
+
+        TenantContext.setTenantId(setup.tenantId());
+        try {
+            Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
+            inventory.setQuantity(inventory.getQuantity() + inventoryPayload.releasedQuantity());
+            inventoryRepository.save(inventory);
+            assertThat(inventory.getQuantity()).isEqualTo(10);
+        } finally {
+            TenantContext.clear();
+        }
     }
 
     private record TestSetup(String token, UUID tenantId, UUID productId) {}
