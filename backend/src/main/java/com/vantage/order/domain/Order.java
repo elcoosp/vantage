@@ -1,4 +1,3 @@
-// backend/src/main/java/com/vantage/order/domain/Order.java
 package com.vantage.order.domain;
 
 import com.vantage.core.domain.BaseTenantEntity;
@@ -7,15 +6,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
-@Getter
-@Setter
 public class Order extends BaseTenantEntity {
 
     @Column(name = "product_id", nullable = false)
@@ -27,4 +21,28 @@ public class Order extends BaseTenantEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;
+
+    public UUID getProductId() {
+        return productId;
+    }
+
+    public void setProductId(UUID productId) {
+        this.productId = productId;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
 }
