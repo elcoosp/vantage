@@ -16,7 +16,10 @@ public class RabbitMQConfig {
 
     public static final String EXCHANGE = "vantage.events";
     public static final String QUEUE = "vantage.order.events";
-    public static final String ROUTING_KEY = "order.created";
+    public static final String ROUTING_KEY = "OrderCreatedEvent";
+    public static final String INVENTORY_QUEUE = "vantage.inventory.events";
+    public static final String INVENTORY_RESERVED_ROUTING_KEY = "InventoryReservedEvent";
+    public static final String INVENTORY_FAILED_ROUTING_KEY = "InventoryReservationFailedEvent";
 
     @Bean
     public DirectExchange vantageEventsExchange() {
@@ -31,5 +34,20 @@ public class RabbitMQConfig {
     @Bean
     public Binding orderEventsBinding(DirectExchange vantageEventsExchange, Queue orderEventsQueue) {
         return BindingBuilder.bind(orderEventsQueue).to(vantageEventsExchange()).with(ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue inventoryEventsQueue() {
+        return QueueBuilder.durable(INVENTORY_QUEUE).build();
+    }
+
+    @Bean
+    public Binding inventoryReservedBinding(DirectExchange vantageEventsExchange, Queue inventoryEventsQueue) {
+        return BindingBuilder.bind(inventoryEventsQueue).to(vantageEventsExchange()).with(INVENTORY_RESERVED_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding inventoryFailedBinding(DirectExchange vantageEventsExchange, Queue inventoryEventsQueue) {
+        return BindingBuilder.bind(inventoryEventsQueue).to(vantageEventsExchange()).with(INVENTORY_FAILED_ROUTING_KEY);
     }
 }
