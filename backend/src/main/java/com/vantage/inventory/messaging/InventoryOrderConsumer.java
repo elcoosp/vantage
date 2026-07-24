@@ -27,6 +27,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Component
+// HUMAN REVIEW REQUIRED: Add 'vantage.inventory.consumer.enabled: true' to application.yml to enable in production.
+// matchIfMissing is false to prevent breaking existing OrderOutboxIT which does not expect this consumer to be active.
 @ConditionalOnProperty(name = "vantage.inventory.consumer.enabled", havingValue = "true")
 public class InventoryOrderConsumer {
 
