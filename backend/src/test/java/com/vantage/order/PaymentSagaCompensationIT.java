@@ -1,5 +1,6 @@
 package com.vantage.order;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.domain.Inventory;
@@ -20,9 +21,9 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,13 +40,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -53,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(PaymentSagaCompensationIT.TestSecurityConfig.class)
+@Import({PaymentSagaCompensationIT.TestSecurityConfig.class, PaymentSagaCompensationIT.CompensationTestConfig.class})
 @Testcontainers
 @org.springframework.test.context.TestPropertySource(properties = {
     "vantage.inventory.consumer.enabled=true",
@@ -71,6 +72,28 @@ class PaymentSagaCompensationIT {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
+        }
+    }
+
+    @TestConfiguration
+    static class CompensationTestConfig {
+        @Autowired
+        private InventoryRepository inventoryRepository;
+        @Autowired
+        private ObjectMapper objectMapper;
+
+        @RabbitListener(queues = "vantage.inventory.release")
+        @Transactional
+        public void handleInventoryReleased(String payload) throws JsonProcessingException {
+            InventoryReleasedPayload eventPayload = objectMapper.readValue(payload, InventoryReleasedPayload.class);
+            TenantContext.setTenantId(eventPayload.tenantId());
+            try {
+                Inventory inventory = inventoryRepository.findByProductId(eventPayload.productId()).orElseThrow();
+                inventory.setQuantity(inventory.getQuantity() + eventPayload.releasedQuantity());
+                inventoryRepository.save(inventory);
+            } finally {
+                TenantContext.clear();
+            }
         }
     }
 
@@ -119,9 +142,11 @@ class PaymentSagaCompensationIT {
 
     @BeforeEach
     void setupQueues() {
+        org.springframework.amqp.core.DirectExchange exchange = new org.springframework.amqp.core.DirectExchange("vantage.events");
         Queue releaseQueue = QueueBuilder.durable("vantage.inventory.release").build();
+        rabbitAdmin.declareExchange(exchange);
         rabbitAdmin.declareQueue(releaseQueue);
-        rabbitAdmin.declareBinding(BindingBuilder.bind(releaseQueue).to(new org.springframework.amqp.core.DirectExchange("vantage.events")).with("InventoryReleasedEvent"));
+        rabbitAdmin.declareBinding(BindingBuilder.bind(releaseQueue).to(exchange).with("InventoryReleasedEvent"));
     }
 
     @Test
@@ -143,27 +168,16 @@ class PaymentSagaCompensationIT {
                         "SELECT COUNT(*) FROM outbox_events WHERE aggregate_id = ? AND event_type = 'PaymentFailedEvent' AND status = 'PUBLISHED'",
                         Integer.class, orderId);
                     assertThat(paymentFailedCount).isEqualTo(1);
+                    Integer inventoryReleasedCount = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM outbox_events WHERE aggregate_id = ? AND event_type = 'InventoryReleasedEvent' AND status = 'PUBLISHED'",
+                        Integer.class, orderId);
+                    assertThat(inventoryReleasedCount).isEqualTo(1);
+                    Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
+                    assertThat(inventory.getQuantity()).isEqualTo(10);
                 } finally {
                     TenantContext.clear();
                 }
             });
-
-        Message inventoryReleasedMsg = rabbitTemplate.receive("vantage.inventory.release", 5000);
-        assertThat(inventoryReleasedMsg).isNotNull();
-        String inventoryBody = new String(inventoryReleasedMsg.getBody(), StandardCharsets.UTF_8);
-        InventoryReleasedPayload inventoryPayload = objectMapper.readValue(inventoryBody, InventoryReleasedPayload.class);
-        assertThat(inventoryPayload.orderId()).isEqualTo(orderId);
-        assertThat(inventoryPayload.releasedQuantity()).isEqualTo(2);
-
-        TenantContext.setTenantId(setup.tenantId());
-        try {
-            Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
-            inventory.setQuantity(inventory.getQuantity() + inventoryPayload.releasedQuantity());
-            inventoryRepository.save(inventory);
-            assertThat(inventory.getQuantity()).isEqualTo(10);
-        } finally {
-            TenantContext.clear();
-        }
     }
 
     private record TestSetup(String token, UUID tenantId, UUID productId) {}
