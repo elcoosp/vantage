@@ -19,6 +19,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(name = "vantage.inventory.consumer.enabled", havingValue = "true")
 public class InventoryOrderConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(InventoryOrderConsumer.class);
@@ -61,8 +63,13 @@ public class InventoryOrderConsumer {
             processedEventRepository.save(processedEvent);
 
             try {
-                Inventory inventory = inventoryRepository.findByProductId(payload.productId())
-                        .orElseThrow(() -> new IllegalStateException("Inventory not found for product: " + payload.productId()));
+                var inventoryOpt = inventoryRepository.findByProductId(payload.productId());
+                if (inventoryOpt.isEmpty()) {
+                    log.warn("Inventory not found for product: {}", payload.productId());
+                    emitReservationFailedEvent(payload);
+                    return;
+                }
+                Inventory inventory = inventoryOpt.get();
 
                 if (inventory.getQuantity() < payload.quantity()) {
                     log.warn("Insufficient stock for product {}. Requested: {}, Available: {}", payload.productId(), payload.quantity(), inventory.getQuantity());

@@ -50,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(InventoryConsumerIT.TestSecurityConfig.class)
 @Testcontainers
+@org.springframework.test.context.TestPropertySource(properties = "vantage.inventory.consumer.enabled=true")
 class InventoryConsumerIT {
 
     @TestConfiguration
@@ -120,7 +121,7 @@ class InventoryConsumerIT {
                 }
             });
 
-        Message message = rabbitTemplate.receive(RabbitMQConfig.QUEUE, 5000);
+        Message message = rabbitTemplate.receive(RabbitMQConfig.INVENTORY_QUEUE, 5000);
         assertThat(message).isNotNull();
         String body = new String(message.getBody(), StandardCharsets.UTF_8);
         InventoryReservedPayload payload = objectMapper.readValue(body, InventoryReservedPayload.class);
@@ -149,7 +150,7 @@ class InventoryConsumerIT {
                 }
             });
 
-        rabbitTemplate.receive(RabbitMQConfig.QUEUE, 5000);
+        rabbitTemplate.receive(RabbitMQConfig.INVENTORY_QUEUE, 5000);
 
         publishOrderCreatedEvent(eventId, setup.tenantId(), setup.productId(), setup.orderId(), 5);
 
@@ -163,7 +164,7 @@ class InventoryConsumerIT {
             TenantContext.clear();
         }
 
-        Message message = rabbitTemplate.receive(RabbitMQConfig.QUEUE, 2000);
+        Message message = rabbitTemplate.receive(RabbitMQConfig.INVENTORY_QUEUE, 2000);
         assertThat(message).as("No new event should be published").isNull();
     }
 
@@ -188,7 +189,7 @@ class InventoryConsumerIT {
                 }
             });
 
-        Message message = rabbitTemplate.receive(RabbitMQConfig.QUEUE, 5000);
+        Message message = rabbitTemplate.receive(RabbitMQConfig.INVENTORY_QUEUE, 5000);
         assertThat(message).isNotNull();
         String body = new String(message.getBody(), StandardCharsets.UTF_8);
         InventoryReservationFailedPayload payload = objectMapper.readValue(body, InventoryReservationFailedPayload.class);

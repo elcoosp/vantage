@@ -47,7 +47,7 @@ public class OutboxPoller {
                     .setHeader("eventId", event.getId().toString())
                     .build();
             log.info("Publishing outbox event {} to RabbitMQ", event.getId());
-            rabbitTemplate.send(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message, correlationData);
+            rabbitTemplate.send(RabbitMQConfig.EXCHANGE, event.getEventType(), message, correlationData);
         }
     }
 
