@@ -44,6 +44,7 @@ public class OutboxPoller {
             Message message = MessageBuilder
                     .withBody(event.getPayload().getBytes(StandardCharsets.UTF_8))
                     .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                    .setHeader("eventId", event.getId().toString())
                     .build();
             log.info("Publishing outbox event {} to RabbitMQ", event.getId());
             rabbitTemplate.send(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message, correlationData);
