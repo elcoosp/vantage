@@ -126,16 +126,19 @@ class InventoryCompensationIT {
 
         publishInventoryReleasedEvent(eventId, setup.tenantId(), setup.productId(), 4);
 
-        Thread.sleep(3000);
-
-        TenantContext.setTenantId(setup.tenantId());
-        try {
-            Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
-            assertThat(inventory.getQuantity()).isEqualTo(14);
-            assertThat(processedEventRepository.existsById(eventId)).isTrue();
-        } finally {
-            TenantContext.clear();
-        }
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(3))
+            .pollInterval(Duration.ofMillis(250))
+            .untilAsserted(() -> {
+                TenantContext.setTenantId(setup.tenantId());
+                try {
+                    Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
+                    assertThat(inventory.getQuantity()).isEqualTo(14);
+                    assertThat(processedEventRepository.existsById(eventId)).isTrue();
+                } finally {
+                    TenantContext.clear();
+                }
+            });
     }
 
     private record TestSetup(UUID tenantId, UUID productId) {}

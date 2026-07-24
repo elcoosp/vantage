@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.ProcessedEvent;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
+import com.vantage.core.exception.ResourceNotFoundException;
 import com.vantage.inventory.domain.Inventory;
 import com.vantage.inventory.domain.InventoryRepository;
 import com.vantage.order.app.event.InventoryReleasedPayload;
@@ -72,7 +73,7 @@ public class InventoryCompensationConsumer {
             processedEventRepository.save(processedEvent);
 
             Inventory inventory = inventoryRepository.findByProductId(eventPayload.productId())
-                    .orElseThrow(() -> new IllegalStateException("Inventory not found for product: " + eventPayload.productId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for product: " + eventPayload.productId()));
 
             inventory.setQuantity(inventory.getQuantity() + eventPayload.releasedQuantity());
             inventoryRepository.save(inventory);
