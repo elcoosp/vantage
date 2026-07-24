@@ -8,9 +8,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "idempotency_keys")
+@Table(name = "idempotency_keys", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"idempotency_key", "tenant_id"})
+})
 @Getter
 @Setter
 public class IdempotencyKey extends BaseTenantEntity {
