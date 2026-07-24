@@ -1,4 +1,6 @@
 package com.vantage.integration;
+import java.util.UUID;
+import org.springframework.http.HttpMethod;
 
 import com.vantage.integration.ui.dto.WebhookUpdateRequest;
 import com.vantage.integration.ui.dto.WebhookUpdateResponse;
