@@ -51,3 +51,43 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(inventoryEventsQueue).to(vantageEventsExchange()).with(INVENTORY_FAILED_ROUTING_KEY);
     }
 }
+
+    // Webhook delivery exchange and queue with DLX
+    public static final String WEBHOOK_DELIVERY_EXCHANGE = "vantage.webhook.delivery.exchange";
+    public static final String WEBHOOK_DELIVERY_QUEUE = "vantage.webhook.delivery.queue";
+    public static final String WEBHOOK_DELIVERY_ROUTING_KEY = "webhook.delivery";
+    public static final String WEBHOOK_DLX = "vantage.webhook.dlx";
+
+    @Bean
+    public DirectExchange webhookDeliveryExchange() {
+        return new DirectExchange(WEBHOOK_DELIVERY_EXCHANGE);
+    }
+
+    @Bean
+    public Queue webhookDeliveryQueue() {
+        return QueueBuilder.durable(WEBHOOK_DELIVERY_QUEUE)
+                .withArgument("x-dead-letter-exchange", WEBHOOK_DLX)
+                .withArgument("x-dead-letter-routing-key", "webhook.dlq")
+                .build();
+    }
+
+    @Bean
+    public Queue webhookDlq() {
+        return QueueBuilder.durable("vantage.webhook.dlq").build();
+    }
+
+    @Bean
+    public DirectExchange webhookDlxExchange() {
+        return new DirectExchange(WEBHOOK_DLX);
+    }
+
+    @Bean
+    public Binding webhookDeliveryBinding(DirectExchange webhookDeliveryExchange, Queue webhookDeliveryQueue) {
+        return BindingBuilder.bind(webhookDeliveryQueue).to(webhookDeliveryExchange()).with(WEBHOOK_DELIVERY_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding webhookDlxBinding(DirectExchange webhookDlxExchange, Queue webhookDlq) {
+        return BindingBuilder.bind(webhookDlq).to(webhookDlxExchange()).with("webhook.dlq");
+    }
+
