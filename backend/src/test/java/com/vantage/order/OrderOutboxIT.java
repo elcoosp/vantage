@@ -33,6 +33,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -47,6 +48,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(OrderOutboxIT.TestSecurityConfig.class)
 @Testcontainers
@@ -110,9 +112,11 @@ public class OrderOutboxIT {
         ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorEntity, AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).as("Vendor registration failed: %s", vendorRes).isEqualTo(HttpStatus.CREATED);
         assertThat(vendorRes.getBody()).isNotNull();
+        String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
         HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
 

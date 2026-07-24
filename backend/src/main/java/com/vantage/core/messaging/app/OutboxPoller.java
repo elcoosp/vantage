@@ -11,16 +11,15 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
-import org.springframework.amqp.rabbit.connection.CorrelationData.Confirm;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
 
 @Component
 public class OutboxPoller {
@@ -28,14 +27,16 @@ public class OutboxPoller {
     private static final Logger log = LoggerFactory.getLogger(OutboxPoller.class);
     private final OutboxRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final TransactionTemplate transactionTemplate;
 
-    public OutboxPoller(OutboxRepository outboxRepository, RabbitTemplate rabbitTemplate) {
+    public OutboxPoller(OutboxRepository outboxRepository, RabbitTemplate rabbitTemplate, TransactionTemplate transactionTemplate) {
         this.outboxRepository = outboxRepository;
         this.rabbitTemplate = rabbitTemplate;
+        this.transactionTemplate = transactionTemplate;
+        this.rabbitTemplate.setConfirmCallback(this::confirm);
     }
 
     @Scheduled(fixedDelay = 2000)
-    @Transactional
     public void pollAndPublish() {
         List<OutboxEvent> pendingEvents = outboxRepository.findByStatus(OutboxStatus.PENDING);
         for (OutboxEvent event : pendingEvents) {
@@ -44,21 +45,24 @@ public class OutboxPoller {
                     .withBody(event.getPayload().getBytes(StandardCharsets.UTF_8))
                     .setContentType(MessageProperties.CONTENT_TYPE_JSON)
                     .build();
-            try {
-                log.info("Publishing outbox event {} to RabbitMQ", event.getId());
-                rabbitTemplate.send(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message, correlationData);
-                Confirm confirm = correlationData.getFuture().get(5, TimeUnit.SECONDS);
-                if (confirm != null && confirm.isAck()) {
-                    event.setStatus(OutboxStatus.PUBLISHED);
-                    event.setPublishedAt(Instant.now());
-                    outboxRepository.save(event);
-                    log.info("Successfully published and confirmed outbox event {}", event.getId());
-                } else {
-                    log.warn("Outbox event {} publish confirm returned NACK or null", event.getId());
-                }
-            } catch (Exception e) {
-                log.error("Failed to publish or confirm outbox event {}", event.getId(), e);
-            }
+            log.info("Publishing outbox event {} to RabbitMQ", event.getId());
+            rabbitTemplate.send(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message, correlationData);
         }
+    }
+
+    private void confirm(CorrelationData correlationData, boolean ack, String cause) {
+        if (correlationData == null || !ack) {
+            log.warn("Received NACK or null correlation data for publisher confirm. Cause: {}", cause);
+            return;
+        }
+        UUID eventId = UUID.fromString(correlationData.getId());
+        transactionTemplate.executeWithoutResult(status -> {
+            outboxRepository.findById(eventId).ifPresent(event -> {
+                event.setStatus(OutboxStatus.PUBLISHED);
+                event.setPublishedAt(Instant.now());
+                outboxRepository.save(event);
+                log.info("Successfully marked outbox event {} as PUBLISHED", eventId);
+            });
+        });
     }
 }
