@@ -1,5 +1,6 @@
 package com.vantage.analytics.ui;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.app.HoltWintersForecastCalculator;
 import com.vantage.analytics.app.HoltWintersForecastCalculator.ForecastResult;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/analytics")
+@Slf4j
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -29,19 +31,24 @@ public class AnalyticsController {
 
     @GetMapping("/forecast/{productId}")
     public ForecastResponse getForecast(@PathVariable UUID productId) {
+        log.debug("Forecast request for product {}", productId);
         double[] history = analyticsService.getHistoricalData(productId, 30);
-        ForecastResult result = forecastCalculator.forecast(history, 7);
-
-        List<ForecastDataPoint> points = new ArrayList<>();
-        LocalDate start = LocalDate.now().plusDays(1);
-        for (int i = 0; i < 7; i++) {
-            LocalDate date = start.plusDays(i);
-            int predicted = (int) Math.round(result.forecast()[i]);
-            int lower = (int) Math.round(result.lower()[i]);
-            int upper = (int) Math.round(result.upper()[i]);
-            points.add(new ForecastDataPoint(date, predicted, lower, upper));
+        try {
+            ForecastResult result = forecastCalculator.forecast(history, 7);
+            List<ForecastDataPoint> points = new ArrayList<>();
+            LocalDate start = LocalDate.now().plusDays(1);
+            for (int i = 0; i < 7; i++) {
+                LocalDate date = start.plusDays(i);
+                int predicted = (int) Math.round(result.forecast()[i]);
+                int lower = (int) Math.round(result.lower()[i]);
+                int upper = (int) Math.round(result.upper()[i]);
+                points.add(new ForecastDataPoint(date, predicted, lower, upper));
+            }
+            log.debug("Forecast generated for product {}", productId);
+            return new ForecastResponse(points);
+        } catch (IllegalArgumentException e) {
+            log.warn("Forecast failed for product {}: {}", productId, e.getMessage());
+            throw new IllegalArgumentException("Unable to forecast: " + e.getMessage());
         }
-
-        return new ForecastResponse(points);
     }
 }

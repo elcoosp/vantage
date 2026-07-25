@@ -1,5 +1,6 @@
 package com.vantage.analytics.app;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vantage.core.tenant.TenantContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class AnalyticsService {
 
     private final EntityManager entityManager;
@@ -55,24 +57,17 @@ public class AnalyticsService {
         }
 
         LocalDate now = LocalDate.now(ZoneOffset.UTC);
+        LocalDate startDate = now.minusDays(days);
         for (Object[] row : results) {
             java.sql.Date sqlDate = (java.sql.Date) row[0];
             LocalDate date = sqlDate.toLocalDate();
-            long diffDays = java.time.temporal.ChronoUnit.DAYS.between(date, now);
-            if (diffDays >= 0 && diffDays < days) {
-                int index = (int) diffDays; // oldest at index 0? Actually we want last 30 days, most recent at end
-                // We want index 0 = oldest, index 29 = yesterday
-                // diffDays = days between date and now: if date is yesterday, diffDays=1, index should be days-1 - (diffDays-1)? Let's simplify: we want array where index 0 = day (now-30), index 29 = yesterday.
-                // So we set index = days - 1 - (int) diffDays? Wait: if date is now - 1 day, diffDays=1, we want index 29? Actually if days=30, we want index 0 for day (now-30), index 29 for (now-1). So index = days - 1 - diffDays? Let's test: if date is now-30, diffDays=30, days-1 - 30 = -1, not good. So we need to compute days between startDate and date? Better: compute offset from startDate.
-                // Use startDate = now - days days. Then diff from start = days between start and date.
-                LocalDate startDate = now.minusDays(days);
-                long offset = java.time.temporal.ChronoUnit.DAYS.between(startDate, date);
-                if (offset >= 0 && offset < days) {
-                    int idx = (int) offset; // 0 for oldest, days-1 for latest
-                    history[idx] = ((Number) row[1]).doubleValue();
-                }
+            long offset = java.time.temporal.ChronoUnit.DAYS.between(startDate, date);
+            if (offset >= 0 && offset < days) {
+                int idx = (int) offset;
+                history[idx] = ((Number) row[1]).doubleValue();
             }
         }
+        log.debug("Retrieved {} historical data points for product {}", days, productId);
 
         return history;
     }

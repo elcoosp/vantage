@@ -1,9 +1,9 @@
 package com.vantage.analytics.app;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-
+@Slf4j
 @Component
 public class HoltWintersForecastCalculator {
 
@@ -25,14 +25,25 @@ public class HoltWintersForecastCalculator {
             throw new IllegalArgumentException("History too short for seasonality");
         }
 
-        // Initial level: average of first season
+        // Check if all values are zero
+        boolean allZero = true;
+        for (double v : history) {
+            if (v != 0.0) {
+                allZero = false;
+                break;
+            }
+        }
+        if (allZero) {
+            double[] zeros = new double[horizon];
+            log.debug("All historical values are zero; returning zero forecast");
+            return new ForecastResult(zeros, 0.0, zeros.clone(), zeros.clone());
+        }
+
         double[] level = new double[n];
         double[] trend = new double[n];
         double[] seasonal = new double[n];
 
-        // Initialize seasonal indices with average for each position in season
         double[] seasonalAvg = new double[seasonLength];
-        int fullSeasons = n / seasonLength;
         for (int s = 0; s < seasonLength; s++) {
             double sum = 0.0;
             int count = 0;
@@ -40,32 +51,34 @@ public class HoltWintersForecastCalculator {
                 sum += history[i];
                 count++;
             }
-            seasonalAvg[s] = sum / count;
+            if (count > 0 && sum != 0.0) {
+                seasonalAvg[s] = sum / count;
+            } else {
+                seasonalAvg[s] = 1.0;
+            }
         }
-        // De-seasonalize and get initial level & trend
+
         double[] deseasonalized = new double[n];
         for (int i = 0; i < n; i++) {
             deseasonalized[i] = history[i] / seasonalAvg[i % seasonLength];
         }
-        // Initial level: average of first season's deseasonalized
+
         double sumLevel = 0.0;
         for (int i = 0; i < seasonLength; i++) {
             sumLevel += deseasonalized[i];
         }
         level[seasonLength - 1] = sumLevel / seasonLength;
-        // Initial trend: average of differences between seasons
+
         double trendSum = 0.0;
         for (int i = seasonLength; i < 2 * seasonLength && i < n; i++) {
             trendSum += (deseasonalized[i] - deseasonalized[i - seasonLength]) / seasonLength;
         }
         trend[seasonLength - 1] = trendSum / Math.min(seasonLength, n - seasonLength);
 
-        // Initialize seasonal for first season
         for (int i = 0; i < seasonLength; i++) {
             seasonal[i] = history[i] / level[seasonLength - 1];
         }
 
-        // Smoothing
         for (int t = seasonLength; t < n; t++) {
             double prevLevel = level[t - 1];
             double prevTrend = trend[t - 1];
@@ -80,7 +93,6 @@ public class HoltWintersForecastCalculator {
             seasonal[t] = newSeasonal;
         }
 
-        // Forecast
         double[] forecast = new double[horizon];
         for (int h = 0; h < horizon; h++) {
             int t = n - 1;
@@ -89,7 +101,6 @@ public class HoltWintersForecastCalculator {
             if (forecast[h] < 0) forecast[h] = 0;
         }
 
-        // Compute MSE on in-sample fit (from seasonLength to n-1)
         double sumSq = 0.0;
         int count = 0;
         for (int t = seasonLength; t < n; t++) {
@@ -101,7 +112,6 @@ public class HoltWintersForecastCalculator {
         }
         double mse = count > 0 ? sumSq / count : 0.0;
 
-        // Confidence intervals: 95% (approx 1.96 * sqrt(MSE))
         double stdDev = Math.sqrt(mse);
         double multiplier = 1.96;
         double[] upper = new double[horizon];
