@@ -290,23 +290,25 @@ public class WebhookDeliveryIT {
         rabbitTemplate.send(RabbitMQConfig.EXCHANGE, "PaymentSucceededEvent", message);
         System.out.println("Published event for DLQ test with eventId: " + eventId);
 
-        // Wait for the message to appear in the DLQ after max attempts
-        System.out.println("Waiting for DLQ message for up to 120 seconds...");
+        // Wait and verify the DLQ queue has one message
         Awaitility.await()
             .atMost(Duration.ofSeconds(120))
-            .pollInterval(Duration.ofSeconds(3))
+            .pollInterval(Duration.ofSeconds(2))
             .until(() -> {
-                Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
-                if (dlqMessage != null) {
-                    System.out.println("Found DLQ message: " + new String(dlqMessage.getBody()));
-                    return true;
-                } else {
-                    System.out.println("No DLQ message yet...");
+                Properties props = rabbitAdmin.getQueueProperties("vantage.webhook.dlq");
+                if (props == null) {
+                    System.out.println("DLQ queue properties are null - queue may not exist");
                     return false;
                 }
+                Object msgCount = props.get("QUEUE_MESSAGE_COUNT");
+                System.out.println("DLQ message count: " + msgCount);
+                if (msgCount instanceof Integer) {
+                    return (Integer) msgCount > 0;
+                }
+                return false;
             });
 
-        // Verify the DLQ message contains the eventId and other details
+        // Verify by receiving one message
         Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
         assertThat(dlqMessage).isNotNull();
         String dlqBody = new String(dlqMessage.getBody());
