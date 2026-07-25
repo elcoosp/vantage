@@ -28,7 +28,7 @@ public class WebhookDeliveryConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @RabbitListener(queues = "vantage.webhook.delivery.queue")
+    @RabbitListener(queues = "vantage.webhook.delivery.queue", containerFactory = "rabbitListenerContainerFactory")
     public void handleDelivery(Message message) {
         try {
             String body = new String(message.getBody(), StandardCharsets.UTF_8);
