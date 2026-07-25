@@ -60,6 +60,8 @@ public class WebhookRegistrationTest {
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
+        System.out.println("Vendor registered with tenantId: " + tenantId);
+
         // Set TenantContext manually for the webhook update
         com.vantage.core.tenant.TenantContext.setTenantId(tenantId);
         try {
@@ -78,9 +80,20 @@ public class WebhookRegistrationTest {
                 entity,
                 WebhookUpdateResponse.class);
 
-            // Debug output
-            System.err.println("Webhook update response status: " + response.getStatusCode());
-            System.err.println("Webhook update response body: " + response.getBody());
+            System.out.println("Webhook update response status: " + response.getStatusCode());
+            System.out.println("Webhook update response body: " + response.getBody());
+            System.out.println("Webhook update response headers: " + response.getHeaders());
+
+            if (response.getStatusCode() != HttpStatus.OK && response.getBody() != null) {
+                // If it's an error response, try to parse and print details
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    com.vantage.core.exception.ErrorResponse error = mapper.readValue(response.getBody().toString(), com.vantage.core.exception.ErrorResponse.class);
+                    System.out.println("Error response: " + error);
+                } catch (Exception e) {
+                    System.out.println("Could not parse error response");
+                }
+            }
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isNotNull();
