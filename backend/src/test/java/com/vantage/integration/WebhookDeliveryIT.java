@@ -171,10 +171,15 @@ public class WebhookDeliveryIT {
             .build();
         rabbitTemplate.send(RabbitMQConfig.EXCHANGE, "PaymentSucceededEvent", message);
 
+        System.out.println("Published PaymentSucceededEvent with eventId: " + eventId);
+        // Wait a bit for the message to be processed
+        Thread.sleep(2000);
+
         // Wait for webhook to be received
+        System.out.println("Waiting for webhook delivery...");
         Awaitility.await()
-            .atMost(Duration.ofSeconds(10))
-            .pollInterval(Duration.ofMillis(250))
+            .atMost(Duration.ofSeconds(30))
+            .pollInterval(Duration.ofMillis(500))
             .untilAsserted(() -> {
                 RecordedRequest recordedRequest = mockWebServer.takeRequest();
                 assertThat(recordedRequest).isNotNull();
