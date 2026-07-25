@@ -27,6 +27,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+
 
 import java.util.UUID;
 
@@ -34,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(WebhookRegistrationTest.TestSecurityConfig.class)
+@Import({WebhookRegistrationTest.TestSecurityConfig.class, WebhookRegistrationTest.RabbitMQTestConfig.class})
 @Testcontainers
 public class WebhookRegistrationTest {
 
@@ -48,6 +51,17 @@ public class WebhookRegistrationTest {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
+        }
+    }
+
+    @TestConfiguration
+    static class RabbitMQTestConfig {
+        @Bean
+        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+            SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+            factory.setConnectionFactory(connectionFactory);
+            factory.setAutoStartup(false);
+            return factory;
         }
     }
 
