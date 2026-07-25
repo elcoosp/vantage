@@ -12,7 +12,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
@@ -71,7 +70,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false", "spring.main.allow-bean-definition-overriding=true"})
 
-@TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false", "spring.main.allow-bean-definition-overriding=true"})
 @Import({WebhookDeliveryIT.TestSecurityConfig.class, WebhookDeliveryIT.TestRabbitMQConfig.class})
 @Testcontainers
 public class WebhookDeliveryIT {
@@ -117,15 +115,7 @@ public class WebhookDeliveryIT {
     private TestRestTemplate restTemplate;
 
     @Autowired
-    private RabbitListenerEndpointRegistry registry;
-
-    @BeforeEach
-    void startRabbitMQListeners() {
-        // Check if DLQ exists
-        try {
-            Properties queueProps = rabbitAdmin.getQueueProperties("vantage.webhook.dlq");
-            System.out.println("DLQ properties: " + queueProps);
-        } catch (Exception e) {
+    private RabbitListenerEndpointRegistry registry; catch (Exception e) {
             System.out.println("Could not get DLQ properties: " + e.getMessage());
         }    }
 
