@@ -25,6 +25,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -60,9 +63,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false"})
 
 @TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false", "spring.rabbitmq.admin.auto-startup=false"})
-@Import(WebhookDeliveryIT.TestSecurityConfig.class)
+@Import({WebhookDeliveryIT.TestSecurityConfig.class, WebhookDeliveryIT.TestRabbitMQConfig.class})
 @Testcontainers
 public class WebhookDeliveryIT {
 
@@ -272,7 +276,7 @@ public class WebhookDeliveryIT {
         // Wait for the message to appear in the DLQ after max attempts
         System.out.println("Waiting for DLQ message for up to 120 seconds...");
         Awaitility.await()
-            .atMost(Duration.ofSeconds(120))
+            .atMost(Duration.ofSeconds(60))
             .pollInterval(Duration.ofSeconds(3))
             .until(() -> {
                 Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
@@ -291,5 +295,25 @@ public class WebhookDeliveryIT {
         String dlqBody = new String(dlqMessage.getBody());
         assertThat(dlqBody).contains(eventId.toString());
         assertThat(dlqBody).contains("http://localhost:9999/webhook");
+    }
+
+    @TestConfiguration
+    static class TestRabbitMQConfig {
+        @Bean
+        @Primary
+        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+            SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+            factory.setConnectionFactory(connectionFactory);
+            factory.setDefaultRequeueRejected(false);
+
+            RetryTemplate retryTemplate = new RetryTemplate();
+            ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+            backOffPolicy.setInitialInterval(1000);
+            backOffPolicy.setMultiplier(2.0);
+            backOffPolicy.setMaxInterval(5000);
+            retryTemplate.setBackOffPolicy(backOffPolicy);
+            factory.setRetryTemplate(retryTemplate);
+            return factory;
+        }
     }
 }
