@@ -92,6 +92,8 @@ public class WebhookDeliveryIT {
         registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
         registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
         registry.add("spring.rabbitmq.publisher-returns", () -> "true");
+        System.out.println("RabbitMQ host: " + rabbitmq.getHost());
+        System.out.println("RabbitMQ port: " + rabbitmq.getAmqpPort());
     }
 
     @Autowired
