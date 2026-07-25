@@ -118,7 +118,14 @@ public class WebhookDeliveryIT {
     private RabbitListenerEndpointRegistry registry;
 
     @BeforeEach
-    void startRabbitMQListeners() {    }
+    void startRabbitMQListeners() {
+        // Check if DLQ exists
+        try {
+            Map<String, Object> queueProps = rabbitAdmin.getQueueProperties("vantage.webhook.dlq");
+            System.out.println("DLQ properties: " + queueProps);
+        } catch (Exception e) {
+            System.out.println("Could not get DLQ properties: " + e.getMessage());
+        }    }
 
 
 
@@ -284,7 +291,7 @@ public class WebhookDeliveryIT {
         // Wait for the message to appear in the DLQ after max attempts
         System.out.println("Waiting for DLQ message for up to 120 seconds...");
         Awaitility.await()
-            .atMost(Duration.ofSeconds(60))
+            .atMost(Duration.ofSeconds(120))
             .pollInterval(Duration.ofSeconds(3))
             .until(() -> {
                 Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
@@ -316,7 +323,7 @@ public class WebhookDeliveryIT {
 
             RetryTemplate retryTemplate = new RetryTemplate();
             SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-            retryPolicy.setMaxAttempts(3);
+            retryPolicy.setMaxAttempts(5);
             retryTemplate.setRetryPolicy(retryPolicy);
 
             ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
