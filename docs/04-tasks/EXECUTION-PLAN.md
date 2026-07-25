@@ -16,14 +16,14 @@ This document defines the exact execution sequence to build Vantage using up to 
 *Everything depends on the base scaffolding. This must be done sequentially by a single agent.*
 
 - **Agent 1 (Backend Lead):**
-  - [ ] `TASK-001`: Bootstrap Monorepo & Core Infrastructure
-  - [ ] Merge to `main`
-  - [ ] `TASK-002`: Multi-Tenant Security & Tenant Isolation
-  - [ ] Merge to `main`
-  - [ ] `TASK-003`: Product Catalog & Optimistic Inventory
-  - [ ] Merge to `main`
-  - [ ] `TASK-004`: Transactional Order Creation (Outbox)
-  - [ ] Merge to `main`
+  - [x] `TASK-001`: Bootstrap Monorepo & Core Infrastructure
+  - [x] Merge to `main`
+  - [x] `TASK-002`: Multi-Tenant Security & Tenant Isolation
+  - [x] Merge to `main`
+  - [x] `TASK-003`: Product Catalog & Optimistic Inventory
+  - [x] Merge to `main`
+  - [x] `TASK-004`: Transactional Order Creation (Outbox)
+  - [x] Merge to `main`
 
 ---
 
@@ -31,14 +31,14 @@ This document defines the exact execution sequence to build Vantage using up to 
 *The distributed transaction flow is highly coupled. Must be sequential.*
 
 - **Agent 1 (Backend Lead):**
-  - [ ] `TASK-005`: Inventory Reservation Consumer & Idempotency
-  - [ ] Merge to `main`
-  - [ ] `TASK-006`: Payment Processing & Saga Compensation
-  - [ ] Merge to `main`
-  - [ ] `TASK-007`: Inventory Compensation Consumer
-  - [ ] Merge to `main`
-  - [ ] `TASK-008`: Idempotent Payment API
-  - [ ] Merge to `main`
+  - [x] `TASK-005`: Inventory Reservation Consumer & Idempotency
+  - [x] Merge to `main`
+  - [x] `TASK-006`: Payment Processing & Saga Compensation
+  - [x] Merge to `main`
+  - [x] `TASK-007`: Inventory Compensation Consumer
+  - [x] Merge to `main`
+  - [x] `TASK-008`: Idempotent Payment API
+  - [x] Merge to `main`
 
 ---
 
@@ -46,15 +46,15 @@ This document defines the exact execution sequence to build Vantage using up to 
 *Now that the core backend and API contracts exist, we can parallelize heavily. All agents pull `main` before starting.*
 
 - **Agent 1 (Backend Infra):**
-  - [ ] `TASK-013`: OpenTelemetry Distributed Tracing (Touches `core/observability`, `application.yml`)
-  - [ ] `TASK-047`: HikariCP Virtual Thread Optimization (Touches `application.yml`, `core/config`)
-  - [ ] Merge to `main`
+  - [x] `TASK-013`: OpenTelemetry Distributed Tracing (Touches `core/observability`, `application.yml`)
+  - [x] `TASK-047`: HikariCP Virtual Thread Optimization (Touches `application.yml`, `core/config`)
+  - [x] Merge to `main`
 
 - **Agent 2 (Backend Features - Integration):**
-  - [ ] `TASK-009`: HMAC-Signed Webhooks (Touches `integration/`, `vendor/`)
-  - [ ] `TASK-020`: Developer Portal & API Keys (Touches `integration/`, `core/security/`)
-  - [ ] `TASK-035`: Multi-Tenant API Rate Limiting (Touches `core/ratelimiter/`, `core/config/`)
-  - [ ] Merge to `main`
+  - [x] `TASK-009`: HMAC-Signed Webhooks (Touches `integration/`, `vendor/`)
+  - [x] `TASK-020`: Developer Portal & API Keys (Touches `integration/`, `core/security/`)
+  - [x] `TASK-035`: Multi-Tenant API Rate Limiting (Touches `core/ratelimiter/`, `core/config/`)
+  - [x] Merge to `main`
 
 - **Agent 3 (Backend Features - Analytics/Search):**
   - [ ] `TASK-010`: Pure-Java AI Demand Forecasting (Touches `analytics/`, Migration `V10__`)
