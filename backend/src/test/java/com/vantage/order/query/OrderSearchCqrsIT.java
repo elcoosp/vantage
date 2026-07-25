@@ -236,7 +236,7 @@ class OrderSearchCqrsIT {
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
-        OrderRequest orderReq = new OrderRequest(productId, quantity);
+        OrderRequest orderReq = new OrderRequest(productId, quantity, "Test Product");
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
         ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity(
             "/api/v1/orders", orderEntity, OrderResponse.class

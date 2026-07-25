@@ -20,9 +20,9 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.annotation.Exchange;
+import org.springframework.amqp.rabbit.annotation.Queue;
+import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -58,7 +58,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @org.springframework.test.context.TestPropertySource(properties = {
     "vantage.inventory.consumer.enabled=true",
-    "vantage.payment.enabled=true"
+    "vantage.payment.enabled=true",
+    "vantage.outbox.enabled=true"
 })
 class PaymentSagaCompensationIT {
 
@@ -82,7 +83,13 @@ class PaymentSagaCompensationIT {
         @Autowired
         private ObjectMapper objectMapper;
 
-        @RabbitListener(queues = "vantage.inventory.release")
+        @RabbitListener(bindings = {
+            @QueueBinding(
+                value = @Queue(name = "vantage.inventory.release", durable = "true"),
+                exchange = @Exchange(name = "vantage.events", type = "direct"),
+                key = "InventoryReleasedEvent"
+            )
+        })
         @Transactional
         public void handleInventoryReleased(String payload) throws JsonProcessingException {
             InventoryReleasedPayload eventPayload = objectMapper.readValue(payload, InventoryReleasedPayload.class);
@@ -135,19 +142,7 @@ class PaymentSagaCompensationIT {
     private MockPaymentGatewayClient mockPaymentGatewayClient;
 
     @Autowired
-    private RabbitAdmin rabbitAdmin;
-
-    @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    @BeforeEach
-    void setupQueues() {
-        org.springframework.amqp.core.DirectExchange exchange = new org.springframework.amqp.core.DirectExchange("vantage.events");
-        Queue releaseQueue = QueueBuilder.durable("vantage.inventory.release").build();
-        rabbitAdmin.declareExchange(exchange);
-        rabbitAdmin.declareQueue(releaseQueue);
-        rabbitAdmin.declareBinding(BindingBuilder.bind(releaseQueue).to(exchange).with("InventoryReleasedEvent"));
-    }
 
     @Test
     void should_cancel_order_and_release_inventory_when_payment_fails() throws Exception {
@@ -219,7 +214,7 @@ class PaymentSagaCompensationIT {
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
-        OrderRequest orderReq = new OrderRequest(productId, quantity);
+        OrderRequest orderReq = new OrderRequest(productId, quantity, "Test Product");
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
         ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity("/api/v1/orders", orderEntity, OrderResponse.class);
         return orderRes.getBody().id();
