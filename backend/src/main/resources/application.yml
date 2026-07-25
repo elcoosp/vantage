@@ -6,6 +6,12 @@ spring:
     url: jdbc:postgresql://localhost:5432/vantage_dev
     username: vantage
     password: vantage_pw
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 0
+      connection-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     hibernate:
       ddl-auto: validate
