@@ -37,14 +37,43 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeAll;
-import org.springframework.test.context.jdbc.Sql;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(FullTextSearchIT.TestSecurityConfig.class)
+
+    @BeforeEach
+    void setupFTS() throws Exception {
+        log.info("=== Running FTS setup as a single statement ===");
+        try (var conn = jdbcTemplate.getDataSource().getConnection()) {
+            // Read the script content as a single string
+            var resource = new ClassPathResource("db/migration/clean_fts_setup.sql");
+            var script = new String(resource.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            // Execute the entire script as one statement using a Statement
+            try (var stmt = conn.createStatement()) {
+                stmt.execute(script);
+            }
+            log.info("FTS setup completed successfully");
+        } catch (Exception e) {
+            log.error("FTS setup failed", e);
+            throw e;
+        }
+    }
+
+
 @Testcontainers
-@Sql(scripts = {"/db/migration/clean_fts_setup.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class FullTextSearchIT {
+
+    private static final Logger log = LoggerFactory.getLogger(FullTextSearchIT.class);
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
 
 
