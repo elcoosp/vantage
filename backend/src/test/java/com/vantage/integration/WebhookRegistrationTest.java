@@ -34,7 +34,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.test.context.TestPropertySource;
-import org.mockito.Mockito;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
@@ -53,8 +58,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 
 @TestPropertySource(properties = {"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
-@Import({WebhookRegistrationTest.TestSecurityConfig.class, WebhookRegistrationTest.TestRabbitMQConfig.class})
+@Import(WebhookRegistrationTest.TestSecurityConfig.class)
 @Testcontainers
+@SuppressWarnings("deprecation")
 public class WebhookRegistrationTest {
 
     @TestConfiguration
@@ -93,6 +99,16 @@ public class WebhookRegistrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @MockBean
+    private RabbitTemplate rabbitTemplate;
+
+    @MockBean
+    private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
+
+    @MockBean
+    private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
+
 
     private RabbitTemplate rabbitTemplate;
 
@@ -138,24 +154,5 @@ public class WebhookRegistrationTest {
         assertThat(response.getBody().secret()).isNotBlank();
     }
 
-    @TestConfiguration
-    static class TestRabbitMQConfig {
-        @Bean
-        @Primary
-        public RabbitTemplate rabbitTemplate() {
-            return Mockito.mock(RabbitTemplate.class);
-        }
 
-        @Bean
-        @Primary
-        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
-            return Mockito.mock(SimpleRabbitListenerContainerFactory.class);
-        }
-
-        @Bean
-        @Primary
-        public RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry() {
-            return Mockito.mock(RabbitListenerEndpointRegistry.class);
-        }
-    }
 }
