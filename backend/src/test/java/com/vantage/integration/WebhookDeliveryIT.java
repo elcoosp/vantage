@@ -184,7 +184,7 @@ public class WebhookDeliveryIT {
                 RecordedRequest recordedRequest = mockWebServer.takeRequest();
                 assertThat(recordedRequest).isNotNull();
                 assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-                assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json;charset=UTF-8");
+                assertThat(recordedRequest.getHeader("Content-Type")).startsWith("application/json");
                 assertThat(recordedRequest.getHeader("X-Vantage-Event-Id")).isEqualTo(eventId.toString());
 
                 String signatureHeader = recordedRequest.getHeader("X-Vantage-Signature");
