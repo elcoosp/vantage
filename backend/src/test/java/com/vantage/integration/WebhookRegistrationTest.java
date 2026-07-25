@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 
-@TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
+@TestPropertySource(properties = {"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
 @Import(WebhookRegistrationTest.TestSecurityConfig.class)
 @Testcontainers
 public class WebhookRegistrationTest {
