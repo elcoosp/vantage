@@ -28,8 +28,8 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         Bucket bucket = rateLimiterService.resolveBucket(tenantId.toString());
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
         if (!probe.isConsumed()) {
-            // Use a fixed retry-after of 60 seconds (the refill period)
-            // In a production system, we could compute the exact wait time using Bucket's time estimation.
+            // Use a fixed retry-after of 60 seconds (the refill period).
+            // A dynamic calculation using probe.getNanosToWaitForToken() is not available in the used version.
             long retryAfterSeconds = 60;
             throw new RateLimitExceededException("Rate limit exceeded for tenant: " + tenantId, retryAfterSeconds);
         }
