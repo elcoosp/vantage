@@ -60,7 +60,7 @@ public class WebhookRegistrationTest {
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
-        System.out.println("Vendor registered with tenantId: " + tenantId);
+        System.err.println("Vendor registered with tenantId: " + tenantId);
 
         // Set TenantContext manually for the webhook update
         com.vantage.core.tenant.TenantContext.setTenantId(tenantId);
@@ -80,9 +80,10 @@ public class WebhookRegistrationTest {
                 entity,
                 WebhookUpdateResponse.class);
 
-            System.out.println("Webhook update response status: " + response.getStatusCode());
-            System.out.println("Webhook update response body: " + response.getBody());
-            System.out.println("Webhook update response headers: " + response.getHeaders());
+            System.err.println("Webhook update response status: " + response.getStatusCode());
+        System.err.println("Response headers: " + response.getHeaders());
+            System.err.println("Webhook update response body: " + response.getBody());
+            System.err.println("Webhook update response headers: " + response.getHeaders());
 
             if (response.getStatusCode() != HttpStatus.OK && response.getBody() != null) {
                 // If it's an error response, try to parse and print details
