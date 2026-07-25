@@ -19,7 +19,7 @@ public interface SearchRepository extends JpaRepository<Product, UUID> {
                p.description AS description
         FROM products p
         WHERE p.tenant_id = :tenantId
-          AND 1 = 0  -- intentionally return no results to make test fail
+          AND p.search_vector @@ plainto_tsquery('english', :query)
         UNION
         SELECT 'ORDER' AS entity_type,
                o.id AS id,
@@ -27,7 +27,7 @@ public interface SearchRepository extends JpaRepository<Product, UUID> {
                o.status AS description
         FROM orders o
         WHERE o.tenant_id = :tenantId
-          AND 1 = 0
+          AND o.search_vector @@ plainto_tsquery('english', :query)
         """, nativeQuery = true)
     List<SearchResult> search(@Param("query") String query, @Param("tenantId") UUID tenantId);
 }
