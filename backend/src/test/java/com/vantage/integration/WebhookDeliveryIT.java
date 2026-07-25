@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.amqp.rabbit.retry.RetryInterceptorBuilder;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
@@ -307,14 +308,10 @@ public class WebhookDeliveryIT {
             SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
             factory.setConnectionFactory(connectionFactory);
             factory.setDefaultRequeueRejected(false);
-
-            RetryTemplate retryTemplate = new RetryTemplate();
-            ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-            backOffPolicy.setInitialInterval(1000);
-            backOffPolicy.setMultiplier(2.0);
-            backOffPolicy.setMaxInterval(5000);
-            retryTemplate.setBackOffPolicy(backOffPolicy);
-            factory.setRetryTemplate(retryTemplate);
+            factory.setAdviceChain(RetryInterceptorBuilder.stateless()
+                    .maxAttempts(3)
+                    .backOffOptions(1000, 2.0, 5000)
+                    .build());
             return factory;
         }
     }
