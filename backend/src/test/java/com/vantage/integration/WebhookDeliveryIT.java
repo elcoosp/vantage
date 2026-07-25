@@ -26,6 +26,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.core.annotation.Order;
