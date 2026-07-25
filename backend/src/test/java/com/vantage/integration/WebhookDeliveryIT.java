@@ -54,6 +54,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.Collection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
