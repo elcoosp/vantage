@@ -49,7 +49,13 @@ public class WebhookDispatchConsumer {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    @RabbitListener(queues = "vantage.payment.events")
+    @RabbitListener(bindings = {
+        @QueueBinding(
+            value = @Queue(name = "vantage.payment.events", durable = "true"),
+            exchange = @Exchange(name = "vantage.events", type = "direct"),
+            key = {"PaymentSucceededEvent", "PaymentFailedEvent"}
+        )
+    })
     @Transactional
     public void handlePaymentEvent(@Payload String payload,
                                    @Header("eventId") String eventIdHeader,

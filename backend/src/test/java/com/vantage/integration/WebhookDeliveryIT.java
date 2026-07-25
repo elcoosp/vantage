@@ -41,6 +41,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.containers.wait.strategy.Wait;
+import java.time.Duration;
+
 import org.springframework.test.context.TestPropertySource;
 
 import javax.crypto.Mac;
@@ -79,7 +82,10 @@ public class WebhookDeliveryIT {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @Container
-    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-management-alpine");
+    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-management-alpine")
+            .withExposedPorts(5672, 15672)
+            .waitingFor(Wait.forListeningPorts(5672, 15672)
+                    .withStartupTimeout(Duration.ofSeconds(60)));
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
