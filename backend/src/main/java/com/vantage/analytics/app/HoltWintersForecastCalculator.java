@@ -83,10 +83,14 @@ public class HoltWintersForecastCalculator {
             double prevLevel = level[t - 1];
             double prevTrend = trend[t - 1];
             double prevSeasonal = seasonal[t - seasonLength];
+            // Guard against zero seasonal factor
+            if (prevSeasonal == 0.0) prevSeasonal = 1.0;
 
             double newLevel = alpha * (history[t] / prevSeasonal) + (1 - alpha) * (prevLevel + prevTrend);
             double newTrend = beta * (newLevel - prevLevel) + (1 - beta) * prevTrend;
-            double newSeasonal = gamma * (history[t] / newLevel) + (1 - gamma) * prevSeasonal;
+            // Guard against zero level when computing seasonal
+            double newLevelForSeasonal = (newLevel == 0.0) ? 1.0 : newLevel;
+            double newSeasonal = gamma * (history[t] / newLevelForSeasonal) + (1 - gamma) * prevSeasonal;
 
             level[t] = newLevel;
             trend[t] = newTrend;
