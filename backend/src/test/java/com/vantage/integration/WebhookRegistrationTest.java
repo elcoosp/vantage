@@ -95,7 +95,9 @@ public class WebhookRegistrationTest {
                 }
             }
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new AssertionError("Expected 200 OK but got " + response.getStatusCode() + " with body: " + response.getBody());
+            }
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().secret()).isNotBlank();
         } finally {
