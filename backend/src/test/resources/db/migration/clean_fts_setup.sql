@@ -1,16 +1,24 @@
--- Add tsvector columns and triggers (idempotent)
+-- Idempotent setup for full-text search
+DO $$
+BEGIN
+    -- Add search_vector column to products if not exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='search_vector') THEN
+        ALTER TABLE products ADD COLUMN search_vector tsvector;
+    END IF;
 
--- Drop existing triggers and functions to avoid conflicts
+    -- Add search_vector column to orders if not exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='search_vector') THEN
+        ALTER TABLE orders ADD COLUMN search_vector tsvector;
+    END IF;
+END $$;
+
+-- Drop existing triggers and functions (ignore errors if they don't exist)
 DROP TRIGGER IF EXISTS products_search_vector_trigger ON products;
 DROP TRIGGER IF EXISTS orders_search_vector_trigger ON orders;
 DROP FUNCTION IF EXISTS products_search_vector_update() CASCADE;
 DROP FUNCTION IF EXISTS orders_search_vector_update() CASCADE;
 
--- Add columns if they don't exist
-ALTER TABLE products ADD COLUMN IF NOT EXISTS search_vector tsvector;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS search_vector tsvector;
-
--- Create functions
+-- Create trigger functions
 CREATE OR REPLACE FUNCTION products_search_vector_update() RETURNS trigger AS $$
 BEGIN
   NEW.search_vector := setweight(to_tsvector('english', coalesce(NEW.name, '')), 'A') ||
