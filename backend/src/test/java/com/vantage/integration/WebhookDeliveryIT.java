@@ -3,8 +3,6 @@ package com.vantage.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.config.RabbitMQConfig;
 import com.vantage.payment.app.event.PaymentSucceededPayload;
-import com.vantage.product.ui.dto.ProductRequest;
-import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import okhttp3.mockwebserver.MockResponse;
@@ -15,11 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -43,33 +41,31 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.containers.wait.strategy.Wait;
-import java.time.Duration;
-
-import org.springframework.test.context.TestPropertySource;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false", "spring.main.allow-bean-definition-overriding=true"})
-
+@TestPropertySource(properties = {
+    "spring.rabbitmq.listener.simple.auto-startup=false",
+    "spring.main.allow-bean-definition-overriding=true"
+})
 @Import({WebhookDeliveryIT.TestSecurityConfig.class, WebhookDeliveryIT.TestRabbitMQConfig.class})
 @Testcontainers
 public class WebhookDeliveryIT {
@@ -84,6 +80,31 @@ public class WebhookDeliveryIT {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
+        }
+    }
+
+    @TestConfiguration
+    static class TestRabbitMQConfig {
+        @Bean
+        @Primary
+        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+            SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+            factory.setConnectionFactory(connectionFactory);
+            factory.setDefaultRequeueRejected(false);
+
+            RetryTemplate retryTemplate = new RetryTemplate();
+            SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+            retryPolicy.setMaxAttempts(5);
+            retryTemplate.setRetryPolicy(retryPolicy);
+
+            ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+            backOffPolicy.setInitialInterval(1000);
+            backOffPolicy.setMultiplier(2.0);
+            backOffPolicy.setMaxInterval(5000);
+            retryTemplate.setBackOffPolicy(backOffPolicy);
+
+            factory.setRetryTemplate(retryTemplate);
+            return factory;
         }
     }
 
@@ -115,21 +136,16 @@ public class WebhookDeliveryIT {
     private TestRestTemplate restTemplate;
 
     @Autowired
-    private RabbitListenerEndpointRegistry registry; catch (Exception e) {
-            System.out.println("Could not get DLQ properties: " + e.getMessage());
-        }    }
-
-
-
-    @Autowired
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
     private RabbitAdmin rabbitAdmin;
 
-
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RabbitListenerEndpointRegistry registry;
 
     @Test
     void should_deliver_webhook_with_correct_signature_when_payment_succeeded() throws Exception {
@@ -148,7 +164,6 @@ public class WebhookDeliveryIT {
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
-        // Create product for order? Not needed for webhook test, but we need to update webhook URL.
         // Update webhook URL to a local mock server
         MockWebServer mockWebServer = new MockWebServer();
         mockWebServer.start();
@@ -170,7 +185,7 @@ public class WebhookDeliveryIT {
         assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         String webhookSecret = updateRes.getBody().secret();
 
-        // Now publish a PaymentSucceededEvent
+        // Publish a PaymentSucceededEvent
         UUID orderId = UUID.randomUUID();
         PaymentSucceededPayload payload = new PaymentSucceededPayload(orderId, tenantId);
         String jsonPayload = objectMapper.writeValueAsString(payload);
@@ -183,8 +198,6 @@ public class WebhookDeliveryIT {
         rabbitTemplate.send(RabbitMQConfig.EXCHANGE, "PaymentSucceededEvent", message);
 
         System.out.println("Published PaymentSucceededEvent with eventId: " + eventId);
-        // Wait a bit for the message to be processed
-        Thread.sleep(2000);
 
         // Wait for webhook to be received
         System.out.println("Waiting for webhook delivery...");
@@ -201,12 +214,10 @@ public class WebhookDeliveryIT {
                 String signatureHeader = recordedRequest.getHeader("X-Vantage-Signature");
                 assertThat(signatureHeader).isNotBlank();
 
-                // Verify signature
                 String body = recordedRequest.getBody().readUtf8();
                 String expectedSignature = hmacSha256(body, webhookSecret);
                 assertThat(signatureHeader).isEqualTo(expectedSignature);
 
-                // Verify payload content
                 com.vantage.integration.app.WebhookPayload webhookPayload =
                     objectMapper.readValue(body, com.vantage.integration.app.WebhookPayload.class);
                 assertThat(webhookPayload.eventType()).isEqualTo("PaymentSucceeded");
@@ -215,22 +226,6 @@ public class WebhookDeliveryIT {
             });
 
         mockWebServer.shutdown();
-    }
-
-    private String hmacSha256(String data, String key) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(secretKeySpec);
-            byte[] hash = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (byte b : hash) {
-                hex.append(String.format("%02x", b));
-            }
-            return hex.toString();
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new IllegalStateException("Failed to compute HMAC", e);
-        }
     }
 
     @Test
@@ -268,8 +263,7 @@ public class WebhookDeliveryIT {
 
         // Publish PaymentSucceededEvent
         UUID orderId = UUID.randomUUID();
-        com.vantage.payment.app.event.PaymentSucceededPayload payload =
-            new com.vantage.payment.app.event.PaymentSucceededPayload(orderId, tenantId);
+        PaymentSucceededPayload payload = new PaymentSucceededPayload(orderId, tenantId);
         String jsonPayload = objectMapper.writeValueAsString(payload);
         UUID eventId = UUID.randomUUID();
         Message message = MessageBuilder
@@ -306,28 +300,19 @@ public class WebhookDeliveryIT {
         assertThat(dlqBody).contains("http://localhost:9999/webhook");
     }
 
-    @TestConfiguration
-    static class TestRabbitMQConfig {
-        @Bean
-        @Primary
-        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
-            SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-            factory.setConnectionFactory(connectionFactory);
-            factory.setDefaultRequeueRejected(false);
-
-            RetryTemplate retryTemplate = new RetryTemplate();
-            SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-            retryPolicy.setMaxAttempts(5);
-            retryTemplate.setRetryPolicy(retryPolicy);
-
-            ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-            backOffPolicy.setInitialInterval(1000);
-            backOffPolicy.setMultiplier(2.0);
-            backOffPolicy.setMaxInterval(5000);
-            retryTemplate.setBackOffPolicy(backOffPolicy);
-
-            factory.setRetryTemplate(retryTemplate);
-            return factory;
+    private String hmacSha256(String data, String key) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKeySpec);
+            byte[] hash = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new IllegalStateException("Failed to compute HMAC", e);
         }
     }
 }
