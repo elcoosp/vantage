@@ -80,12 +80,15 @@ public class WebhookRegistrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @SuppressWarnings("deprecation")
     @MockBean
     private RabbitTemplate rabbitTemplate;
 
+    @SuppressWarnings("deprecation")
     @MockBean
     private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
 
+    @SuppressWarnings("deprecation")
     @MockBean
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
 
