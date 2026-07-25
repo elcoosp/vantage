@@ -65,7 +65,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false"})
+@TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false", "spring.main.allow-bean-definition-overriding=true"})
 
 @TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false", "spring.rabbitmq.admin.auto-startup=false"})
 @Import({WebhookDeliveryIT.TestSecurityConfig.class, WebhookDeliveryIT.TestRabbitMQConfig.class})
