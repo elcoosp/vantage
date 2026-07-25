@@ -23,6 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.boot.test.mock.mockito.MockitoBean;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -86,13 +87,13 @@ public class WebhookRegistrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @MockBean
+    @MockitoBean
     private RabbitTemplate rabbitTemplate;
 
-    @MockBean
+    @MockitoBean
     private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
 
-    @MockBean
+    @MockitoBean
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
 
 
