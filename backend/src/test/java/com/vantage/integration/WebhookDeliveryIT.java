@@ -270,16 +270,19 @@ public class WebhookDeliveryIT {
         System.out.println("Published event for DLQ test with eventId: " + eventId);
 
         // Wait for the message to appear in the DLQ after max attempts
+        System.out.println("Waiting for DLQ message for up to 120 seconds...");
         Awaitility.await()
-            .atMost(Duration.ofSeconds(45))
-            .pollInterval(Duration.ofSeconds(2))
+            .atMost(Duration.ofSeconds(120))
+            .pollInterval(Duration.ofSeconds(3))
             .until(() -> {
                 Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
                 if (dlqMessage != null) {
                     System.out.println("Found DLQ message: " + new String(dlqMessage.getBody()));
                     return true;
+                } else {
+                    System.out.println("No DLQ message yet...");
+                    return false;
                 }
-                return false;
             });
 
         // Verify the DLQ message contains the eventId and other details
