@@ -23,7 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.boot.test.mock.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -48,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
 @Import(WebhookRegistrationTest.TestSecurityConfig.class)
 @Testcontainers
+@SuppressWarnings("deprecation")
 public class WebhookRegistrationTest {
 
     @TestConfiguration
@@ -87,13 +88,13 @@ public class WebhookRegistrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @MockitoBean
+    @MockBean
     private RabbitTemplate rabbitTemplate;
 
-    @MockitoBean
+    @MockBean
     private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
 
-    @MockitoBean
+    @MockBean
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
 
 
