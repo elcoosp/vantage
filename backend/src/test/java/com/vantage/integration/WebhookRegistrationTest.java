@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
 @Import(WebhookRegistrationTest.TestSecurityConfig.class)
 @Testcontainers
-@SuppressWarnings("deprecation")
+@SuppressWarnings("removal")
 public class WebhookRegistrationTest {
 
     @TestConfiguration
@@ -80,15 +80,15 @@ public class WebhookRegistrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @MockBean
     private RabbitTemplate rabbitTemplate;
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @MockBean
     private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @MockBean
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
 
