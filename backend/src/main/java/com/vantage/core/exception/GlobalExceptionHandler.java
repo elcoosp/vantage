@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.vantage.payment.app.IdempotencyConflictException;
+import com.vantage.core.ratelimiter.RateLimitExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -39,5 +40,14 @@ public class GlobalExceptionHandler {
         log.warn("Bad request: {}", ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse("Bad Request", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceededException(RateLimitExceededException ex) {
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("Too Many Requests", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(errorResponse);
     }
 }
