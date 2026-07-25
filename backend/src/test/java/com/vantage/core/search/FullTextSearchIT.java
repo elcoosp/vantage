@@ -6,7 +6,10 @@ import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -14,12 +17,15 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
@@ -36,17 +42,17 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.jupiter.api.BeforeAll;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.junit.jupiter.api.BeforeEach;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(FullTextSearchIT.TestSecurityConfig.class)
+@Testcontainers
+public class FullTextSearchIT {
+
+    private static final Logger log = LoggerFactory.getLogger(FullTextSearchIT.class);
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setupFTS() throws Exception {
@@ -63,17 +69,6 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
             throw e;
         }
     }
-
-
-@Testcontainers
-public class FullTextSearchIT {
-
-    private static final Logger log = LoggerFactory.getLogger(FullTextSearchIT.class);
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -186,8 +181,6 @@ public class FullTextSearchIT {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> results = response.getBody();
         assertThat(results).hasSize(2);
-        // Verify entity types and ids
-        // (We expect both products)
         List<String> entityTypes = results.stream().map(m -> (String) m.get("entityType")).toList();
         assertThat(entityTypes).containsOnly("PRODUCT");
         List<UUID> ids = results.stream().map(m -> UUID.fromString((String) m.get("id"))).toList();
@@ -222,7 +215,6 @@ public class FullTextSearchIT {
 
     @Test
     void should_respect_tenant_isolation() {
-        // Setup vendor A (same as above) and vendor B
         TestContext ctxA = setupVendorAndData();
 
         // Register vendor B
@@ -265,7 +257,7 @@ public class FullTextSearchIT {
         assertThat(responseA.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> resultsA = responseA.getBody();
         assertThat(resultsA).hasSize(1);
-        assertThat(resultsA.get(0).get("id")).isEqualTo(ctxA.product1Id.toString()); // Coffee Mug
+        assertThat(resultsA.get(0).get("id")).isEqualTo(ctxA.product1Id.toString());
 
         // Search as vendor B for "Mug" should return only B's Tea Mug
         ResponseEntity<List> responseB = restTemplate.exchange(
