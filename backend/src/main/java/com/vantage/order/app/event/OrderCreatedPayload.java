@@ -3,5 +3,5 @@ package com.vantage.order.app.event;
 
 import java.util.UUID;
 
-public record OrderCreatedPayload(UUID orderId, UUID tenantId, UUID productId, Integer quantity) {
+public record OrderCreatedPayload(UUID orderId, UUID tenantId, UUID productId, String productName, Integer quantity) {
 }

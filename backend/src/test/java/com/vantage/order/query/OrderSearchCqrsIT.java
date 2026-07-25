@@ -24,6 +24,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
+import com.vantage.order.query.ui.dto.OrderSearchPageResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -53,7 +54,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @org.springframework.test.context.TestPropertySource(properties = {
     "vantage.inventory.consumer.enabled=true",
-    "vantage.payment.enabled=true"
+    "vantage.payment.enabled=true",
+    "vantage.outbox.enabled=true"
 })
 class OrderSearchCqrsIT {
 
@@ -111,18 +113,18 @@ class OrderSearchCqrsIT {
                 headers.set("X-Tenant-ID", setup.tenantId().toString());
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-                ResponseEntity<OrderSearchResultResponse[]> response = restTemplate.exchange(
+                ResponseEntity<OrderSearchPageResponse> response = restTemplate.exchange(
                     "/api/v1/orders/search",
                     HttpMethod.GET,
                     entity,
-                    OrderSearchResultResponse[].class
+                    OrderSearchPageResponse.class
                 );
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody()).hasSize(1);
+                assertThat(response.getBody().content()).hasSize(1);
 
-                OrderSearchResultResponse result = response.getBody()[0];
+                OrderSearchResultResponse result = response.getBody().content().get(0);
                 assertThat(result.orderId()).isEqualTo(orderId);
                 assertThat(result.productName()).isEqualTo("Test Product");
                 assertThat(result.status()).isEqualTo("CREATED");
@@ -146,17 +148,17 @@ class OrderSearchCqrsIT {
                 headers.set("X-Tenant-ID", setup.tenantId().toString());
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-                ResponseEntity<OrderSearchResultResponse[]> response = restTemplate.exchange(
+                ResponseEntity<OrderSearchPageResponse> response = restTemplate.exchange(
                     "/api/v1/orders/search",
                     HttpMethod.GET,
                     entity,
-                    OrderSearchResultResponse[].class
+                    OrderSearchPageResponse.class
                 );
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody()).hasSize(1);
-                assertThat(response.getBody()[0].status()).isEqualTo("CREATED");
+                assertThat(response.getBody().content()).hasSize(1);
+                assertThat(response.getBody().content().get(0).status()).isEqualTo("CREATED");
             });
 
         PaymentSucceededPayload paymentPayload = new PaymentSucceededPayload(orderId, setup.tenantId());
@@ -179,17 +181,17 @@ class OrderSearchCqrsIT {
                 headers.set("X-Tenant-ID", setup.tenantId().toString());
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-                ResponseEntity<OrderSearchResultResponse[]> response = restTemplate.exchange(
+                ResponseEntity<OrderSearchPageResponse> response = restTemplate.exchange(
                     "/api/v1/orders/search",
                     HttpMethod.GET,
                     entity,
-                    OrderSearchResultResponse[].class
+                    OrderSearchPageResponse.class
                 );
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody()).hasSize(1);
-                assertThat(response.getBody()[0].status()).isEqualTo("PAID");
+                assertThat(response.getBody().content()).hasSize(1);
+                assertThat(response.getBody().content().get(0).status()).isEqualTo("PAID");
             });
     }
 

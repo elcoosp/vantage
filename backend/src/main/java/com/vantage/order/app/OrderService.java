@@ -8,6 +8,8 @@ import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
 import com.vantage.order.app.event.OrderCreatedPayload;
 import com.vantage.order.domain.Order;
+import com.vantage.product.domain.Product;
+import com.vantage.product.domain.ProductRepository;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;
 import com.vantage.order.ui.dto.OrderRequest;
@@ -23,11 +25,13 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final ProductRepository productRepository;
 
-    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper) {
+    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.objectMapper = objectMapper;
+        this.productRepository = productRepository;
     }
 
     @Transactional
@@ -39,7 +43,9 @@ public class OrderService {
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
 
-        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), TenantContext.getTenantId(), order.getProductId(), order.getQuantity());
+        Product product = productRepository.findById(order.getProductId())
+            .orElseThrow(() -> new IllegalArgumentException("Product not found: " + order.getProductId()));
+        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), TenantContext.getTenantId(), order.getProductId(), product.getName(), order.getQuantity());
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);
