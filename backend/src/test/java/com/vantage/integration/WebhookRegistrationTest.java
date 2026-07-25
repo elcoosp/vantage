@@ -34,6 +34,15 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.test.context.TestPropertySource;
+import org.mockito.Mockito;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+
 
 
 import java.util.UUID;
@@ -44,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 
 @TestPropertySource(properties = {"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
-@Import(WebhookRegistrationTest.TestSecurityConfig.class)
+@Import({WebhookRegistrationTest.TestSecurityConfig.class, WebhookRegistrationTest.TestRabbitMQConfig.class})
 @Testcontainers
 public class WebhookRegistrationTest {
 
@@ -127,5 +136,26 @@ public class WebhookRegistrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().secret()).isNotBlank();
+    }
+
+    @TestConfiguration
+    static class TestRabbitMQConfig {
+        @Bean
+        @Primary
+        public RabbitTemplate rabbitTemplate() {
+            return Mockito.mock(RabbitTemplate.class);
+        }
+
+        @Bean
+        @Primary
+        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
+            return Mockito.mock(SimpleRabbitListenerContainerFactory.class);
+        }
+
+        @Bean
+        @Primary
+        public RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry() {
+            return Mockito.mock(RabbitListenerEndpointRegistry.class);
+        }
     }
 }
