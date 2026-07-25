@@ -5,9 +5,13 @@ import com.vantage.integration.ui.dto.WebhookUpdateResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -23,32 +27,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
-
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
-
-
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-
-
 
 import java.util.UUID;
 
@@ -56,8 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-
-@TestPropertySource(properties = {"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
+@TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
 @Import(WebhookRegistrationTest.TestSecurityConfig.class)
 @Testcontainers
 @SuppressWarnings("deprecation")
@@ -75,8 +57,6 @@ public class WebhookRegistrationTest {
             return http.build();
         }
     }
-
-
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -108,14 +88,6 @@ public class WebhookRegistrationTest {
 
     @MockBean
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
-
-
-    private RabbitTemplate rabbitTemplate;
-
-    private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
-
-    private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
-
 
     @Test
     void should_return_secret_and_update_vendor_when_updating_webhook() {
@@ -153,6 +125,4 @@ public class WebhookRegistrationTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().secret()).isNotBlank();
     }
-
-
 }
