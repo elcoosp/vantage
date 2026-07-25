@@ -129,7 +129,7 @@ public class OrderOutboxIT {
         assertThat(productRes.getBody()).isNotNull();
         UUID productId = productRes.getBody().id();
 
-        OrderRequest orderReq = new OrderRequest(productId, 5);
+        OrderRequest orderReq = new OrderRequest(productId, 5, "Order Product");
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
         ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity("/api/v1/orders", orderEntity, OrderResponse.class);
 

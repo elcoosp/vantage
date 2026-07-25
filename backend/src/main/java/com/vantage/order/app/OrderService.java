@@ -39,7 +39,7 @@ public class OrderService {
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
 
-        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), TenantContext.getTenantId(), order.getProductId(), order.getQuantity());
+        OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), TenantContext.getTenantId(), order.getProductId(), request.productName(), order.getQuantity());
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);

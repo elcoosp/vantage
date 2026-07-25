@@ -234,7 +234,7 @@ class InventoryConsumerIT {
     }
 
     private void publishOrderCreatedEvent(UUID eventId, UUID tenantId, UUID productId, UUID orderId, int quantity) throws Exception {
-        OrderCreatedPayload payload = new OrderCreatedPayload(orderId, tenantId, productId, quantity);
+        OrderCreatedPayload payload = new OrderCreatedPayload(orderId, tenantId, productId, "Test Product", quantity);
         String jsonPayload = objectMapper.writeValueAsString(payload);
         Message message = MessageBuilder
             .withBody(jsonPayload.getBytes(StandardCharsets.UTF_8))

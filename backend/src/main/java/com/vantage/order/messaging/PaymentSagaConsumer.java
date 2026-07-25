@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
-import com.vantage.core.messaging.domain.ProcessedEvent;
-import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.app.event.InventoryReleasedPayload;
 import com.vantage.order.domain.Order;
@@ -25,8 +23,6 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
 import java.util.UUID;
 
 @Component
@@ -37,43 +33,33 @@ public class PaymentSagaConsumer {
 
     private final OrderRepository orderRepository;
     private final OutboxRepository outboxRepository;
-    private final ProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
 
-    public PaymentSagaConsumer(OrderRepository orderRepository, OutboxRepository outboxRepository, ProcessedEventRepository processedEventRepository, ObjectMapper objectMapper) {
+    public PaymentSagaConsumer(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
-        this.processedEventRepository = processedEventRepository;
         this.objectMapper = objectMapper;
     }
 
     @RabbitListener(bindings = {
         @QueueBinding(
-            value = @Queue(name = "vantage.payment.events", durable = "true"),
+            value = @Queue(name = "vantage.order.payment.saga.events", durable = "true"),
             exchange = @Exchange(name = "vantage.events", type = "direct"),
             key = {"PaymentSucceededEvent", "PaymentFailedEvent"}
         )
     })
     @Transactional
-    public void handlePaymentEvent(@Payload String payload, @Header("eventId") String eventIdHeader, @Header("amqp_receivedRoutingKey") String routingKey) {
-        UUID eventId = UUID.fromString(eventIdHeader);
+    public void handlePaymentEvent(@Payload String payload, @Header("amqp_receivedRoutingKey") String routingKey) {
         try {
-            if (processedEventRepository.existsById(eventId)) {
-                log.info("Event {} already processed. Skipping.", eventId);
-                return;
-            }
-
             if ("PaymentSucceededEvent".equals(routingKey)) {
                 PaymentSucceededPayload eventPayload = objectMapper.readValue(payload, PaymentSucceededPayload.class);
                 TenantContext.setTenantId(eventPayload.tenantId());
 
-                ProcessedEvent processedEvent = new ProcessedEvent();
-                processedEvent.setEventId(eventId);
-                processedEvent.setTenantId(eventPayload.tenantId());
-                processedEvent.setProcessedAt(Instant.now());
-                processedEventRepository.save(processedEvent);
-
                 Order order = orderRepository.findById(eventPayload.orderId()).orElseThrow();
+                if (order.getStatus() == OrderStatus.PAID) {
+                    log.info("Order {} already PAID. Skipping.", order.getId());
+                    return;
+                }
                 order.setStatus(OrderStatus.PAID);
                 orderRepository.save(order);
 
@@ -81,13 +67,11 @@ public class PaymentSagaConsumer {
                 PaymentFailedPayload eventPayload = objectMapper.readValue(payload, PaymentFailedPayload.class);
                 TenantContext.setTenantId(eventPayload.tenantId());
 
-                ProcessedEvent processedEvent = new ProcessedEvent();
-                processedEvent.setEventId(eventId);
-                processedEvent.setTenantId(eventPayload.tenantId());
-                processedEvent.setProcessedAt(Instant.now());
-                processedEventRepository.save(processedEvent);
-
                 Order order = orderRepository.findById(eventPayload.orderId()).orElseThrow();
+                if (order.getStatus() == OrderStatus.CANCELLED) {
+                    log.info("Order {} already CANCELLED. Skipping.", order.getId());
+                    return;
+                }
                 order.setStatus(OrderStatus.CANCELLED);
                 orderRepository.save(order);
 
