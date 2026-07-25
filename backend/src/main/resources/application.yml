@@ -1,4 +1,10 @@
 spring:
+  application:
+    name: vantage-backend
+  application:
+    name: vantage-backend
+  application:
+    name: vantage-backend
   threads:
     virtual:
       enabled: true
@@ -32,3 +38,11 @@ logging:
     com.vantage: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4317/v1/traces

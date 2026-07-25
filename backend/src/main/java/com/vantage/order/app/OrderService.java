@@ -15,6 +15,7 @@ import com.vantage.order.ui.dto.OrderResponse;
 import com.vantage.core.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.micrometer.tracing.annotation.NewSpan;
 
 @Service
 public class OrderService {
@@ -30,6 +31,7 @@ public class OrderService {
     }
 
     @Transactional
+    @NewSpan("order.create")
     public OrderResponse createOrder(OrderRequest request) {
         Order order = new Order();
         order.setProductId(request.productId());
