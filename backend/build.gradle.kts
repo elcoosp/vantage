@@ -46,6 +46,8 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:rabbitmq")
+
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 dependencyManagement {
@@ -58,4 +60,9 @@ dependencyManagement {
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+}
+
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

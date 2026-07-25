@@ -9,4 +9,5 @@ import java.util.UUID;
 @Repository
 public interface VendorRepository extends JpaRepository<Vendor, UUID> {
     Optional<Vendor> findByEmail(String email);
+    Optional<Vendor> findByTenantId(UUID tenantId);
 }
