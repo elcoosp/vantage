@@ -31,10 +31,13 @@ public class WebhookDeliveryConsumer {
     @RabbitListener(queues = "vantage.webhook.delivery.queue", containerFactory = "rabbitListenerContainerFactory")
     public void handleDelivery(Message message) {
         try {
+            // Get retry count from header
+            Long retryCount = message.getMessageProperties().getHeader("x-retry-count");
+            if (retryCount == null) retryCount = 0L;
             String body = new String(message.getBody(), StandardCharsets.UTF_8);
             DeliveryMessage delivery = objectMapper.readValue(body, DeliveryMessage.class);
 
-            log.info("Webhook delivery attempt for event {}", delivery.eventId);
+            log.info("Webhook delivery attempt {} for event {}", retryCount + 1, delivery.eventId);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
@@ -57,7 +60,9 @@ public class WebhookDeliveryConsumer {
             log.info("Webhook delivery succeeded for event {}", delivery.eventId);
 
         } catch (RestClientException e) {
-            log.error("Webhook delivery failed: {}", e.getMessage());
+            Long retryCount = message.getMessageProperties().getHeader("x-retry-count");
+            if (retryCount == null) retryCount = 0L;
+            log.error("Webhook delivery failed on attempt {}: {}", retryCount + 1, e.getMessage());
             throw new RuntimeException("Webhook delivery failed", e);
         } catch (Exception e) {
             log.error("Unexpected error during webhook delivery", e);
