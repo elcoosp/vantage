@@ -40,11 +40,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.junit.jupiter.api.TestInstance;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(FullTextSearchIT.TestSecurityConfig.class)
 @Testcontainers
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class FullTextSearchIT {
 
     @Autowired
