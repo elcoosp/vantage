@@ -37,6 +37,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeAll;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
@@ -62,6 +63,7 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 
 
 @Testcontainers
+@Sql(scripts = {"/db/migration/clean_fts_setup.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class FullTextSearchIT {
 
     private static final Logger log = LoggerFactory.getLogger(FullTextSearchIT.class);
