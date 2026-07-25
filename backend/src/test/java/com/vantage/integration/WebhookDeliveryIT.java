@@ -17,6 +17,8 @@ import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -38,6 +40,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.context.TestPropertySource;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -52,6 +55,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+
+@TestPropertySource(properties = {"spring.rabbitmq.listener.simple.auto-startup=false"})
 @Import(WebhookDeliveryIT.TestSecurityConfig.class)
 @Testcontainers
 public class WebhookDeliveryIT {
@@ -90,6 +95,10 @@ public class WebhookDeliveryIT {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private RabbitListenerEndpointRegistry registry;
+
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
