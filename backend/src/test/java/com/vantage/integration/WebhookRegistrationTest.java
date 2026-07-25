@@ -29,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.test.context.TestPropertySource;
 
 
 import java.util.UUID;
@@ -37,7 +38,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({WebhookRegistrationTest.TestSecurityConfig.class, WebhookRegistrationTest.RabbitMQTestConfig.class})
+
+@TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
+@Import(WebhookRegistrationTest.TestSecurityConfig.class)
 @Testcontainers
 public class WebhookRegistrationTest {
 
@@ -54,16 +57,7 @@ public class WebhookRegistrationTest {
         }
     }
 
-    @TestConfiguration
-    static class RabbitMQTestConfig {
-        @Bean
-        public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
-            SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-            factory.setConnectionFactory(connectionFactory);
-            factory.setAutoStartup(false);
-            return factory;
-        }
-    }
+
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
