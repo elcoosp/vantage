@@ -46,6 +46,8 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:rabbitmq")
+
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 dependencyManagement {
