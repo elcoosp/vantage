@@ -52,7 +52,7 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
     void setupFTS() {
         log.info("=== Running FTS setup script ===");
         try (var conn = jdbcTemplate.getDataSource().getConnection()) {
-            ScriptUtils.executeSqlScript(conn, new ClassPathResource("db/migration/debug_fts_setup.sql"));
+            ScriptUtils.executeSqlScript(conn, new ClassPathResource("db/migration/fts_setup.sql"));
             log.info("FTS setup completed successfully");
         } catch (Exception e) {
             log.error("FTS setup failed", e);
@@ -68,24 +68,6 @@ public class FullTextSearchIT {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    private static final Logger log = LoggerFactory.getLogger(FullTextSearchIT.class);
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @BeforeEach
-    void setupFTS() {
-        log.info("Running FTS setup script...");
-        try (var conn = jdbcTemplate.getDataSource().getConnection()) {
-            ScriptUtils.executeSqlScript(conn, new ClassPathResource("db/migration/debug_fts_setup.sql"));
-            log.info("FTS setup completed successfully");
-        } catch (Exception e) {
-            log.error("FTS setup failed", e);
-            throw new RuntimeException(e);
-        }
-    }
-
 
 
 

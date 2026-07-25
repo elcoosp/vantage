@@ -23,6 +23,7 @@ public class SearchService {
 
     public List<SearchResult> search(String query) {
         log.info("Searching for query: {}", query);
+        log.info("Searching for query: {}", query);
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context missing");
