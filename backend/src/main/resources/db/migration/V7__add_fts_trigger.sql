@@ -1,12 +1,19 @@
--- V6__add_fts_trigger.sql
--- Drop existing columns and indexes if they exist
+-- V7__add_fts_trigger.sql
+-- Drop existing triggers, functions, indexes, and columns in correct order
+
+DROP TRIGGER IF EXISTS products_search_vector_trigger ON products;
+DROP TRIGGER IF EXISTS orders_search_vector_trigger ON orders;
+
+DROP FUNCTION IF EXISTS products_search_vector_update() CASCADE;
+DROP FUNCTION IF EXISTS orders_search_vector_update() CASCADE;
+
 DROP INDEX IF EXISTS idx_products_search_vector;
 DROP INDEX IF EXISTS idx_orders_search_vector;
 
 ALTER TABLE products DROP COLUMN IF EXISTS search_vector;
 ALTER TABLE orders DROP COLUMN IF EXISTS search_vector;
 
--- Add regular tsvector columns (not generated)
+-- Add regular tsvector columns
 ALTER TABLE products ADD COLUMN search_vector tsvector;
 ALTER TABLE orders ADD COLUMN search_vector tsvector;
 
