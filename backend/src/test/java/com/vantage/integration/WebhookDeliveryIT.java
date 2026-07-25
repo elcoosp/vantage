@@ -221,4 +221,72 @@ public class WebhookDeliveryIT {
             throw new IllegalStateException("Failed to compute HMAC", e);
         }
     }
+
+    @Test
+    void should_send_to_dlq_after_max_retries_when_webhook_unreachable() throws Exception {
+        // Register a vendor and set up webhook with invalid URL
+        VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
+            "webhook-fail-" + UUID.randomUUID() + "@vantage.com",
+            "securePassword123",
+            "Vantage Inc.");
+        HttpHeaders vendorHeaders = new HttpHeaders();
+        vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
+        vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
+        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
+        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
+            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        String token = vendorRes.getBody().token();
+        UUID tenantId = vendorRes.getBody().tenantId();
+
+        // Update webhook URL to an invalid port
+        String invalidWebhookUrl = "http://localhost:9999/webhook";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Tenant-ID", tenantId.toString());
+
+        com.vantage.integration.ui.dto.WebhookUpdateRequest updateRequest =
+            new com.vantage.integration.ui.dto.WebhookUpdateRequest(invalidWebhookUrl);
+        HttpEntity<com.vantage.integration.ui.dto.WebhookUpdateRequest> updateEntity =
+            new HttpEntity<>(updateRequest, headers);
+        ResponseEntity<com.vantage.integration.ui.dto.WebhookUpdateResponse> updateRes =
+            restTemplate.exchange("/api/v1/webhooks", HttpMethod.PUT, updateEntity,
+                com.vantage.integration.ui.dto.WebhookUpdateResponse.class);
+        assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Publish PaymentSucceededEvent
+        UUID orderId = UUID.randomUUID();
+        com.vantage.payment.app.event.PaymentSucceededPayload payload =
+            new com.vantage.payment.app.event.PaymentSucceededPayload(orderId, tenantId);
+        String jsonPayload = objectMapper.writeValueAsString(payload);
+        UUID eventId = UUID.randomUUID();
+        Message message = MessageBuilder
+            .withBody(jsonPayload.getBytes(StandardCharsets.UTF_8))
+            .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+            .setHeader("eventId", eventId.toString())
+            .build();
+        rabbitTemplate.send(RabbitMQConfig.EXCHANGE, "PaymentSucceededEvent", message);
+        System.out.println("Published event for DLQ test with eventId: " + eventId);
+
+        // Wait for the message to appear in the DLQ after max attempts
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(45))
+            .pollInterval(Duration.ofSeconds(2))
+            .until(() -> {
+                Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
+                if (dlqMessage != null) {
+                    System.out.println("Found DLQ message: " + new String(dlqMessage.getBody()));
+                    return true;
+                }
+                return false;
+            });
+
+        // Verify the DLQ message contains the eventId and other details
+        Message dlqMessage = rabbitTemplate.receive("vantage.webhook.dlq");
+        assertThat(dlqMessage).isNotNull();
+        String dlqBody = new String(dlqMessage.getBody());
+        assertThat(dlqBody).contains(eventId.toString());
+        assertThat(dlqBody).contains("http://localhost:9999/webhook");
+    }
 }
