@@ -63,6 +63,7 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -122,7 +123,7 @@ public class WebhookDeliveryIT {
     void startRabbitMQListeners() {
         // Check if DLQ exists
         try {
-            Map<String, Object> queueProps = rabbitAdmin.getQueueProperties("vantage.webhook.dlq");
+            Properties queueProps = rabbitAdmin.getQueueProperties("vantage.webhook.dlq");
             System.out.println("DLQ properties: " + queueProps);
         } catch (Exception e) {
             System.out.println("Could not get DLQ properties: " + e.getMessage());
