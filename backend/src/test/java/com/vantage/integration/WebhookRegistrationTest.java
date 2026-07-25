@@ -16,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import com.vantage.core.tenant.TenantFilter;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -61,29 +60,33 @@ public class WebhookRegistrationTest {
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
-        // Update webhook URL
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Tenant-ID", tenantId.toString());
+        // Set TenantContext manually for the webhook update
+        com.vantage.core.tenant.TenantContext.setTenantId(tenantId);
+        try {
+            // Update webhook URL
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(token);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("X-Tenant-ID", tenantId.toString());
 
-        WebhookUpdateRequest request = new WebhookUpdateRequest("https://example.com/webhook");
-        HttpEntity<WebhookUpdateRequest> entity = new HttpEntity<>(request, headers);
+            WebhookUpdateRequest request = new WebhookUpdateRequest("https://example.com/webhook");
+            HttpEntity<WebhookUpdateRequest> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<WebhookUpdateResponse> response = restTemplate.exchange(
-            "/api/v1/webhooks",
-            HttpMethod.PUT,
-            entity,
-            WebhookUpdateResponse.class);
+            ResponseEntity<WebhookUpdateResponse> response = restTemplate.exchange(
+                "/api/v1/webhooks",
+                HttpMethod.PUT,
+                entity,
+                WebhookUpdateResponse.class);
 
-        // Debug output
-        if (response.getStatusCode() != HttpStatus.OK) {
-            System.err.println("Webhook update failed with status: " + response.getStatusCode());
-            System.err.println("Response body: " + response.getBody());
+            // Debug output
+            System.err.println("Webhook update response status: " + response.getStatusCode());
+            System.err.println("Webhook update response body: " + response.getBody());
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().secret()).isNotBlank();
+        } finally {
+            com.vantage.core.tenant.TenantContext.clear();
         }
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().secret()).isNotBlank();
     }
 }
