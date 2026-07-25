@@ -12,6 +12,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
@@ -115,6 +116,10 @@ public class WebhookDeliveryIT {
 
     @Autowired
     private RabbitListenerEndpointRegistry registry;
+
+    @BeforeEach
+    void startRabbitMQListeners() {    }
+
 
 
     @Autowired
