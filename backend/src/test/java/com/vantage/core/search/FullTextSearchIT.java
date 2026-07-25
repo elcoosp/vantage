@@ -50,12 +50,10 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 
     @BeforeEach
     void setupFTS() throws Exception {
-        log.info("=== Running FTS setup as a single statement ===");
+        log.info("=== Running FTS setup ===");
         try (var conn = jdbcTemplate.getDataSource().getConnection()) {
-            // Read the script content as a single string
             var resource = new ClassPathResource("db/migration/clean_fts_setup.sql");
             var script = new String(resource.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            // Execute the entire script as one statement using a Statement
             try (var stmt = conn.createStatement()) {
                 stmt.execute(script);
             }
