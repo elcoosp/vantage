@@ -1,7 +1,37 @@
 package com.vantage.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vantage.core.messaging.config.RabbitMQConfig;
+import com.vantage.payment.app.event.PaymentSucceededPayload;
+import com.vantage.product.ui.dto.ProductRequest;
+import com.vantage.product.ui.dto.ProductResponse;
+import com.vantage.vendor.ui.dto.AuthResponse;
+import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -9,11 +39,35 @@ import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.util.UUID;
 
-@SpringBootTest
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(WebhookDeliveryIT.TestSecurityConfig.class)
 @Testcontainers
 public class WebhookDeliveryIT {
+
+    @TestConfiguration
+    static class TestSecurityConfig {
+        @Bean
+        @Order(1)
+        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+            http
+                .securityMatcher("/**")
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+    }
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -34,8 +88,109 @@ public class WebhookDeliveryIT {
         registry.add("spring.rabbitmq.publisher-returns", () -> "true");
     }
 
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
-    public void dummyTest() {
-        assertTrue(true);
+    void should_deliver_webhook_with_correct_signature_when_payment_succeeded() throws Exception {
+        // Register a vendor and set up webhook
+        VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
+            "webhook-" + UUID.randomUUID() + "@vantage.com",
+            "securePassword123",
+            "Vantage Inc.");
+        HttpHeaders vendorHeaders = new HttpHeaders();
+        vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
+        vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
+        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
+        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
+            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        String token = vendorRes.getBody().token();
+        UUID tenantId = vendorRes.getBody().tenantId();
+
+        // Create product for order? Not needed for webhook test, but we need to update webhook URL.
+        // Update webhook URL to a local mock server
+        MockWebServer mockWebServer = new MockWebServer();
+        mockWebServer.start();
+        String webhookUrl = mockWebServer.url("/webhook").toString();
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Tenant-ID", tenantId.toString());
+
+        com.vantage.integration.ui.dto.WebhookUpdateRequest updateRequest =
+            new com.vantage.integration.ui.dto.WebhookUpdateRequest(webhookUrl);
+        HttpEntity<com.vantage.integration.ui.dto.WebhookUpdateRequest> updateEntity =
+            new HttpEntity<>(updateRequest, headers);
+        ResponseEntity<com.vantage.integration.ui.dto.WebhookUpdateResponse> updateRes =
+            restTemplate.exchange("/api/v1/webhooks", HttpMethod.PUT, updateEntity,
+                com.vantage.integration.ui.dto.WebhookUpdateResponse.class);
+        assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
+        String webhookSecret = updateRes.getBody().secret();
+
+        // Now publish a PaymentSucceededEvent
+        UUID orderId = UUID.randomUUID();
+        PaymentSucceededPayload payload = new PaymentSucceededPayload(orderId, tenantId);
+        String jsonPayload = objectMapper.writeValueAsString(payload);
+        UUID eventId = UUID.randomUUID();
+        Message message = MessageBuilder
+            .withBody(jsonPayload.getBytes(StandardCharsets.UTF_8))
+            .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+            .setHeader("eventId", eventId.toString())
+            .build();
+        rabbitTemplate.send(RabbitMQConfig.EXCHANGE, "PaymentSucceededEvent", message);
+
+        // Wait for webhook to be received
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(10))
+            .pollInterval(Duration.ofMillis(250))
+            .untilAsserted(() -> {
+                RecordedRequest recordedRequest = mockWebServer.takeRequest();
+                assertThat(recordedRequest).isNotNull();
+                assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+                assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo("application/json;charset=UTF-8");
+                assertThat(recordedRequest.getHeader("X-Vantage-Event-Id")).isEqualTo(eventId.toString());
+
+                String signatureHeader = recordedRequest.getHeader("X-Vantage-Signature");
+                assertThat(signatureHeader).isNotBlank();
+
+                // Verify signature
+                String body = recordedRequest.getBody().readUtf8();
+                String expectedSignature = hmacSha256(body, webhookSecret);
+                assertThat(signatureHeader).isEqualTo(expectedSignature);
+
+                // Verify payload content
+                com.vantage.integration.app.WebhookPayload webhookPayload =
+                    objectMapper.readValue(body, com.vantage.integration.app.WebhookPayload.class);
+                assertThat(webhookPayload.eventType()).isEqualTo("PaymentSucceeded");
+                assertThat(webhookPayload.orderId()).isEqualTo(orderId);
+                assertThat(webhookPayload.status()).isEqualTo("PAID");
+            });
+
+        mockWebServer.shutdown();
+    }
+
+    private String hmacSha256(String data, String key) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKeySpec);
+            byte[] hash = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new IllegalStateException("Failed to compute HMAC", e);
+        }
     }
 }
