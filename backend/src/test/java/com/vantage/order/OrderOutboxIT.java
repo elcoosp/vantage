@@ -40,6 +40,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.context.TestPropertySource;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "vantage.outbox.enabled=true")
 @Import(OrderOutboxIT.TestSecurityConfig.class)
 @Testcontainers
 public class OrderOutboxIT {
