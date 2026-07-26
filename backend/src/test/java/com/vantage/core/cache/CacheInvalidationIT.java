@@ -1,5 +1,6 @@
 package com.vantage.core.cache;
 
+import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
 import com.vantage.analytics.messaging.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
@@ -91,6 +92,9 @@ public class CacheInvalidationIT {
 
     @Test
     void should_cache_forecast_and_evict_on_order_created_event() {
+        // Reset flag
+        ForecastCacheEvictionListener.resetEventReceived();
+
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "cache-" + UUID.randomUUID() + "@vantage.com",
@@ -165,7 +169,7 @@ public class CacheInvalidationIT {
         // Same result (cached)
         assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
 
-        // 6. Insert a new order (to change history) and publish OrderCreatedEvent
+        // 6. Insert a new order (to change history)
         TenantContext.setTenantId(tenantId);
         try {
             Order newOrder = new Order();
@@ -189,7 +193,10 @@ public class CacheInvalidationIT {
             Thread.currentThread().interrupt();
         }
 
-        // 7. Third forecast call (should be cache miss, recomputed, result changed)
+        // Verify that the event was received
+        assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
+
+        // 7. Third forecast call (should be cache miss, recomputed)
         ResponseEntity<ForecastResponse> thirdResponse = restTemplate.exchange(
                 "/api/v1/analytics/forecast/" + productId,
                 HttpMethod.GET,
