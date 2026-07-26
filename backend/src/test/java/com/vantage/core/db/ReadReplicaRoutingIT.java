@@ -1,6 +1,5 @@
 package com.vantage.core.db;
 
-import com.vantage.core.db.config.TestAspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -13,9 +12,12 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -43,8 +45,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestAspectConfig.class})
+@Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
 @Testcontainers
+@ExtendWith(OutputCaptureExtension.class)
 public class ReadReplicaRoutingIT {
 
     @TestConfiguration
@@ -90,6 +93,8 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
         registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
+        // Set log level for our package to INFO
+        registry.add("logging.level.com.vantage.core.db", () -> "INFO");
     }
 
     @Autowired
@@ -100,7 +105,6 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
-        TestRoutingAspect.clear();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
@@ -119,7 +123,6 @@ public class ReadReplicaRoutingIT {
 
     @AfterEach
     void tearDown() {
-        TestRoutingAspect.clear();
         TenantContext.clear();
     }
 
@@ -151,7 +154,7 @@ public class ReadReplicaRoutingIT {
     }
 
     @Test
-    void should_use_replica_for_read_only_transaction() {
+    void should_use_replica_for_read_only_transaction(CapturedOutput output) {
         UUID productId = createProduct("Routing Test Product", "Description", new BigDecimal("99.99"));
 
         // Perform read-only GET request
@@ -166,12 +169,13 @@ public class ReadReplicaRoutingIT {
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // Verify the aspect captured REPLICA
-        assertThat(TestRoutingAspect.getCaptured()).isEqualTo(DatabaseType.REPLICA);
+        // Verify logs: interceptor set context to REPLICA, and datasource routed to REPLICA
+        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: REPLICA");
+        assertThat(output).contains("Routing datasource: REPLICA");
     }
 
     @Test
-    void should_use_primary_for_write_transaction() {
+    void should_use_primary_for_write_transaction(CapturedOutput output) {
         UUID productId = createProduct("Write Test Product", "Description", new BigDecimal("99.99"));
         setInventory(productId, 10, 0);
 
@@ -188,7 +192,8 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 
-        // Verify the aspect captured PRIMARY
-        assertThat(TestRoutingAspect.getCaptured()).isEqualTo(DatabaseType.PRIMARY);
+        // Verify logs: interceptor set context to PRIMARY, and datasource routed to PRIMARY
+        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: PRIMARY");
+        assertThat(output).contains("Routing datasource: PRIMARY");
     }
 }
