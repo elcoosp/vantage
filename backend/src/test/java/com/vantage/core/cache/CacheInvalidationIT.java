@@ -2,6 +2,7 @@ package com.vantage.core.cache;
 
 import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.messaging.OrderCreatedEvent;
+import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
@@ -76,6 +77,7 @@ public class CacheInvalidationIT {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+    private ForecastCacheEvictionListener forecastCacheEvictionListener;
 
     @Autowired
     private CacheManager cacheManager;
@@ -145,7 +147,7 @@ public class CacheInvalidationIT {
             orderRepository.save(newOrder);
 
             // Publish event to trigger eviction
-            eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
+            forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
             // Wait a moment for event processing (though synchronous, but just to be safe)
             try {
