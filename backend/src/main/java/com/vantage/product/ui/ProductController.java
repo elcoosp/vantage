@@ -1,4 +1,5 @@
 package com.vantage.product.ui;
+import java.util.UUID;
 
 import com.vantage.product.app.ProductService;
 import com.vantage.product.ui.dto.ProductRequest;
@@ -17,6 +18,11 @@ public class ProductController {
 
     public ProductController(ProductService productService) {
         this.productService = productService;
+    }
+        return productService.getProductById(id);
+    public ProductResponse getProductById(@org.springframework.web.bind.annotation.PathVariable UUID id) {
+    @org.springframework.web.bind.annotation.GetMapping("/{id}")
+
     }
 
     @PostMapping
