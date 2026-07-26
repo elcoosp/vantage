@@ -1,5 +1,6 @@
 package com.vantage.core.db;
 
+import com.vantage.core.config.AspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -17,7 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
@@ -43,15 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, ReadReplicaRoutingIT.TestAspectConfig.class})
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, AspectConfig.class})
 @Testcontainers
 public class ReadReplicaRoutingIT {
-
-    @TestConfiguration
-    @EnableAspectJAutoProxy(proxyTargetClass = true)
-    static class TestAspectConfig {
-        // The interceptor is a @Component and will be automatically woven
-    }
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -175,7 +169,9 @@ public class ReadReplicaRoutingIT {
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Verify the interceptor captured REPLICA
-        assertThat(ReplicaRoutingInterceptor.getLastDecision()).isEqualTo(DatabaseType.REPLICA);
+        DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
+        System.out.println("Captured routing type: " + captured);
+        assertThat(captured).isEqualTo(DatabaseType.REPLICA);
     }
 
     @Test
@@ -197,6 +193,8 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getBody()).isNotNull();
 
         // Verify the interceptor captured PRIMARY
-        assertThat(ReplicaRoutingInterceptor.getLastDecision()).isEqualTo(DatabaseType.PRIMARY);
+        DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
+        System.out.println("Captured routing type: " + captured);
+        assertThat(captured).isEqualTo(DatabaseType.PRIMARY);
     }
 }
