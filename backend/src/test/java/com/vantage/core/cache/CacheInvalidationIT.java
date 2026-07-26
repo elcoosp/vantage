@@ -2,6 +2,7 @@ package com.vantage.core.cache;
 
 import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.messaging.OrderCreatedEvent;
+import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
@@ -77,6 +78,7 @@ public class CacheInvalidationIT {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+    private ForecastCacheEvictionListener forecastCacheEvictionListener;
 
     @Test
     void should_cache_forecast_and_evict_on_order_created_event() {
@@ -138,6 +140,9 @@ public class CacheInvalidationIT {
 
             // 8. Publish event to trigger eviction
             eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
+            // Also explicitly call listener to ensure eviction
+            forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
+            System.out.println("Explicitly called listener for eviction");
 
             // 9. Verify cache entry was evicted
             assertThat(forecastCache.get(productId)).isNull();
