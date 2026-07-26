@@ -63,10 +63,10 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 4 (Backend Features - Advanced Ops):**
-  - [ ] `TASK-017`: Event-Sourced Audit Timeline (Touches `core/audit/`, `order/`)
-  - [ ] `TASK-023`: Admin Dashboard & Chaos Monkey (Touches `core/admin/`, `payment/`)
-  - [ ] `TASK-029`: Bulk Product Upload Virtual Threads (Touches `product/`)
-  - [ ] Merge to `main`
+  - [x] `TASK-017`: Event-Sourced Audit Timeline (Touches `core/audit/`, `order/`)
+  - [x] `TASK-023`: Admin Dashboard & Chaos Monkey (Touches `core/admin/`, `payment/`)
+  - [x] `TASK-029`: Bulk Product Upload Virtual Threads (Touches `product/`)
+  - [x] Merge to `main`
 
 - **Agent 5 (Backend Features - Hardening):**
   - [ ] `TASK-040`: RFC 7807 Problem Details (Touches `core/exception/`)
