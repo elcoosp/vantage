@@ -7,18 +7,17 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Aspect
+@Component
 public class ReplicaRoutingInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ReplicaRoutingInterceptor.class);
-    private static final ThreadLocal<DatabaseType> lastDecision = new ThreadLocal<>();
-
-    static {
-        log.info("ReplicaRoutingInterceptor class loaded");
-    }
+    private static final AtomicReference<DatabaseType> lastDecision = new AtomicReference<>();
 
     @PostConstruct
     public void init() {
@@ -27,7 +26,6 @@ public class ReplicaRoutingInterceptor {
 
     @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
     public Object route(ProceedingJoinPoint pjp) throws Throwable {
-        log.info("ReplicaRoutingInterceptor.route() invoked for method: {}", pjp.getSignature());
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method = signature.getMethod();
         Transactional transactional = method.getAnnotation(Transactional.class);
@@ -45,6 +43,7 @@ public class ReplicaRoutingInterceptor {
         } finally {
             log.info("ReplicaRoutingInterceptor clearing context");
             DatabaseContextHolder.clear();
+            // Do NOT clear lastDecision; we need it for test verification
         }
     }
 
@@ -53,6 +52,6 @@ public class ReplicaRoutingInterceptor {
     }
 
     public static void clearDecision() {
-        lastDecision.remove();
+        lastDecision.set(null);
     }
 }
