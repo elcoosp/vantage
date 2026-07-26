@@ -8,6 +8,7 @@ import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
 import { InventoryGrid } from "./features/inventory/InventoryGrid";
 import { OpsDashboard } from "./features/ops/OpsDashboard";
+import { OrdersPage } from "./features/orders/OrdersPage";
 
 function Products() {
 	return (
@@ -37,6 +38,7 @@ function App() {
 					<Route path="inventory" element={<InventoryGrid />} />
 					<Route path="ops" element={<OpsDashboard />} />
 					<Route path="products" element={<Products />} />
+					<Route path="orders" element={<OrdersPage />} />
 				</Route>
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
