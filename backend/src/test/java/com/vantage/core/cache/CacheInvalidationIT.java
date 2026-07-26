@@ -77,6 +77,7 @@ public class CacheInvalidationIT {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+    @Autowired
     private ForecastCacheEvictionListener forecastCacheEvictionListener;
 
     @Autowired
