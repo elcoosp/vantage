@@ -92,7 +92,7 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         registry.add("spring.flyway.enabled", () -> "false");
         // Exclude RabbitMQ auto-config and related listeners
-        registry.add("spring.autoconfigure.exclude", () ->
+        registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"); ->
             "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration," +
             "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
         registry.add("vantage.outbox.enabled", () -> "false");
