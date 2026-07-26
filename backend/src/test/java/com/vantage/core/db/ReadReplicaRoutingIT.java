@@ -19,7 +19,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -55,7 +54,6 @@ public class ReadReplicaRoutingIT {
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     static class TestAspectConfig {
         // No explicit bean needed; the interceptor is a @Component and will be picked up
-        // The @EnableAspectJAutoProxy enables proxy for it
     }
 
     @TestConfiguration
@@ -113,6 +111,7 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
+        ReplicaRoutingInterceptor.clearDecision();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
@@ -131,6 +130,7 @@ public class ReadReplicaRoutingIT {
 
     @AfterEach
     void tearDown() {
+        ReplicaRoutingInterceptor.clearDecision();
         TenantContext.clear();
     }
 
@@ -177,7 +177,9 @@ public class ReadReplicaRoutingIT {
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // Verify logs: interceptor set context to REPLICA, and datasource routed to REPLICA
+        // Verify the interceptor captured REPLICA
+        assertThat(ReplicaRoutingInterceptor.getLastDecision()).isEqualTo(DatabaseType.REPLICA);
+        // Also check logs
         assertThat(output).contains("ReplicaRoutingInterceptor setting context to: REPLICA");
         assertThat(output).contains("Routing datasource: REPLICA");
     }
@@ -200,7 +202,8 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 
-        // Verify logs: interceptor set context to PRIMARY, and datasource routed to PRIMARY
+        // Verify the interceptor captured PRIMARY
+        assertThat(ReplicaRoutingInterceptor.getLastDecision()).isEqualTo(DatabaseType.PRIMARY);
         assertThat(output).contains("ReplicaRoutingInterceptor setting context to: PRIMARY");
         assertThat(output).contains("Routing datasource: PRIMARY");
     }

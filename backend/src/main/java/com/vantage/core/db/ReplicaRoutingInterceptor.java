@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 @Component
 public class ReplicaRoutingInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ReplicaRoutingInterceptor.class);
+    private static final ThreadLocal<DatabaseType> LAST_DECISION = new ThreadLocal<>();
 
     @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
     public Object route(ProceedingJoinPoint pjp) throws Throwable {
@@ -31,6 +32,8 @@ public class ReplicaRoutingInterceptor {
         } else {
             type = DatabaseType.PRIMARY;
         }
+        // Capture for test verification
+        LAST_DECISION.set(type);
         log.info("ReplicaRoutingInterceptor setting context to: {}", type);
         DatabaseContextHolder.setDatabaseType(type);
 
@@ -40,5 +43,13 @@ public class ReplicaRoutingInterceptor {
             log.info("ReplicaRoutingInterceptor clearing context");
             DatabaseContextHolder.clear();
         }
+    }
+
+    public static DatabaseType getLastDecision() {
+        return LAST_DECISION.get();
+    }
+
+    public static void clearDecision() {
+        LAST_DECISION.remove();
     }
 }
