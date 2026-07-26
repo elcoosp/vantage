@@ -69,10 +69,10 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 5 (Backend Features - Hardening):**
-  - [ ] `TASK-040`: RFC 7807 Problem Details (Touches `core/exception/`)
-  - [ ] `TASK-034`: Event-Driven Cache Invalidation (Touches `core/cache/`, `product/`, `analytics/`)
-  - [ ] `TASK-038`: Database Indexing & N+1 Elimination (Touches repositories, Migration `V13__`)
-  - [ ] Merge to `main`
+  - [x] `TASK-040`: RFC 7807 Problem Details (Touches `core/exception/`)
+  - [x] `TASK-034`: Event-Driven Cache Invalidation (Touches `core/cache/`, `product/`, `analytics/`)
+  - [x] `TASK-038`: Database Indexing & N+1 Elimination (Touches repositories, Migration `V13__`)
+  - [x] Merge to `main`
 
 - **Agent 6 (Backend Features - Scaling):**
   - [ ] `TASK-039`: Database Read Replica Routing (Touches `core/db/`, `application.yml`)

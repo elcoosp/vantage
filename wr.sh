@@ -1,58 +1,50 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(pwd)"
-WORKTREE_PATH="../vantage-worktrees/agent-1-task-023"
-BRANCH="agent-1/TASK-023"
+WT="../vantage-worktrees/agent-1-task-034"
+BRANCH="agent-1/TASK-034"
 BASE_BRANCH="main"
-TASK_ID="TASK-023"
+REPO_ROOT="$(pwd)"
 
-cd "$REPO_ROOT"
-if [ -d "$WORKTREE_PATH" ]; then
-  cd "$WORKTREE_PATH"
-else
-  echo "Worktree not found at $WORKTREE_PATH"
-  exit 1
-fi
+cd "$WT"
 
-echo "=== Running only new tests (created for TASK-023) ==="
+echo "=== Final quality check: compiling and running CacheInvalidationIT ==="
 cd backend
-./gradlew test --tests AdminControllerIT 2>&1
-./gradlew test --tests ChaosMonkeyServiceTest 2>&1
-./gradlew test --tests MockPaymentGatewayClientTest 2>&1
+./gradlew compileTestJava test --tests "*CacheInvalidationIT" --no-daemon
 cd ..
 
-echo "=== Frontend build (quality gate) ==="
-cd frontend
-pnpm run build 2>&1
-cd ..
-
-echo "=== Pushing branch ==="
+echo "=== Pushing branch to origin ==="
 git push origin "$BRANCH"
 
-echo "=== Creating PR ==="
+echo "=== Creating Pull Request ==="
 gh pr create \
   --base "$BASE_BRANCH" \
-  --title "feat(core): implement admin dashboard and chaos monkey control panel" \
-  --body "$(cat << 'EOF'
+  --title "feat(core): implement event-driven cache invalidation with Caffeine" \
+  --body "$(cat << EOF
 ## Summary
-Implements the Platform Admin dashboard and Chaos Monkey control panel as specified in TASK-023.
+Implement event-driven cache invalidation for product catalog and AI forecasts using Caffeine.
 
 ## Changes
-- **ChaosMonkeyService**: Manages a global AtomicBoolean flag to control payment failure simulation.
-- **AdminController**: Exposes REST endpoints for toggling chaos monkey and retrieving system metrics (total vendors, total orders, circuit breaker state).
-- **MockPaymentGatewayClient**: Now checks the chaos monkey flag before processing payments; throws PaymentGatewayException when enabled.
-- **AdminDashboard (Frontend)**: React component using React Query to fetch metrics every 5 seconds and display stat cards.
-- **useChaosMonkey**: React Query hook to read and toggle chaos monkey state with optimistic updates.
-- **useAdminMetrics**: React Query hook for periodic metrics refresh.
+- Add \`CacheConfig\` with Caffeine caches:
+  - \`productCache\`: max 500, 1 hour TTL
+  - \`forecastCache\`: max 100, 10 minutes TTL
+- Annotate \`ProductService.getProductById\` with \`@Cacheable\` and \`updateProduct\`/\\\`deleteProduct\\\` with \`@CacheEvict\`
+- Add \`AnalyticsService.getForecast\` with \`@Cacheable\` and delegate from \`AnalyticsController\`
+- Create \`OrderCreatedEvent\` in \`core.events\` (cross-module event)
+- Publish \`OrderCreatedEvent\` from \`OrderService\` after order creation
+- Implement \`ForecastCacheEvictionListener\` in \`analytics\` module to evict \`forecastCache\` on event
+- Integration test \`CacheInvalidationIT\` validates caching and eviction
 
 ## Testing
-- Backend unit tests for ChaosMonkeyService.
-- Backend integration tests for AdminController endpoints (using JWT authentication).
-- Frontend build passes; manual testing instructions provided in task manifest.
+- Added \`CacheInvalidationIT\` using Testcontainers (PostgreSQL + RabbitMQ)
+- Verifies:
+  - First forecast call populates cache
+  - Second call returns cached result
+  - New order triggers eviction
+  - Subsequent call recomputes forecast
 
-Closes #TASK-023
+Closes TASK-034
 EOF
 )"
 
-echo "✅ PR created"
+echo "✅ PR created successfully"
