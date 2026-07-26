@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -39,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @Import(CacheConfig.class)
+@ComponentScan(basePackages = "com.vantage.analytics")
 @Testcontainers
 public class CacheInvalidationIT {
 
@@ -140,9 +142,12 @@ public class CacheInvalidationIT {
 
             // 8. Publish event to trigger eviction
             eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            // Also explicitly call listener to ensure eviction
-            forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            System.out.println("Explicitly called listener for eviction");
+            if (forecastCacheEvictionListener != null) {
+                forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
+            } else {
+                System.out.println("Listener is null, relying on event mechanism");
+                try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            }
 
             // 9. Verify cache entry was evicted
             assertThat(forecastCache.get(productId)).isNull();
