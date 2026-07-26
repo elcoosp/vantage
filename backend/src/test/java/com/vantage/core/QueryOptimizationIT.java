@@ -54,6 +54,9 @@ public class QueryOptimizationIT {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private jakarta.persistence.EntityManagerFactory entityManagerFactory;
+
     @Test
     void should_fetch_orders_with_products_in_single_query() {
         UUID tenantId = UUID.randomUUID();
@@ -85,7 +88,7 @@ public class QueryOptimizationIT {
         }
 
         entityManager.clear();
-        Statistics stats = entityManager.getSessionFactory().getStatistics();
+        Statistics stats = entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
         stats.clear();
 
         TenantContext.setTenantId(tenantId);
