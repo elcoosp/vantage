@@ -161,8 +161,6 @@ public class OrderGraphQLIT {
             graphqlEntity,
             String.class);
 
-        System.out.println("GraphQL Response Status: " + graphqlRes.getStatusCode());
-        System.out.println("GraphQL Response Body: " + graphqlRes.getBody());
         assertThat(graphqlRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode responseJson = objectMapper.readTree(graphqlRes.getBody());
