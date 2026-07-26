@@ -1,6 +1,5 @@
 package com.vantage.core.db;
 
-import com.vantage.core.db.config.TestAspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
