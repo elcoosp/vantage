@@ -7,13 +7,11 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
 
 @Aspect
-@Component
 public class ReplicaRoutingInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ReplicaRoutingInterceptor.class);
     private static final ThreadLocal<DatabaseType> lastDecision = new ThreadLocal<>();
