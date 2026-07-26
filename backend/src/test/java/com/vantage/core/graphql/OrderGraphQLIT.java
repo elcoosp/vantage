@@ -28,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -44,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(OrderGraphQLIT.TestSecurityConfig.class)
 @Testcontainers
+@TestPropertySource(properties = "vantage.outbox.enabled=true")
 public class OrderGraphQLIT {
 
     @TestConfiguration
@@ -159,6 +161,8 @@ public class OrderGraphQLIT {
             graphqlEntity,
             String.class);
 
+        System.out.println("GraphQL Response Status: " + graphqlRes.getStatusCode());
+        System.out.println("GraphQL Response Body: " + graphqlRes.getBody());
         assertThat(graphqlRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode responseJson = objectMapper.readTree(graphqlRes.getBody());
