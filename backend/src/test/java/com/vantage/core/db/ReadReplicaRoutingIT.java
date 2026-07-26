@@ -1,5 +1,6 @@
 package com.vantage.core.db;
 
+import com.vantage.core.config.AspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -42,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, AspectConfig.class})
 @Testcontainers
 public class ReadReplicaRoutingIT {
 
@@ -89,7 +90,6 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
         registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
-        // Set log level to DEBUG for our package
         registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
     }
 
@@ -169,7 +169,7 @@ public class ReadReplicaRoutingIT {
 
         // Verify the interceptor captured REPLICA
         DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
-        System.out.println("Captured routing type: " + captured);
+        System.out.println("Captured routing type for read: " + captured);
         assertThat(captured).isEqualTo(DatabaseType.REPLICA);
     }
 
@@ -193,7 +193,7 @@ public class ReadReplicaRoutingIT {
 
         // Verify the interceptor captured PRIMARY
         DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
-        System.out.println("Captured routing type: " + captured);
+        System.out.println("Captured routing type for write: " + captured);
         assertThat(captured).isEqualTo(DatabaseType.PRIMARY);
     }
 }

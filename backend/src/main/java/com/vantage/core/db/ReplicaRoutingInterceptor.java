@@ -1,20 +1,32 @@
 package com.vantage.core.db;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
+import jakarta.annotation.PostConstruct;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
 
-public class ReplicaRoutingInterceptor implements MethodInterceptor {
+@Aspect
+@Component
+public class ReplicaRoutingInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ReplicaRoutingInterceptor.class);
     private static final ThreadLocal<DatabaseType> lastDecision = new ThreadLocal<>();
 
-    @Override
-    public Object invoke(MethodInvocation invocation) throws Throwable {
-        Method method = invocation.getMethod();
+    @PostConstruct
+    public void init() {
+        log.info("ReplicaRoutingInterceptor Aspect bean initialized");
+    }
+
+    @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
+    public Object route(ProceedingJoinPoint pjp) throws Throwable {
+        MethodSignature signature = (MethodSignature) pjp.getSignature();
+        Method method = signature.getMethod();
         Transactional transactional = method.getAnnotation(Transactional.class);
         if (transactional == null) {
             transactional = method.getDeclaringClass().getAnnotation(Transactional.class);
@@ -26,7 +38,7 @@ public class ReplicaRoutingInterceptor implements MethodInterceptor {
         DatabaseContextHolder.setDatabaseType(type);
 
         try {
-            return invocation.proceed();
+            return pjp.proceed();
         } finally {
             log.info("ReplicaRoutingInterceptor clearing context");
             DatabaseContextHolder.clear();
