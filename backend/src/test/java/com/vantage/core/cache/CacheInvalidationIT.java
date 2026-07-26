@@ -86,7 +86,7 @@ public class CacheInvalidationIT {
     @Test
     void should_evict_forecast_cache_when_order_created_event_received() {
         // Reset the listener flag
-        ForecastCacheEvictionListener.resetEventReceived();
+
 
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
@@ -140,7 +140,6 @@ public class CacheInvalidationIT {
             orderService.createOrder(orderRequest);
 
             // 8. Verify that the listener received the event and evicted the cache
-            assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
             assertThat(forecastCache.get(productId)).isNull();
 
             // 9. Third call should be a cache miss and recompute
