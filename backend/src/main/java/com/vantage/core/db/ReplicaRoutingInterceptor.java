@@ -13,7 +13,6 @@ public class ReplicaRoutingInterceptor implements MethodInterceptor {
         Method method = invocation.getMethod();
         Transactional transactional = method.getAnnotation(Transactional.class);
         if (transactional == null) {
-            // Check class-level annotation
             transactional = method.getDeclaringClass().getAnnotation(Transactional.class);
         }
 
