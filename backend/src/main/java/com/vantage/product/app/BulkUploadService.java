@@ -11,7 +11,7 @@ import com.vantage.product.ui.dto.BulkUploadResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -29,10 +29,12 @@ public class BulkUploadService {
 
     private static final Logger log = LoggerFactory.getLogger(BulkUploadService.class);
     private final ProductRepository productRepository;
+    private final TransactionTemplate transactionTemplate;
     private static final int BATCH_SIZE = 50;
 
-    public BulkUploadService(ProductRepository productRepository) {
+    public BulkUploadService(ProductRepository productRepository, TransactionTemplate transactionTemplate) {
         this.productRepository = productRepository;
+        this.transactionTemplate = transactionTemplate;
     }
 
     public BulkUploadResponse processBulkUpload(MultipartFile file) {
@@ -108,12 +110,15 @@ public class BulkUploadService {
                 List<Product> batch = new ArrayList<>(validProducts.subList(i, end));
 
                 CompletableFuture<Integer> future = CompletableFuture.supplyAsync(() -> {
-                    TenantContext.setTenantId(tenantId);
-                    try {
-                        return saveBatch(batch);
-                    } finally {
-                        TenantContext.clear();
-                    }
+                    return transactionTemplate.execute(status -> {
+                        TenantContext.setTenantId(tenantId);
+                        try {
+                            productRepository.saveAll(batch);
+                            return batch.size();
+                        } finally {
+                            TenantContext.clear();
+                        }
+                    });
                 }, executor);
                 futures.add(future);
             }
@@ -130,11 +135,5 @@ public class BulkUploadService {
 
         log.info("Bulk upload completed. Total: {}, Success: {}, Failures: {}", totalRecords, successCount, failureCount);
         return new BulkUploadResponse(totalRecords, successCount, failureCount, errors);
-    }
-
-    @Transactional
-    public int saveBatch(List<Product> batch) {
-        productRepository.saveAll(batch);
-        return batch.size();
     }
 }
