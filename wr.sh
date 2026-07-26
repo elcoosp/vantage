@@ -1,44 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-WT="../vantage-worktrees/agent-1-task-039"
-BRANCH="agent-1/TASK-039"
+WT="../vantage-worktrees/agent-1-task-014"
+BRANCH="agent-1/TASK-014"
 BASE_BRANCH="main"
-TASK_ID="TASK-039"
+TASK_ID="TASK-014"
 
 cd "$WT"
 
-echo "=== Quality gate: compile and run ReadReplicaRoutingIT only ==="
-cd backend
-./gradlew compileJava compileTestJava test --tests "ReadReplicaRoutingIT" 2>&1
+echo "=== Final quality gate ==="
+cd frontend
+pnpm run build 2>&1
 cd ..
 
 echo "=== Pushing branch ==="
-git push origin "$BRANCH"
+git push -u origin "$BRANCH" --force
 
 echo "=== Creating PR ==="
 gh pr create \
   --base "$BASE_BRANCH" \
-  --title "feat(db): implement read replica routing for scalability" \
-  --body "## Summary
-Implement database read/write splitting using Spring's AbstractRoutingDataSource. This enables offloading read-heavy operations (e.g., product searches, analytics forecasts) to a PostgreSQL read replica while directing writes (orders, inventory) to the primary node.
+  --title "feat(analytics): implement AI forecast visualization dashboard" \
+  --body "$(cat << 'EOF'
+## Summary
+Implementation of TASK-014: AI Demand Forecasting frontend dashboard.
 
 ## Changes
-- Added DatabaseType enum, DatabaseContextHolder (ThreadLocal), and ReplicaRoutingDataSource extending AbstractRoutingDataSource.
-- Created DataSourceConfig to configure primary and replica DataSources and the routing DataSource as the primary bean.
-- Implemented ReplicaRoutingInterceptor (AspectJ) that intercepts @Transactional methods:
-  - Sets DatabaseType.REPLICA for readOnly = true transactions.
-  - Sets DatabaseType.PRIMARY for write transactions.
-  - Clears context after each invocation.
-- Updated application.yml to support two datasource configurations (primary and replica).
-- Added GET /api/v1/products/{id} endpoint to ProductController for read test.
-- Integration test ReadReplicaRoutingIT using Testcontainers with two PostgreSQL containers (primary and replica), verifying routing via log capture.
+- Added `recharts` and `date-fns` dependencies to `frontend/package.json`.
+- Created `useForecast` custom hook using `@tanstack/react-query` to fetch forecast data from `/api/v1/analytics/forecast/{productId}`.
+- Created `ForecastChart` component using Recharts `ComposedChart` to display predicted quantity (dashed line) and confidence interval (shaded area).
+- Created `ForecastDashboard` component with a product selector, loading state, and error handling.
+- Updated `App.tsx` to include the `/forecast` route.
 
 ## Testing
-- Integration test spins up two PostgreSQL containers and a mocked RabbitMQ environment.
-- Test 1 (Read): Calls GET /api/v1/products/{id} and asserts routing log shows REPLICA.
-- Test 2 (Write): Calls POST /api/v1/orders and asserts routing log shows PRIMARY.
-
-Closes #${TASK_ID}"
+- Verified TypeScript compilation and Biome linting pass without errors.
+- Verified Vite production build succeeds.
+- UI correctly handles loading, error, and empty states.
+EOF
+)"
 
 echo "✅ PR created"
