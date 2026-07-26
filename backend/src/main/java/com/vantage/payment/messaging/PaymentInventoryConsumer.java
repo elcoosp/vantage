@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -35,12 +36,14 @@ public class PaymentInventoryConsumer {
     private final ProcessedEventRepository processedEventRepository;
     private final MockPaymentGatewayClient mockPaymentGatewayClient;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
-    public PaymentInventoryConsumer(OutboxRepository outboxRepository, ProcessedEventRepository processedEventRepository, MockPaymentGatewayClient mockPaymentGatewayClient, ObjectMapper objectMapper) {
+    public PaymentInventoryConsumer(OutboxRepository outboxRepository, ProcessedEventRepository processedEventRepository, MockPaymentGatewayClient mockPaymentGatewayClient, ObjectMapper objectMapper, MeterRegistry meterRegistry) {
         this.outboxRepository = outboxRepository;
         this.processedEventRepository = processedEventRepository;
         this.mockPaymentGatewayClient = mockPaymentGatewayClient;
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
     }
 
     @RabbitListener(queues = "vantage.inventory.events")

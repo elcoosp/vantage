@@ -17,6 +17,7 @@ import com.vantage.order.ui.dto.OrderResponse;
 import com.vantage.core.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.tracing.annotation.NewSpan;
 
 @Service
@@ -26,12 +27,14 @@ public class OrderService {
     private final OutboxRepository outboxRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
-    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper, ApplicationEventPublisher applicationEventPublisher) {
+    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper, ApplicationEventPublisher applicationEventPublisher, MeterRegistry meterRegistry) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
         this.applicationEventPublisher = applicationEventPublisher;
         this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
     }
 
     @Transactional
@@ -42,6 +45,9 @@ public class OrderService {
         order.setQuantity(request.quantity());
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
+
+        meterRegistry.counter("vantage_orders_created_total", "tenant_id", TenantContext.getTenantId().toString()).increment();
+
         applicationEventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), order.getProductId(), TenantContext.getTenantId()));
         // Publish internal event for cache eviction and other listeners
 
