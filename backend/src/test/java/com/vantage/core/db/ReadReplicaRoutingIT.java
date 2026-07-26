@@ -108,7 +108,7 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
         registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false");
-        registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
+        registry.add("logging.level.com.vantage.core.db", () -> "INFO");
     }
 
     @Autowired
@@ -186,6 +186,7 @@ public class ReadReplicaRoutingIT {
 
         // Verify the routing log shows REPLICA
         assertThat(output).contains("ReplicaRoutingInterceptor setting context to: REPLICA");
+        System.out.println("Captured output for read test: " + output);
         assertThat(output).contains("Routing datasource: REPLICA");
     }
 
@@ -209,6 +210,7 @@ public class ReadReplicaRoutingIT {
 
         // Verify the routing log shows PRIMARY
         assertThat(output).contains("ReplicaRoutingInterceptor setting context to: PRIMARY");
+        System.out.println("Captured output for write test: " + output);
         assertThat(output).contains("Routing datasource: PRIMARY");
     }
 }
