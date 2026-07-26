@@ -117,20 +117,20 @@ public class CacheInvalidationIT {
             }
 
             // 4. Get the forecast cache
-            System.out.println("CacheManager: " + cacheManager.getClass());
-            System.out.println("Cache names: " + String.join(", ", cacheManager.getCacheNames()));
+            System.err.println("CacheManager: " + cacheManager.getClass());
+            System.err.println("Cache names: " + String.join(", ", cacheManager.getCacheNames()));
             Cache forecastCache = cacheManager.getCache("forecastCache");
             assertThat(forecastCache).isNotNull();
 
             // 5. First forecast call (cache miss)
-            System.out.println("Calling getForecast for product: " + productId);
+            System.err.println("Calling getForecast for product: " + productId);
             ForecastResponse firstForecast = analyticsService.getForecast(productId);
-            System.out.println("Forecast response received: " + firstForecast);
+            System.err.println("Forecast response received: " + firstForecast);
             assertThat(firstForecast).isNotNull();
             assertThat(firstForecast.forecast()).hasSize(7);
 
             // Verify cache now contains the value
-            System.out.println("Cache entry for product after first call: " + forecastCache.get(productId));
+            System.err.println("Cache entry for product after first call: " + forecastCache.get(productId));
             assertThat(forecastCache.get(productId)).isNotNull();
 
             // 6. Second forecast call (cache hit)
@@ -151,12 +151,14 @@ public class CacheInvalidationIT {
             eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
             // Also explicitly call listener to ensure eviction
-            System.out.println("Calling listener directly for product: " + productId);
+            System.err.println("Calling listener directly for product: " + productId);
             listener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            System.out.println("Cache entry after listener: " + forecastCache.get(productId));
+            System.err.println("After listener call, cache entry: " + forecastCache.get(productId));
+            System.err.println("Cache entry after listener: " + forecastCache.get(productId));
 
             // 9. Verify cache entry was evicted
             assertThat(forecastCache.get(productId)).isNull();
+            System.err.println("Asserting cache is null, current value: " + forecastCache.get(productId));
             assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
 
             // 10. Third forecast call (cache miss, recomputed)
