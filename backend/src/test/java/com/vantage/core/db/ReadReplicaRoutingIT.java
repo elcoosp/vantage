@@ -89,9 +89,10 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.datasource.replica.password", replicaPostgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         registry.add("spring.flyway.enabled", () -> "false");
-        // Exclude RabbitMQ auto-configuration to avoid connection refused errors
+        // Exclude both DataSource and RabbitMQ auto-configurations to avoid conflicts and connection errors
         registry.add("spring.autoconfigure.exclude",
-            () -> "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration");
+            () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+                  "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration");
         registry.add("vantage.outbox.enabled", () -> "false");
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
