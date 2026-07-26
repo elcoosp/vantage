@@ -1,50 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WT="../vantage-worktrees/agent-1-task-034"
-BRANCH="agent-1/TASK-034"
+WT="../vantage-worktrees/agent-1-task-039"
+BRANCH="agent-1/TASK-039"
 BASE_BRANCH="main"
-REPO_ROOT="$(pwd)"
+TASK_ID="TASK-039"
 
 cd "$WT"
 
-echo "=== Final quality check: compiling and running CacheInvalidationIT ==="
+echo "=== Quality gate: compile and run ReadReplicaRoutingIT only ==="
 cd backend
-./gradlew compileTestJava test --tests "*CacheInvalidationIT" --no-daemon
+./gradlew compileJava compileTestJava test --tests "ReadReplicaRoutingIT" 2>&1
 cd ..
 
-echo "=== Pushing branch to origin ==="
+echo "=== Pushing branch ==="
 git push origin "$BRANCH"
 
-echo "=== Creating Pull Request ==="
+echo "=== Creating PR ==="
 gh pr create \
   --base "$BASE_BRANCH" \
-  --title "feat(core): implement event-driven cache invalidation with Caffeine" \
-  --body "$(cat << EOF
-## Summary
-Implement event-driven cache invalidation for product catalog and AI forecasts using Caffeine.
+  --title "feat(db): implement read replica routing for scalability" \
+  --body "## Summary
+Implement database read/write splitting using Spring's AbstractRoutingDataSource. This enables offloading read-heavy operations (e.g., product searches, analytics forecasts) to a PostgreSQL read replica while directing writes (orders, inventory) to the primary node.
 
 ## Changes
-- Add \`CacheConfig\` with Caffeine caches:
-  - \`productCache\`: max 500, 1 hour TTL
-  - \`forecastCache\`: max 100, 10 minutes TTL
-- Annotate \`ProductService.getProductById\` with \`@Cacheable\` and \`updateProduct\`/\\\`deleteProduct\\\` with \`@CacheEvict\`
-- Add \`AnalyticsService.getForecast\` with \`@Cacheable\` and delegate from \`AnalyticsController\`
-- Create \`OrderCreatedEvent\` in \`core.events\` (cross-module event)
-- Publish \`OrderCreatedEvent\` from \`OrderService\` after order creation
-- Implement \`ForecastCacheEvictionListener\` in \`analytics\` module to evict \`forecastCache\` on event
-- Integration test \`CacheInvalidationIT\` validates caching and eviction
+- Added DatabaseType enum, DatabaseContextHolder (ThreadLocal), and ReplicaRoutingDataSource extending AbstractRoutingDataSource.
+- Created DataSourceConfig to configure primary and replica DataSources and the routing DataSource as the primary bean.
+- Implemented ReplicaRoutingInterceptor (AspectJ) that intercepts @Transactional methods:
+  - Sets DatabaseType.REPLICA for readOnly = true transactions.
+  - Sets DatabaseType.PRIMARY for write transactions.
+  - Clears context after each invocation.
+- Updated application.yml to support two datasource configurations (primary and replica).
+- Added GET /api/v1/products/{id} endpoint to ProductController for read test.
+- Integration test ReadReplicaRoutingIT using Testcontainers with two PostgreSQL containers (primary and replica), verifying routing via log capture.
 
 ## Testing
-- Added \`CacheInvalidationIT\` using Testcontainers (PostgreSQL + RabbitMQ)
-- Verifies:
-  - First forecast call populates cache
-  - Second call returns cached result
-  - New order triggers eviction
-  - Subsequent call recomputes forecast
+- Integration test spins up two PostgreSQL containers and a mocked RabbitMQ environment.
+- Test 1 (Read): Calls GET /api/v1/products/{id} and asserts routing log shows REPLICA.
+- Test 2 (Write): Calls POST /api/v1/orders and asserts routing log shows PRIMARY.
 
-Closes TASK-034
-EOF
-)"
+Closes #${TASK_ID}"
 
-echo "✅ PR created successfully"
+echo "✅ PR created"
