@@ -89,11 +89,11 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 8 (DevOps & QA Lead):**
-  - [ ] `TASK-018`: CI Pipeline & Mutation Testing (Touches `.github/`, `build.gradle.kts`)
-  - [ ] `TASK-028`: Semantic Versioning & Release Please (Touches `.github/`)
-  - [ ] `TASK-031`: DevSecOps Scanning (Touches `.github/`)
-  - [ ] `TASK-045`: Prometheus Metrics & Grafana (Touches `grafana/`, `core/metrics/`)
-  - [ ] Merge to `main`
+  - [x] `TASK-018`: CI Pipeline & Mutation Testing (Touches `.github/`, `build.gradle.kts`)
+  - [x] `TASK-028`: Semantic Versioning & Release Please (Touches `.github/`)
+  - [x] `TASK-031`: DevSecOps Scanning (Touches `.github/`)
+  - [x] `TASK-045`: Prometheus Metrics & Grafana (Touches `grafana/`, `core/metrics/`)
+  - [x] Merge to `main`
 
 ---
 
