@@ -1,8 +1,30 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminDashboard } from "./features/admin/AdminDashboard";
+import { LoginPage } from "./features/auth/LoginPage";
+import { RegisterPage } from "./features/auth/RegisterPage";
+
 function App() {
 	return (
-		<div className="container mx-auto p-4">
-			<h1 className="text-2xl font-bold text-gray-800">Vantage Dashboard</h1>
-		</div>
+		<BrowserRouter>
+			<Routes>
+				<Route path="/login" element={<LoginPage />} />
+				<Route path="/register" element={<RegisterPage />} />
+				<Route
+					path="/dashboard"
+					element={
+						<ProtectedRoute>
+							<Layout>
+								<AdminDashboard />
+							</Layout>
+						</ProtectedRoute>
+					}
+				/>
+				<Route path="/" element={<Navigate to="/dashboard" replace />} />
+				<Route path="*" element={<Navigate to="/dashboard" replace />} />
+			</Routes>
+		</BrowserRouter>
 	);
 }
 

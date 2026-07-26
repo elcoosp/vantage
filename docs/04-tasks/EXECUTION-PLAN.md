@@ -75,10 +75,10 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 6 (Backend Features - Scaling):**
-  - [ ] `TASK-039`: Database Read Replica Routing (Touches `core/db/`, `application.yml`)
-  - [ ] `TASK-049`: Distributed Scheduling Postgres Locks (Touches `core/db/`, `core/messaging/`)
-  - [ ] `TASK-048`: GraphQL API for Order Search (Touches `core/graphql/`, `order/query/`)
-  - [ ] Merge to `main`
+  - [x] `TASK-039`: Database Read Replica Routing (Touches `core/db/`, `application.yml`)
+  - [x] `TASK-049`: Distributed Scheduling Postgres Locks (Touches `core/db/`, `core/messaging/`)
+  - [x] `TASK-048`: GraphQL API for Order Search (Touches `core/graphql/`, `order/query/`)
+  - [x] Merge to `main`
 
 - **Agent 7 (Frontend Lead):**
   - [ ] `TASK-016`: Frontend Authentication Flow
