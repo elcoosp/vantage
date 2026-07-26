@@ -1,8 +1,18 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
 export function Layout() {
-	const { token, clearAuth } = useAuthStore();
+	const navigate = useNavigate();
+	const accessToken = useAuthStore((state) => state.accessToken);
+	const clearAuth = useAuthStore((state) => state.clearAuth);
+
+	const handleLogout = () => {
+		clearAuth();
+		localStorage.removeItem("accessToken");
+		localStorage.removeItem("tenantId");
+		navigate("/login");
+	};
+
 	return (
 		<div className="flex h-screen bg-gray-100 dark:bg-gray-900">
 			<aside className="w-64 bg-gray-800 dark:bg-gray-950 text-white flex flex-col">
@@ -17,12 +27,15 @@ export function Layout() {
 					<Link to="/products" className="block px-3 py-2 rounded hover:bg-gray-700">
 						Products
 					</Link>
+					<Link to="/ops" className="block px-3 py-2 rounded hover:bg-gray-700">
+						Ops
+					</Link>
 				</nav>
-				{token && (
+				{accessToken && (
 					<div className="p-4 border-t border-gray-700">
 						<button
 							type="button"
-							onClick={clearAuth}
+							onClick={handleLogout}
 							className="w-full px-3 py-2 text-sm rounded bg-red-600 hover:bg-red-700"
 						>
 							Sign Out
