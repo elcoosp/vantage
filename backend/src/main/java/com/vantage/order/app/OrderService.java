@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
+import com.vantage.core.events.OrderCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.vantage.order.app.event.OrderCreatedPayload;
 import com.vantage.order.domain.Order;
 import com.vantage.order.domain.OrderRepository;
@@ -22,11 +24,13 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OutboxRepository outboxRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final ObjectMapper objectMapper;
 
-    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper) {
+    public OrderService(OrderRepository orderRepository, OutboxRepository outboxRepository, ObjectMapper objectMapper, ApplicationEventPublisher applicationEventPublisher) {
         this.orderRepository = orderRepository;
         this.outboxRepository = outboxRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
         this.objectMapper = objectMapper;
     }
 
@@ -38,6 +42,8 @@ public class OrderService {
         order.setQuantity(request.quantity());
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
+        applicationEventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), order.getProductId(), TenantContext.getTenantId()));
+        // Publish internal event for cache eviction and other listeners
 
         OrderCreatedPayload payload = new OrderCreatedPayload(order.getId(), TenantContext.getTenantId(), order.getProductId(), request.productName(), order.getQuantity());
         String jsonPayload;
