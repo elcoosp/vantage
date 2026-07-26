@@ -1,24 +1,24 @@
 package com.vantage.core.cache;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableCaching
 public class CacheConfig {
 
-    public CacheConfig() {
-        System.out.println("CacheConfig bean created");
-    }
-
     @Bean
     public CacheManager cacheManager() {
-        System.out.println("Creating CacheManager with caches: productCache, forecastCache");
-        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager("productCache", "forecastCache");
-        System.out.println("CacheManager created: " + cacheManager);
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("productCache", "forecastCache");
+        cacheManager.setCaffeine(Caffeine.newBuilder()
+                .maximumSize(500)
+                .expireAfterWrite(1, TimeUnit.HOURS));
         return cacheManager;
     }
 }
