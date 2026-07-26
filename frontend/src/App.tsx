@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { CommandPalette } from "./components/CommandPalette";
 import { Layout } from "./components/Layout";
 import { InventoryGrid } from "./features/inventory/InventoryGrid";
+import { OpsDashboard } from "./features/ops/OpsDashboard";
 
 function Dashboard() {
 	return (
@@ -29,6 +30,7 @@ function App() {
 				<Route path="/" element={<Layout />}>
 					<Route index element={<Dashboard />} />
 					<Route path="inventory" element={<InventoryGrid />} />
+					<Route path="ops" element={<OpsDashboard />} />
 					<Route path="products" element={<Products />} />
 				</Route>
 			</Routes>
