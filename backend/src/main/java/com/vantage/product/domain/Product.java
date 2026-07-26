@@ -11,6 +11,13 @@ public class Product extends BaseTenantEntity {
     private String name;
     private String description;
     private BigDecimal price;
+private String sku;
+public String getSku() { return sku; }
+public void setSku(String sku) { this.sku = sku; }
+
+@jakarta.persistence.OneToMany(mappedBy = "product", fetch = jakarta.persistence.FetchType.LAZY)
+private java.util.List<com.vantage.inventory.domain.Inventory> inventories = new java.util.ArrayList<>();
+public java.util.List<com.vantage.inventory.domain.Inventory> getInventories() { return inventories; }
 
     public String getName() {
         return name;
