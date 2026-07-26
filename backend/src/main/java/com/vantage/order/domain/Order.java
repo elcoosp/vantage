@@ -3,13 +3,18 @@ package com.vantage.order.domain;
 import com.vantage.core.domain.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+
 import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
+
 public class Order extends BaseTenantEntity {
 
     @Column(name = "product_id", nullable = false)
@@ -44,5 +49,16 @@ public class Order extends BaseTenantEntity {
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+    }
+
+
+    @PrePersist
+    public void prePersist() {
+        com.vantage.core.audit.infrastructure.AuditHelper.captureInsert(this);
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        com.vantage.core.audit.infrastructure.AuditHelper.captureUpdate(this);
     }
 }
