@@ -32,6 +32,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import com.vantage.core.db.config.TestAspectConfig;
+import com.vantage.core.db.TestRoutingAspect;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -43,17 +45,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, ReadReplicaRoutingIT.TestConfig.class})
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, com.vantage.core.db.config.TestAspectConfig.class})
 @Testcontainers
 public class ReadReplicaRoutingIT {
 
     @TestConfiguration
-    static class TestConfig {
-        @Bean
-        @Primary
-        public TestRoutingInterceptor testRoutingInterceptor() {
-            return new TestRoutingInterceptor();
-        }
 
         @Bean
         public org.springframework.aop.Advisor testRoutingAdvisor(TestRoutingInterceptor interceptor) {
@@ -116,7 +112,7 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
-        TestRoutingInterceptor.clear();
+        TestRoutingAspect.clear();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
@@ -136,7 +132,7 @@ public class ReadReplicaRoutingIT {
     @AfterEach
     void tearDown() {
         TenantContext.clear();
-        TestRoutingInterceptor.clear();
+        TestRoutingAspect.clear();
     }
 
     private UUID createProduct(String name, String description, BigDecimal price) {
@@ -183,7 +179,7 @@ public class ReadReplicaRoutingIT {
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Verify the interceptor captured REPLICA
-        assertThat(TestRoutingInterceptor.captured.get()).isEqualTo(DatabaseType.REPLICA);
+        assertThat(TestRoutingAspect.getCaptured()).isEqualTo(DatabaseType.REPLICA);
     }
 
     @Test
@@ -205,6 +201,6 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getBody()).isNotNull();
 
         // Verify the interceptor captured PRIMARY
-        assertThat(TestRoutingInterceptor.captured.get()).isEqualTo(DatabaseType.PRIMARY);
+        assertThat(TestRoutingAspect.getCaptured()).isEqualTo(DatabaseType.PRIMARY);
     }
 }
