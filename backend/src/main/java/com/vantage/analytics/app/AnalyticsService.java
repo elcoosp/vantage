@@ -81,6 +81,7 @@ public class AnalyticsService {
 
     @Cacheable(value = "forecastCache", key = "#productId")
     public ForecastResponse getForecast(UUID productId) {
+        System.out.println("Computing forecast for product: " + productId);
         log.debug("Computing forecast for product {}", productId);
         double[] history = getHistoricalData(productId, 30);
         ForecastResult result = forecastCalculator.forecast(history, 7);

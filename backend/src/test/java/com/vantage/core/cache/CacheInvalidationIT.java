@@ -21,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @Testcontainers
+@TestPropertySource(properties = "spring.cache.type=simple")
 public class CacheInvalidationIT {
 
     @Container
@@ -119,6 +121,7 @@ public class CacheInvalidationIT {
             assertThat(firstForecast.forecast()).hasSize(7);
 
             // Verify cache now contains the value
+        System.out.println("Cache after first call: " + forecastCache.get(productId));
             assertThat(forecastCache.get(productId)).isNotNull();
 
             // 5. Second forecast call (cache hit)
@@ -147,6 +150,7 @@ public class CacheInvalidationIT {
             }
 
             // Verify cache entry was evicted
+        System.out.println("Cache after eviction: " + forecastCache.get(productId));
             assertThat(forecastCache.get(productId)).isNull();
 
             // 7. Third forecast call (cache miss, recomputed)
