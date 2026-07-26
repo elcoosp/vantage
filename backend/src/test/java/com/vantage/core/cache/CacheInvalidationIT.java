@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Testcontainers
 @TestPropertySource(properties = "spring.cache.type=simple")
+@Import(CacheConfig.class)
 public class CacheInvalidationIT {
 
     @Container
@@ -113,6 +114,9 @@ public class CacheInvalidationIT {
 
             // Get cache reference
             Cache forecastCache = cacheManager.getCache("forecastCache");
+        System.out.println("CacheManager: " + cacheManager);
+        System.out.println("Cache names: " + String.join(", ", cacheManager.getCacheNames()));
+        System.out.println("forecastCache: " + forecastCache);
             assertThat(forecastCache).isNotNull();
 
             // 4. First forecast call (cache miss)

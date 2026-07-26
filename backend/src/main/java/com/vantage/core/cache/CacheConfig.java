@@ -10,11 +10,15 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 public class CacheConfig {
 
+    public CacheConfig() {
+        System.out.println("CacheConfig bean created");
+    }
+
     @Bean
     public CacheManager cacheManager() {
+        System.out.println("Creating CacheManager with caches: productCache, forecastCache");
         ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager("productCache", "forecastCache");
-        // Note: Caffeine is recommended for production. Add spring-boot-starter-cache and caffeine dependencies,
-        // then replace with CaffeineCacheManager to enable size/expiry limits.
+        System.out.println("CacheManager created: " + cacheManager);
         return cacheManager;
     }
 }
