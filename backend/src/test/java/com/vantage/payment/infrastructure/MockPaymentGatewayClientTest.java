@@ -1,6 +1,7 @@
 package com.vantage.payment.infrastructure;
 
 import com.vantage.core.admin.app.ChaosMonkeyService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,11 +20,13 @@ public class MockPaymentGatewayClientTest {
     @Mock
     private ChaosMonkeyService chaosMonkeyService;
 
+    private SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+
     private MockPaymentGatewayClient client;
 
     @BeforeEach
     void setUp() {
-        client = new MockPaymentGatewayClient(chaosMonkeyService);
+        client = new MockPaymentGatewayClient(chaosMonkeyService, meterRegistry);
     }
 
     @Test

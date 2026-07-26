@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class CustomMetricsConfig {
 
     public CustomMetricsConfig(MeterRegistry meterRegistry, OutboxRepository outboxRepository) {
-        Gauge.builder("vantage_outbox_pending_events", outboxRepository, repo -> repo.findByStatus(OutboxStatus.PENDING).size())
+        Gauge.builder("vantage_outbox_pending_events", outboxRepository, repo -> repo.countByStatus(OutboxStatus.PENDING))
                 .description("Number of pending outbox events")
                 .register(meterRegistry);
     }

@@ -46,7 +46,7 @@ public class OrderService {
         order.setStatus(OrderStatus.CREATED);
         orderRepository.save(order);
 
-        meterRegistry.counter("vantage_orders_created_total", "tenant_id", TenantContext.getTenantId().toString()).increment();
+        meterRegistry.counter("vantage_orders_created_total", "tenant_id", order.getTenantId().toString()).increment();
 
         applicationEventPublisher.publishEvent(new OrderCreatedEvent(order.getId(), order.getProductId(), TenantContext.getTenantId()));
         // Publish internal event for cache eviction and other listeners
