@@ -24,16 +24,11 @@ public class TestRoutingAspect {
         }
         DatabaseType type = (transactional != null && transactional.readOnly()) ? DatabaseType.REPLICA : DatabaseType.PRIMARY;
         CAPTURED.set(type);
-        // Also set the DatabaseContextHolder so the DataSource uses the correct one
         DatabaseContextHolder.setDatabaseType(type);
         try {
             return pjp.proceed();
         } finally {
-            // Do not clear here; we'll clear in test teardown after capturing
-            // But we need to clear the DatabaseContextHolder after the request?
-            // The aspect is around the service method, which is inside the request.
-            // After the method returns, the filter chain continues. We want to keep the context
-            // for the test to assert. We'll clear it in the test's @AfterEach.
+            // Keep captured for test verification
         }
     }
 
