@@ -11,17 +11,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Aspect
 @Component
 public class ReplicaRoutingInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ReplicaRoutingInterceptor.class);
-    private static final AtomicReference<DatabaseType> lastDecision = new AtomicReference<>();
 
     @PostConstruct
     public void init() {
-        log.info("ReplicaRoutingInterceptor bean initialized (PostConstruct)");
+        log.info("ReplicaRoutingInterceptor bean initialized");
     }
 
     @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
@@ -34,7 +32,6 @@ public class ReplicaRoutingInterceptor {
         }
 
         DatabaseType type = (transactional != null && transactional.readOnly()) ? DatabaseType.REPLICA : DatabaseType.PRIMARY;
-        lastDecision.set(type);
         log.info("ReplicaRoutingInterceptor setting context to: {}", type);
         DatabaseContextHolder.setDatabaseType(type);
 
@@ -43,15 +40,6 @@ public class ReplicaRoutingInterceptor {
         } finally {
             log.info("ReplicaRoutingInterceptor clearing context");
             DatabaseContextHolder.clear();
-            // Do NOT clear lastDecision; we need it for test verification
         }
-    }
-
-    public static DatabaseType getLastDecision() {
-        return lastDecision.get();
-    }
-
-    public static void clearDecision() {
-        lastDecision.set(null);
     }
 }

@@ -13,11 +13,14 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -47,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestInterceptorConfig.class})
 @Testcontainers
+@ExtendWith(OutputCaptureExtension.class)
 public class ReadReplicaRoutingIT {
     private static final Logger log = LoggerFactory.getLogger(ReadReplicaRoutingIT.class);
 
@@ -75,6 +79,8 @@ public class ReadReplicaRoutingIT {
             .withUsername("vantage")
             .withPassword("vantage_pw");
 
+    // We don't actually need RabbitMQ for this test, but we must avoid connection errors.
+    // We'll exclude its auto-configuration entirely.
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.primary.url", primaryPostgres::getJdbcUrl);
@@ -85,19 +91,15 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.datasource.replica.password", replicaPostgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         registry.add("spring.flyway.enabled", () -> "false");
-        registry.add("spring.rabbitmq.host", () -> "localhost");
-        registry.add("spring.rabbitmq.port", () -> "5672");
-        registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
-        registry.add("spring.rabbitmq.publisher-returns", () -> "true");
+        // Exclude RabbitMQ auto-config and related listeners
+        registry.add("spring.autoconfigure.exclude", () ->
+            "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration," +
+            "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
         registry.add("vantage.outbox.enabled", () -> "false");
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
-        registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
         registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
     }
-
-    @Autowired(required = false)
-    private ReplicaRoutingInterceptor interceptor;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -107,13 +109,6 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
-        log.info("=== Test setup ===");
-        if (interceptor != null) {
-            log.info("Interceptor bean is present: {}", interceptor.getClass().getName());
-        } else {
-            log.warn("Interceptor bean is NULL - not injected!");
-        }
-        ReplicaRoutingInterceptor.clearDecision();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
@@ -133,7 +128,6 @@ public class ReadReplicaRoutingIT {
 
     @AfterEach
     void tearDown() {
-        ReplicaRoutingInterceptor.clearDecision();
         TenantContext.clear();
     }
 
@@ -165,10 +159,8 @@ public class ReadReplicaRoutingIT {
     }
 
     @Test
-    void should_use_replica_for_read_only_transaction() {
-        log.info("=== Starting read test ===");
+    void should_use_replica_for_read_only_transaction(CapturedOutput output) {
         UUID productId = createProduct("Routing Test Product", "Description", new BigDecimal("99.99"));
-        log.info("Product created: {}", productId);
 
         // Perform read-only GET request
         HttpHeaders getHeaders = new HttpHeaders();
@@ -181,20 +173,16 @@ public class ReadReplicaRoutingIT {
                 new HttpEntity<>(getHeaders),
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
-        log.info("Read request completed");
 
-        // Verify the interceptor captured REPLICA
-        DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
-        log.info("Captured routing type for read: {}", captured);
-        assertThat(captured).isEqualTo(DatabaseType.REPLICA);
+        // Verify the routing log shows REPLICA
+        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: REPLICA");
+        assertThat(output).contains("Routing datasource: REPLICA");
     }
 
     @Test
-    void should_use_primary_for_write_transaction() {
-        log.info("=== Starting write test ===");
+    void should_use_primary_for_write_transaction(CapturedOutput output) {
         UUID productId = createProduct("Write Test Product", "Description", new BigDecimal("99.99"));
         setInventory(productId, 10, 0);
-        log.info("Product and inventory set up");
 
         // Perform write operation (POST /orders)
         HttpHeaders authHeaders = new HttpHeaders();
@@ -208,11 +196,9 @@ public class ReadReplicaRoutingIT {
                 "/api/v1/orders", orderEntity, OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
-        log.info("Order created: {}", orderRes.getBody().id());
 
-        // Verify the interceptor captured PRIMARY
-        DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
-        log.info("Captured routing type for write: {}", captured);
-        assertThat(captured).isEqualTo(DatabaseType.PRIMARY);
+        // Verify the routing log shows PRIMARY
+        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: PRIMARY");
+        assertThat(output).contains("Routing datasource: PRIMARY");
     }
 }
