@@ -5,9 +5,6 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/vantage_primary
-    username: vantage
-    password: vantage_pw
     primary:
       url: jdbc:postgresql://localhost:5432/vantage_primary
       username: vantage

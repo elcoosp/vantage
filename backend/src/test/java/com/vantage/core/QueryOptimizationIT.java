@@ -35,9 +35,12 @@ public class QueryOptimizationIT {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.primary.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.primary.username", postgres::getUsername);
+        registry.add("spring.datasource.primary.password", postgres::getPassword);
+        registry.add("spring.datasource.replica.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.replica.username", postgres::getUsername);
+        registry.add("spring.datasource.replica.password", postgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         registry.add("spring.flyway.enabled", () -> "false");
     }
