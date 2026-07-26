@@ -12,6 +12,8 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -44,9 +46,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
-@EnableAspectJAutoProxy(proxyTargetClass = true)   // <-- Enable AspectJ auto-proxy here
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 @Testcontainers
 public class ReadReplicaRoutingIT {
+    private static final Logger log = LoggerFactory.getLogger(ReadReplicaRoutingIT.class);
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -91,9 +94,11 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
         registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
-        // Set log level to DEBUG for our package
         registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
     }
+
+    @Autowired(required = false)
+    private ReplicaRoutingInterceptor interceptor;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -103,6 +108,12 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
+        log.info("=== Test setup ===");
+        if (interceptor != null) {
+            log.info("Interceptor bean is present: {}", interceptor.getClass().getName());
+        } else {
+            log.warn("Interceptor bean is NULL - not injected!");
+        }
         ReplicaRoutingInterceptor.clearDecision();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
@@ -118,6 +129,7 @@ public class ReadReplicaRoutingIT {
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         token = vendorRes.getBody().token();
         tenantId = vendorRes.getBody().tenantId();
+        log.info("Vendor registered with tenant: {}", tenantId);
     }
 
     @AfterEach
@@ -155,7 +167,9 @@ public class ReadReplicaRoutingIT {
 
     @Test
     void should_use_replica_for_read_only_transaction() {
+        log.info("=== Starting read test ===");
         UUID productId = createProduct("Routing Test Product", "Description", new BigDecimal("99.99"));
+        log.info("Product created: {}", productId);
 
         // Perform read-only GET request
         HttpHeaders getHeaders = new HttpHeaders();
@@ -168,17 +182,20 @@ public class ReadReplicaRoutingIT {
                 new HttpEntity<>(getHeaders),
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
+        log.info("Read request completed");
 
         // Verify the interceptor captured REPLICA
         DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
-        System.out.println("Captured routing type for read: " + captured);
+        log.info("Captured routing type for read: {}", captured);
         assertThat(captured).isEqualTo(DatabaseType.REPLICA);
     }
 
     @Test
     void should_use_primary_for_write_transaction() {
+        log.info("=== Starting write test ===");
         UUID productId = createProduct("Write Test Product", "Description", new BigDecimal("99.99"));
         setInventory(productId, 10, 0);
+        log.info("Product and inventory set up");
 
         // Perform write operation (POST /orders)
         HttpHeaders authHeaders = new HttpHeaders();
@@ -192,10 +209,11 @@ public class ReadReplicaRoutingIT {
                 "/api/v1/orders", orderEntity, OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
+        log.info("Order created: {}", orderRes.getBody().id());
 
         // Verify the interceptor captured PRIMARY
         DatabaseType captured = ReplicaRoutingInterceptor.getLastDecision();
-        System.out.println("Captured routing type for write: " + captured);
+        log.info("Captured routing type for write: {}", captured);
         assertThat(captured).isEqualTo(DatabaseType.PRIMARY);
     }
 }

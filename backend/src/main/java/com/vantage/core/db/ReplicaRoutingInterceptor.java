@@ -18,13 +18,18 @@ public class ReplicaRoutingInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ReplicaRoutingInterceptor.class);
     private static final ThreadLocal<DatabaseType> lastDecision = new ThreadLocal<>();
 
+    static {
+        log.info("ReplicaRoutingInterceptor class loaded");
+    }
+
     @PostConstruct
     public void init() {
-        log.info("ReplicaRoutingInterceptor Aspect bean initialized");
+        log.info("ReplicaRoutingInterceptor bean initialized (PostConstruct)");
     }
 
     @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
     public Object route(ProceedingJoinPoint pjp) throws Throwable {
+        log.info("ReplicaRoutingInterceptor.route() invoked for method: {}", pjp.getSignature());
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method = signature.getMethod();
         Transactional transactional = method.getAnnotation(Transactional.class);
