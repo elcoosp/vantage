@@ -1,37 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-WT="../vantage-worktrees/agent-1-task-020"
+WT="../vantage-worktrees/agent-1-task-021"
+BRANCH="agent-1/TASK-021"
+BASE_BRANCH="main"
+TASK_ID="TASK-021"
 cd "$WT"
 
-echo "=== Pushing branch to remote ==="
-git push origin agent-1/TASK-020
+echo "=== Pushing branch ==="
+git push origin "$BRANCH"
 
-echo "=== Creating Pull Request ==="
+echo "=== Creating PR ==="
 gh pr create \
-  --base main \
-  --title "feat(integration): implement API key authentication and management (TASK-020)" \
-  --body "$(cat << EOF
+  --base "$BASE_BRANCH" \
+  --title "feat(order): implement CQRS read model for order search" \
+  --body "$(cat << 'EOF'
 ## Summary
-Implement a Stripe-style API key system for external developers. Vendors can now generate API keys via the dashboard, and external systems can authenticate using the \`X-API-Key\` header.
+Implementation of TASK-021: CQRS Read Model for Order Search.
 
 ## Changes
-- Added \`ApiKey\` entity in \`integration.domain\` with BCrypt hashed keys and tenant isolation.
-- Added \`ApiKeyRepository\` with custom query for active keys by prefix.
-- Added \`ApiKeyService\` for generating and revoking keys (returns plain key once).
-- Added \`ApiKeyController\` exposing \`POST /api/v1/api-keys\`, \`GET /api/v1/api-keys\`, and \`DELETE /api/v1/api-keys/{id}\`.
-- Extended \`TenantSecurityFilter\` to support \`X-API-Key\` header authentication; falls back to JWT if missing.
-- Added Flyway migration \`V3__add_api_keys.sql\` to create the \`api_keys\` table.
-- Added integration tests (Testcontainers) covering valid key, missing key, invalid key, and revoked key scenarios.
+- **Database**: Added `V3__create_order_search_view.sql` with optimized indexes for tenant and status lookups.
+- **Read Model**: Created `OrderSearchView` entity and `OrderSearchViewRepository` for denormalized order queries.
+- **Event Projection**: Implemented `OrderSearchProjector` to asynchronously update the read model from `OrderCreatedEvent`, `PaymentSucceededEvent`, and `PaymentFailedEvent`.
+- **Query API**: Added `OrderQueryController` exposing `GET /api/v1/orders/search` with pagination and optional status filtering.
+- **Modularity Fix**: Updated `OrderRequest` and `OrderCreatedPayload` to include `productName`, preventing `OrderService` from violating Spring Modulith boundaries by querying the `ProductRepository`.
+- **Concurrency Fix**: Refactored `PaymentSagaConsumer` to use a dedicated queue (`vantage.order.payment.saga.events`) and state-based idempotency, eliminating race conditions with `WebhookDispatchConsumer`.
 
 ## Testing
-- \`ApiKeyAuthenticationIT\` test class verifies:
-  - Successful product creation with a valid API key (returns 200 OK).
-  - 401 Unauthorized when no key is provided.
-  - 401 Unauthorized when an invalid key is used.
-  - 401 Unauthorized when a revoked key is used.
+- Added comprehensive `OrderSearchCqrsIT` validating projection creation and status updates via Testcontainers.
+- Updated existing integration tests (`OrderOutboxIT`, `PaymentSagaCompensationIT`, `InventoryConsumerIT`) to accommodate the new `OrderRequest` signature.
 
-Closes #TASK-020
+Closes #TASK-021
 EOF
 )"
 

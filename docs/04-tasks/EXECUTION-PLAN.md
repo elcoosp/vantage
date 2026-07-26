@@ -57,10 +57,10 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 3 (Backend Features - Analytics/Search):**
-  - [ ] `TASK-010`: Pure-Java AI Demand Forecasting (Touches `analytics/`, Migration `V10__`)
-  - [ ] `TASK-019`: PostgreSQL Full-Text Search (Touches `core/search/`, `product/`, `order/`, Migration `V11__`)
-  - [ ] `TASK-021`: CQRS Order Search Read Model (Touches `order/query/`, Migration `V12__`)
-  - [ ] Merge to `main`
+  - [x] `TASK-010`: Pure-Java AI Demand Forecasting (Touches `analytics/`, Migration `V10__`)
+  - [x] `TASK-019`: PostgreSQL Full-Text Search (Touches `core/search/`, `product/`, `order/`, Migration `V11__`)
+  - [x] `TASK-021`: CQRS Order Search Read Model (Touches `order/query/`, Migration `V12__`)
+  - [x] Merge to `main`
 
 - **Agent 4 (Backend Features - Advanced Ops):**
   - [ ] `TASK-017`: Event-Sourced Audit Timeline (Touches `core/audit/`, `order/`)
