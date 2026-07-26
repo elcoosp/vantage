@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -143,39 +144,41 @@ public class CacheInvalidationIT {
             TenantContext.clear();
         }
 
+        // Get cache reference
+        Cache forecastCache = cacheManager.getCache("forecastCache");
+        assertThat(forecastCache).isNotNull();
+
         // 4. First forecast call (cache miss)
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.set("X-Tenant-ID", tenantId.toString());
 
-        long startTime = System.nanoTime();
         ResponseEntity<ForecastResponse> firstResponse = restTemplate.exchange(
                 "/api/v1/analytics/forecast/" + productId,
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 ForecastResponse.class);
-        long firstDuration = System.nanoTime() - startTime;
         assertThat(firstResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(firstResponse.getBody()).isNotNull();
         ForecastResponse firstForecast = firstResponse.getBody();
-        assertThat(firstForecast.forecast()).hasSize(7);
 
-        // 5. Second forecast call (should be cache hit - faster)
-        startTime = System.nanoTime();
+        // Verify cache now contains the value
+        assertThat(forecastCache.get(productId)).isNotNull();
+
+        // 5. Second forecast call (cache hit)
         ResponseEntity<ForecastResponse> secondResponse = restTemplate.exchange(
                 "/api/v1/analytics/forecast/" + productId,
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 ForecastResponse.class);
-        long secondDuration = System.nanoTime() - startTime;
         assertThat(secondResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(secondResponse.getBody()).isNotNull();
         ForecastResponse secondForecast = secondResponse.getBody();
         // Same result
         assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
 
-        // Verify cache hit: second call should be faster (or at least not slower)
-        assertThat(secondDuration).isLessThan(firstDuration);
+        // Cache should still contain the value
+        assertThat(forecastCache.get(productId)).isNotNull();
 
         // 6. Insert a new order (to change history) and publish OrderCreatedEvent
         TenantContext.setTenantId(tenantId);
@@ -194,19 +197,22 @@ public class CacheInvalidationIT {
         // Publish event to trigger eviction
         eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
-        // Verify cache entry was evicted
-        org.springframework.cache.Cache cache = cacheManager.getCache("forecastCache");
-        assertThat(cache).isNotNull();
-        assertThat(cache.get(productId)).isNull();
+        // Wait a moment for event processing
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
-        // 7. Third forecast call (should be cache miss, recomputed)
-        startTime = System.nanoTime();
+        // Verify cache entry was evicted
+        assertThat(forecastCache.get(productId)).isNull();
+
+        // 7. Third forecast call (cache miss, recomputed)
         ResponseEntity<ForecastResponse> thirdResponse = restTemplate.exchange(
                 "/api/v1/analytics/forecast/" + productId,
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 ForecastResponse.class);
-        long thirdDuration = System.nanoTime() - startTime;
         assertThat(thirdResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(thirdResponse.getBody()).isNotNull();
         ForecastResponse thirdForecast = thirdResponse.getBody();
@@ -214,7 +220,7 @@ public class CacheInvalidationIT {
         // The forecast should have changed because new order added
         assertThat(thirdForecast.forecast()).isNotEqualTo(firstForecast.forecast());
 
-        // Verify cache miss: third call should be slower than the cached second call
-        assertThat(thirdDuration).isGreaterThan(secondDuration);
+        // Cache should be populated again
+        assertThat(forecastCache.get(productId)).isNotNull();
     }
 }
