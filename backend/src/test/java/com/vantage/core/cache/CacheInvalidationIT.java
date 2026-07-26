@@ -2,15 +2,14 @@ package com.vantage.core.cache;
 
 import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
-import com.vantage.core.events.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
+import com.vantage.core.events.OrderCreatedEvent;
 import com.vantage.core.tenant.TenantContext;
-import com.vantage.order.domain.Order;
 import com.vantage.order.app.OrderService;
-import com.vantage.order.ui.dto.OrderRequest;
-import com.vantage.order.ui.dto.OrderResponse;
+import com.vantage.order.domain.Order;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;
+import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.product.app.ProductService;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
@@ -21,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -72,6 +70,7 @@ public class CacheInvalidationIT {
 
     @Autowired
     private OrderRepository orderRepository;
+
     @Autowired
     private OrderService orderService;
 
@@ -82,13 +81,12 @@ public class CacheInvalidationIT {
     private CacheManager cacheManager;
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
-
-    @Autowired
     private ForecastCacheEvictionListener listener;
 
     @Test
-    void should_cache_forecast_and_evict_on_order_created_event() {
+    void should_evict_forecast_cache_when_order_created_event_received() {
+        // Reset the listener flag
+        ForecastCacheEvictionListener.resetEventReceived();
 
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
@@ -105,7 +103,7 @@ public class CacheInvalidationIT {
             ProductResponse productRes = productService.createProduct(productReq);
             UUID productId = productRes.id();
 
-            // 3. Insert some historical orders (30 days)
+            // 3. Insert some historical orders (30 days) to make forecast computable
             LocalDate start = LocalDate.now().minusDays(30);
             for (int i = 0; i < 30; i++) {
                 LocalDate date = start.plusDays(i);
@@ -121,52 +119,36 @@ public class CacheInvalidationIT {
             }
 
             // 4. Get the forecast cache
-            System.err.println("CacheManager: " + cacheManager.getClass());
-            System.err.println("Cache names: " + String.join(", ", cacheManager.getCacheNames()));
             Cache forecastCache = cacheManager.getCache("forecastCache");
             assertThat(forecastCache).isNotNull();
 
-            // 5. First forecast call (cache miss)
-            System.err.println("Calling getForecast for product: " + productId);
-            ForecastResponse firstForecast = analyticsService.getForecast(productId);
-            System.err.println("Forecast response received: " + firstForecast);
-            assertThat(firstForecast).isNotNull();
-            assertThat(firstForecast.forecast()).hasSize(7);
+            // 5. First call to AnalyticsService.getForecast (cache miss)
+            ForecastResponse firstResponse = analyticsService.getForecast(productId);
+            assertThat(firstResponse).isNotNull();
+            assertThat(firstResponse.forecast()).hasSize(7);
 
-            // Verify cache now contains the value
-            System.err.println("Cache entry for product after first call: " + forecastCache.get(productId));
+            // Verify cache now contains the entry
             assertThat(forecastCache.get(productId)).isNotNull();
 
-            // 6. Second forecast call (cache hit)
-            ForecastResponse secondForecast = analyticsService.getForecast(productId);
-            assertThat(secondForecast).isNotNull();
-            assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
+            // 6. Second call (should be cache hit)
+            ForecastResponse secondResponse = analyticsService.getForecast(productId);
+            assertThat(secondResponse).isNotNull();
+            assertThat(secondResponse.forecast()).isEqualTo(firstResponse.forecast());
 
-            // 7. Insert a new order (to change history)
-            // Trigger eviction by creating a new order via OrderService (publishes event)
-            OrderRequest newOrderRequest = new OrderRequest(productId, 10, "Cache Product");
-            orderService.createOrder(newOrderRequest);
-            newOrder.setProductId(productId);
-            newOrder.setQuantity(10);
-            newOrder.setStatus(OrderStatus.CONFIRMED);
-            newOrder.setCreatedAt(Instant.now());
-            newOrder.setTenantId(tenantId);
+            // 7. Create a new order via OrderService - this will publish OrderCreatedEvent
+            OrderRequest orderRequest = new OrderRequest(productId, 10, "Cache Product");
+            orderService.createOrder(orderRequest);
 
-            // 8. Publish event to trigger eviction
-
-            System.err.println("Calling listener directly for product: " + productId);
-            System.err.println("Cache entry after listener: " + forecastCache.get(productId));
-
-            // 9. Verify cache entry was evicted
+            // 8. Verify that the listener received the event and evicted the cache
+            assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
             assertThat(forecastCache.get(productId)).isNull();
-            System.err.println("Asserting cache is null, current value: " + forecastCache.get(productId));
 
-            // 10. Third forecast call (cache miss, recomputed)
-            ForecastResponse thirdForecast = analyticsService.getForecast(productId);
-            assertThat(thirdForecast).isNotNull();
+            // 9. Third call should be a cache miss and recompute
+            ForecastResponse thirdResponse = analyticsService.getForecast(productId);
+            assertThat(thirdResponse).isNotNull();
+            // Cache should be populated again
+            assertThat(forecastCache.get(productId)).isNotNull();
 
-
-        System.err.println("Test passed: cache evicted and recomputed");
         } finally {
             TenantContext.clear();
         }
