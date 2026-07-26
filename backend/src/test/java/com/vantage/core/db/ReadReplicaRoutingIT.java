@@ -79,8 +79,6 @@ public class ReadReplicaRoutingIT {
             .withUsername("vantage")
             .withPassword("vantage_pw");
 
-    // We don't actually need RabbitMQ for this test, but we must avoid connection errors.
-    // We'll exclude its auto-configuration entirely.
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.primary.url", primaryPostgres::getJdbcUrl);
@@ -91,10 +89,9 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.datasource.replica.password", replicaPostgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         registry.add("spring.flyway.enabled", () -> "false");
-        // Exclude RabbitMQ auto-config and related listeners
-        registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"); ->
-            "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration," +
-            "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
+        // Exclude RabbitMQ auto-configuration to avoid connection refused errors
+        registry.add("spring.autoconfigure.exclude",
+            () -> "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration");
         registry.add("vantage.outbox.enabled", () -> "false");
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
