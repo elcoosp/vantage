@@ -72,6 +72,7 @@ public class CacheInvalidationIT {
 
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
     private OrderService orderService;
 
     @Autowired
