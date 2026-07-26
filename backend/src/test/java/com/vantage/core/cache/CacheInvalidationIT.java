@@ -184,7 +184,7 @@ public class CacheInvalidationIT {
         }
 
         // Publish event to trigger eviction
-        eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
+        eventPublisher.publishEvent(new OrderCreatedEvent(this, UUID.randomUUID(), productId, tenantId));
 
         // Wait a moment for event processing
         try {
