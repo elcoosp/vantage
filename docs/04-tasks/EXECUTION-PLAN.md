@@ -81,12 +81,12 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 7 (Frontend Lead):**
-  - [ ] `TASK-016`: Frontend Authentication Flow
-  - [ ] `TASK-012`: React Dashboard & Command Palette
-  - [ ] `TASK-022`: Virtualized Orders Table
-  - [ ] `TASK-014`: AI Forecast Visualization
-  - [ ] `TASK-015`: Live Ops Map Frontend
-  - [ ] Merge to `main`
+  - [x] `TASK-016`: Frontend Authentication Flow
+  - [x] `TASK-012`: React Dashboard & Command Palette
+  - [x] `TASK-022`: Virtualized Orders Table
+  - [x] `TASK-014`: AI Forecast Visualization
+  - [x] `TASK-015`: Live Ops Map Frontend
+  - [x] Merge to `main`
 
 - **Agent 8 (DevOps & QA Lead):**
   - [ ] `TASK-018`: CI Pipeline & Mutation Testing (Touches `.github/`, `build.gradle.kts`)
