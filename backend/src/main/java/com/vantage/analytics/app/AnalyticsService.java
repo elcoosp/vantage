@@ -1,15 +1,20 @@
 package com.vantage.analytics.app;
 
-import lombok.extern.slf4j.Slf4j;
+import com.vantage.analytics.app.HoltWintersForecastCalculator.ForecastResult;
+import com.vantage.analytics.ui.dto.ForecastDataPoint;
+import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,9 +23,11 @@ import java.util.UUID;
 public class AnalyticsService {
 
     private final EntityManager entityManager;
+    private final HoltWintersForecastCalculator forecastCalculator;
 
-    public AnalyticsService(EntityManager entityManager) {
+    public AnalyticsService(EntityManager entityManager, HoltWintersForecastCalculator forecastCalculator) {
         this.entityManager = entityManager;
+        this.forecastCalculator = forecastCalculator;
     }
 
     @Transactional(readOnly = true)
@@ -70,5 +77,22 @@ public class AnalyticsService {
         log.debug("Retrieved {} historical data points for product {}", days, productId);
 
         return history;
+    }
+
+    @Cacheable(value = "forecastCache", key = "#productId")
+    public ForecastResponse getForecast(UUID productId) {
+        log.debug("Computing forecast for product {}", productId);
+        double[] history = getHistoricalData(productId, 30);
+        ForecastResult result = forecastCalculator.forecast(history, 7);
+        List<ForecastDataPoint> points = new ArrayList<>();
+        LocalDate start = LocalDate.now().plusDays(1);
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = start.plusDays(i);
+            int predicted = (int) Math.round(result.forecast()[i]);
+            int lower = (int) Math.round(result.lower()[i]);
+            int upper = (int) Math.round(result.upper()[i]);
+            points.add(new ForecastDataPoint(date, predicted, lower, upper));
+        }
+        return new ForecastResponse(points);
     }
 }
