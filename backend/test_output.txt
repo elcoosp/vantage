@@ -1,0 +1,105 @@
+Initialized native services in: /Users/adm/.gradle/native
+Initialized jansi services in: /Users/adm/.gradle/native
+Received JVM installation metadata from '/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home': {JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home, JAVA_VERSION=21.0.11, JAVA_VENDOR=Azul Systems, Inc., RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.11+10-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.11+10-LTS, VM_VENDOR=Azul Systems, Inc., OS_ARCH=aarch64}
+The client will now receive all logging from the daemon (pid: 3587). The daemon log file: /Users/adm/.gradle/daemon/8.5/daemon-3587.out.log
+Starting 401st build in daemon [uptime: 17 hrs 27 mins 7.568 secs, performance: 100%, GC rate: 0.00/s, heap usage: 26% of 512 MiB, non-heap usage: 45% of 384 MiB]
+Using 8 worker leases.
+Now considering [/Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-049/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-048/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-034/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-040/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-038/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-023/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-017/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-029/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-021/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-TASK-019/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-010/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-35-task-035/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-020/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-013/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-047/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-009/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-008/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-007/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-006/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-005/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-004/backend] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file '/Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend/settings.gradle.kts'.
+Projects loaded. Root project using build file '/Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend/build.gradle.kts'.
+Included projects: [root project 'vantage-backend']
+
+> Configure project :
+Evaluating root project 'vantage-backend' using build file '/Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend/build.gradle.kts'.
+Applying dependency management to configuration 'annotationProcessor' in project 'vantage-backend'
+Applying dependency management to configuration 'apiElements' in project 'vantage-backend'
+Applying dependency management to configuration 'archives' in project 'vantage-backend'
+Applying dependency management to configuration 'bootArchives' in project 'vantage-backend'
+Applying dependency management to configuration 'compileClasspath' in project 'vantage-backend'
+Applying dependency management to configuration 'compileOnly' in project 'vantage-backend'
+Applying dependency management to configuration 'default' in project 'vantage-backend'
+Applying dependency management to configuration 'developmentOnly' in project 'vantage-backend'
+Applying dependency management to configuration 'implementation' in project 'vantage-backend'
+Applying dependency management to configuration 'mainSourceElements' in project 'vantage-backend'
+Applying dependency management to configuration 'productionRuntimeClasspath' in project 'vantage-backend'
+Applying dependency management to configuration 'runtimeClasspath' in project 'vantage-backend'
+Applying dependency management to configuration 'runtimeElements' in project 'vantage-backend'
+Applying dependency management to configuration 'runtimeOnly' in project 'vantage-backend'
+Applying dependency management to configuration 'testAndDevelopmentOnly' in project 'vantage-backend'
+Applying dependency management to configuration 'testAnnotationProcessor' in project 'vantage-backend'
+Applying dependency management to configuration 'testCompileClasspath' in project 'vantage-backend'
+Applying dependency management to configuration 'testCompileOnly' in project 'vantage-backend'
+Applying dependency management to configuration 'testImplementation' in project 'vantage-backend'
+Applying dependency management to configuration 'testResultsElementsForTest' in project 'vantage-backend'
+Applying dependency management to configuration 'testRuntimeClasspath' in project 'vantage-backend'
+Applying dependency management to configuration 'testRuntimeOnly' in project 'vantage-backend'
+Caching disabled for Kotlin DSL accessors for root project 'vantage-backend' because:
+  Build cache is disabled
+Skipping Kotlin DSL accessors for root project 'vantage-backend' as it is up-to-date.
+All projects evaluated.
+Task name matched 'test'
+Selected primary task 'test' from project :
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/adm/.gradle/daemon/8.5 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Resolving global dependency management for project 'vantage-backend'
+Excluding []
+Excluding []
+Excluding []
+Excluding []
+Excluding []
+Tasks to be executed: [task ':compileJava', task ':processResources', task ':classes', task ':compileTestJava', task ':processTestResources', task ':testClasses', task ':test']
+Tasks that were excluded: []
+Resolve mutations for :compileJava (Thread[#46935,Execution worker,5,main]) started.
+:compileJava (Thread[#46935,Execution worker,5,main]) started.
+
+> Task :compileJava UP-TO-DATE
+Caching disabled for task ':compileJava' because:
+  Build cache is disabled
+Skipping task ':compileJava' as it is up-to-date.
+Resolve mutations for :processResources (Thread[#46935,Execution worker,5,main]) started.
+:processResources (Thread[#46935,Execution worker,5,main]) started.
+
+> Task :processResources UP-TO-DATE
+Caching disabled for task ':processResources' because:
+  Build cache is disabled
+Skipping task ':processResources' as it is up-to-date.
+Resolve mutations for :classes (Thread[#46935,Execution worker,5,main]) started.
+:classes (Thread[#46935,Execution worker,5,main]) started.
+
+> Task :classes UP-TO-DATE
+Skipping task ':classes' as it has no actions.
+Resolve mutations for :compileTestJava (Thread[#46935,Execution worker,5,main]) started.
+:compileTestJava (Thread[#46935,Execution worker,5,main]) started.
+
+> Task :compileTestJava FAILED
+Excluding []
+Caching disabled for task ':compileTestJava' because:
+  Build cache is disabled
+Task ':compileTestJava' is not up-to-date because:
+  Input property 'stableSources' file /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend/src/test/java/com/vantage/core/db/ReadReplicaRoutingIT.java has changed.
+Created classpath snapshot for incremental compilation in 0.015 secs.
+Full recompilation is required because FastIntegerMath.class could not be analyzed for incremental compilation. See the debug log for more details. Analysis took 0.172 secs.
+Compiling with toolchain '/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home'.
+Compiling with JDK Java compiler API.
+/Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend/src/test/java/com/vantage/core/db/ReadReplicaRoutingIT.java:56: error: annotation interface not applicable to this kind of declaration
+        @org.springframework.context.annotation.EnableAspectJAutoProxy
+        ^
+Note: /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend/src/test/java/com/vantage/core/search/FullTextSearchIT.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+1 error
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileTestJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 1s
+3 actionable tasks: 1 executed, 2 up-to-date
+Watched directory hierarchies: [/Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-039/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-049/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-048/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-034/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-040/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-038/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-023/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-017/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-029/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-021/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-TASK-019/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-010/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-35-task-035/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-020/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-013/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-047/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-009/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-008/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-007/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-006/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-005/backend, /Users/adm/Documents/Repos/vantage-worktrees/agent-1-task-004/backend]
