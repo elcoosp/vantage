@@ -1,20 +1,25 @@
 package com.vantage.core.admin.app;
 
 import org.springframework.stereotype.Service;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class ChaosMonkeyService {
-    private static final java.util.concurrent.atomic.AtomicBoolean paymentFailureEnabled = new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final AtomicBoolean paymentFailureEnabled = new AtomicBoolean(false);
 
     public void enablePaymentFailure() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        System.err.println("ChaosMonkeyService.enablePaymentFailure called");
+        paymentFailureEnabled.set(true);
     }
 
     public void disablePaymentFailure() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        System.err.println("ChaosMonkeyService.disablePaymentFailure called");
+        paymentFailureEnabled.set(false);
     }
 
     public boolean isPaymentFailureEnabled() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        boolean result = paymentFailureEnabled.get();
+        System.err.println("ChaosMonkeyService.isPaymentFailureEnabled returning " + result);
+        return result;
     }
 }

@@ -31,7 +31,7 @@ public class MockPaymentGatewayClient {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        if (simulateFailure) {
+        if (chaosMonkeyService.isPaymentFailureEnabled() || simulateFailure) {
             throw new PaymentGatewayException("Simulated payment gateway timeout");
         }
         return PaymentResult.SUCCESS;
