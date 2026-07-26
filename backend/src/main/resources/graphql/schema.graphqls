@@ -1,0 +1,11 @@
+type OrderSearchResult {
+    orderId: ID!
+    productName: String!
+    status: String!
+    quantity: Int!
+    createdAt: String!
+}
+
+type Query {
+    orders(status: String, page: Int, size: Int): [OrderSearchResult]
+}

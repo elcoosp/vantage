@@ -41,6 +41,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     implementation("com.bucket4j:bucket4j-core:8.7.0")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
@@ -54,6 +55,7 @@ dependencies {
     testImplementation("org.testcontainers:rabbitmq")
 
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.springframework.graphql:spring-graphql-test")
 }
 
 dependencyManagement {
