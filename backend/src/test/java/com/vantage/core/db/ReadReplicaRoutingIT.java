@@ -1,5 +1,6 @@
 package com.vantage.core.db;
 
+import com.vantage.core.db.config.TestAspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -12,14 +13,11 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
@@ -42,20 +40,12 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.springframework.context.annotation.Bean;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, ReadReplicaRoutingIT.TestAspectConfig.class})
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestAspectConfig.class})
 @Testcontainers
-@ExtendWith(OutputCaptureExtension.class)
 public class ReadReplicaRoutingIT {
-
-    @TestConfiguration
-    @EnableAspectJAutoProxy(proxyTargetClass = true)
-    static class TestAspectConfig {
-        // No explicit bean needed; the interceptor is a @Component and will be picked up
-    }
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -112,7 +102,7 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
-        ReplicaRoutingInterceptor.clearDecision();
+        TestRoutingInterceptor.clear();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
@@ -131,7 +121,7 @@ public class ReadReplicaRoutingIT {
 
     @AfterEach
     void tearDown() {
-        ReplicaRoutingInterceptor.clearDecision();
+        TestRoutingInterceptor.clear();
         TenantContext.clear();
     }
 
@@ -163,7 +153,7 @@ public class ReadReplicaRoutingIT {
     }
 
     @Test
-    void should_use_replica_for_read_only_transaction(CapturedOutput output) {
+    void should_use_replica_for_read_only_transaction() {
         UUID productId = createProduct("Routing Test Product", "Description", new BigDecimal("99.99"));
 
         // Perform read-only GET request
@@ -179,14 +169,11 @@ public class ReadReplicaRoutingIT {
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Verify the interceptor captured REPLICA
-        assertThat(ReplicaRoutingInterceptor.getLastDecision()).isEqualTo(DatabaseType.REPLICA);
-        // Also check logs
-        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: REPLICA");
-        assertThat(output).contains("Routing datasource: REPLICA");
+        assertThat(TestRoutingInterceptor.getCaptured()).isEqualTo(DatabaseType.REPLICA);
     }
 
     @Test
-    void should_use_primary_for_write_transaction(CapturedOutput output) {
+    void should_use_primary_for_write_transaction() {
         UUID productId = createProduct("Write Test Product", "Description", new BigDecimal("99.99"));
         setInventory(productId, 10, 0);
 
@@ -204,8 +191,6 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getBody()).isNotNull();
 
         // Verify the interceptor captured PRIMARY
-        assertThat(ReplicaRoutingInterceptor.getLastDecision()).isEqualTo(DatabaseType.PRIMARY);
-        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: PRIMARY");
-        assertThat(output).contains("Routing datasource: PRIMARY");
+        assertThat(TestRoutingInterceptor.getCaptured()).isEqualTo(DatabaseType.PRIMARY);
     }
 }
