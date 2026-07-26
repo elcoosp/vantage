@@ -1,6 +1,5 @@
 package com.vantage.core.db;
 
-import org.aopalliance.aop.Advice;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
@@ -32,7 +31,6 @@ public class DataSourceConfig {
     }
 
     @Bean
-    @Primary
     public DataSource primaryDataSource() {
         return primaryDataSourceProperties().initializeDataSourceBuilder().build();
     }

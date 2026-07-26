@@ -80,6 +80,7 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.datasource.replica.username", replicaPostgres::getUsername);
         registry.add("spring.datasource.replica.password", replicaPostgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
         registry.add("spring.flyway.enabled", () -> "false");
         registry.add("spring.rabbitmq.host", () -> "localhost");
         registry.add("spring.rabbitmq.port", () -> "5672");
