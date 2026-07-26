@@ -168,6 +168,7 @@ public class ReadReplicaRoutingIT {
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Verify log contains routing to REPLICA
+        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: REPLICA");
         assertThat(output).contains("Routing datasource: REPLICA");
     }
 
@@ -190,6 +191,7 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getBody()).isNotNull();
 
         // Verify log contains routing to PRIMARY
+        assertThat(output).contains("ReplicaRoutingInterceptor setting context to: PRIMARY");
         assertThat(output).contains("Routing datasource: PRIMARY");
     }
 }
