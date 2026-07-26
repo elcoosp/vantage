@@ -83,6 +83,7 @@ public class PaymentInventoryConsumer {
                 emitPaymentSucceededEvent(eventPayload);
             } else {
                 String reason = result == PaymentResult.CIRCUIT_OPEN ? "CIRCUIT_OPEN" : "GATEWAY_TIMEOUT";
+                meterRegistry.counter("vantage_payments_failed_total", "reason", reason).increment();
                 emitPaymentFailedEvent(eventPayload, reason);
             }
         } finally {
