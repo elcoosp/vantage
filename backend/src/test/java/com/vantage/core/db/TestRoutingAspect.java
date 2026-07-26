@@ -22,13 +22,11 @@ public class TestRoutingAspect {
         }
         DatabaseType type = (transactional != null && transactional.readOnly()) ? DatabaseType.REPLICA : DatabaseType.PRIMARY;
         captured.set(type);
-        // Also set the context for the actual routing
         DatabaseContextHolder.setDatabaseType(type);
         try {
             return pjp.proceed();
         } finally {
-            // Do not clear captured; we need it for assertion.
-            // The DatabaseContextHolder will be cleared by the interceptor or we can clear later.
+            // Keep captured for test verification; context will be cleared later.
         }
     }
 

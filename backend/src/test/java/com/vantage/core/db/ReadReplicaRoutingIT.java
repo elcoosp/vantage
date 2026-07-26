@@ -1,5 +1,6 @@
 package com.vantage.core.db;
 
+import com.vantage.core.db.config.TestAspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -18,7 +19,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -32,8 +32,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import com.vantage.core.db.config.TestAspectConfig;
-import com.vantage.core.db.TestRoutingAspect;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -45,19 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, com.vantage.core.db.config.TestAspectConfig.class})
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestAspectConfig.class})
 @Testcontainers
 public class ReadReplicaRoutingIT {
-
-    @TestConfiguration
-
-        @Bean
-        public org.springframework.aop.Advisor testRoutingAdvisor(TestRoutingInterceptor interceptor) {
-            org.springframework.aop.support.annotation.AnnotationMatchingPointcut pointcut =
-                new org.springframework.aop.support.annotation.AnnotationMatchingPointcut(null, org.springframework.transaction.annotation.Transactional.class);
-            return new org.springframework.aop.support.DefaultPointcutAdvisor(pointcut, interceptor);
-        }
-    }
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -131,8 +119,8 @@ public class ReadReplicaRoutingIT {
 
     @AfterEach
     void tearDown() {
-        TenantContext.clear();
         TestRoutingAspect.clear();
+        TenantContext.clear();
     }
 
     private UUID createProduct(String name, String description, BigDecimal price) {
@@ -178,7 +166,7 @@ public class ReadReplicaRoutingIT {
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // Verify the interceptor captured REPLICA
+        // Verify the aspect captured REPLICA
         assertThat(TestRoutingAspect.getCaptured()).isEqualTo(DatabaseType.REPLICA);
     }
 
@@ -200,7 +188,7 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 
-        // Verify the interceptor captured PRIMARY
+        // Verify the aspect captured PRIMARY
         assertThat(TestRoutingAspect.getCaptured()).isEqualTo(DatabaseType.PRIMARY);
     }
 }
