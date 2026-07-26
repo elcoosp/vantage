@@ -1,6 +1,5 @@
 package com.vantage.core.db;
 
-import com.vantage.core.config.AspectConfig;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -18,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
@@ -43,7 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, AspectConfig.class})
+@Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
+@EnableAspectJAutoProxy(proxyTargetClass = true)   // <-- Enable AspectJ auto-proxy here
 @Testcontainers
 public class ReadReplicaRoutingIT {
 
@@ -90,6 +91,7 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
         registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
+        // Set log level to DEBUG for our package
         registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
     }
 
