@@ -1,8 +1,8 @@
 package com.vantage.core.cache;
 
 import com.vantage.analytics.app.AnalyticsService;
-import com.vantage.analytics.messaging.OrderCreatedEvent;
 import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
+import com.vantage.analytics.messaging.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
@@ -19,7 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -40,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest
 @Import(CacheConfig.class)
-@ComponentScan(basePackages = "com.vantage.analytics")
 @Testcontainers
 public class CacheInvalidationIT {
 
@@ -80,10 +78,14 @@ public class CacheInvalidationIT {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
-    private ForecastCacheEvictionListener forecastCacheEvictionListener;
+
+    @Autowired
+    private ForecastCacheEvictionListener listener;
 
     @Test
     void should_cache_forecast_and_evict_on_order_created_event() {
+        ForecastCacheEvictionListener.resetEventReceived();
+
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "cache-" + UUID.randomUUID() + "@vantage.com",
@@ -118,7 +120,7 @@ public class CacheInvalidationIT {
             Cache forecastCache = cacheManager.getCache("forecastCache");
             assertThat(forecastCache).isNotNull();
 
-            // 5. First forecast call (cache miss - compute)
+            // 5. First forecast call (cache miss)
             ForecastResponse firstForecast = analyticsService.getForecast(productId);
             assertThat(firstForecast).isNotNull();
             assertThat(firstForecast.forecast()).hasSize(7);
@@ -126,7 +128,7 @@ public class CacheInvalidationIT {
             // Verify cache now contains the value
             assertThat(forecastCache.get(productId)).isNotNull();
 
-            // 6. Second forecast call (cache hit - should return same result)
+            // 6. Second forecast call (cache hit)
             ForecastResponse secondForecast = analyticsService.getForecast(productId);
             assertThat(secondForecast).isNotNull();
             assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
@@ -142,14 +144,13 @@ public class CacheInvalidationIT {
 
             // 8. Publish event to trigger eviction
             eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-                try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-            }
+
+            // Also explicitly call listener to ensure eviction
+            listener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
             // 9. Verify cache entry was evicted
-        System.out.println("Is event received? " + ForecastCacheEvictionListener.isEventReceived());
-        System.out.println("Cache entry after eviction: " + forecastCache.get(productId));
             assertThat(forecastCache.get(productId)).isNull();
+            assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
 
             // 10. Third forecast call (cache miss, recomputed)
             ForecastResponse thirdForecast = analyticsService.getForecast(productId);
