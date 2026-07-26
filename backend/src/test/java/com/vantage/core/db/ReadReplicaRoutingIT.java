@@ -16,9 +16,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -45,6 +48,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -79,6 +83,13 @@ public class ReadReplicaRoutingIT {
             .withUsername("vantage")
             .withPassword("vantage_pw");
 
+    // Mock RabbitMQ dependencies to avoid loading actual connection
+    @MockBean
+    private RabbitTemplate rabbitTemplate;
+
+    @MockBean
+    private ConnectionFactory connectionFactory;
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.primary.url", primaryPostgres::getJdbcUrl);
@@ -89,13 +100,14 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.datasource.replica.password", replicaPostgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
         registry.add("spring.flyway.enabled", () -> "false");
-        // Exclude both DataSource and RabbitMQ auto-configurations to avoid conflicts and connection errors
+        // Exclude DataSource and RabbitMQ auto-configs
         registry.add("spring.autoconfigure.exclude",
             () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
                   "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration");
         registry.add("vantage.outbox.enabled", () -> "false");
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
+        registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false");
         registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
     }
 
