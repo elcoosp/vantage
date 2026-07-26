@@ -55,13 +55,6 @@ public class DataSourceConfig {
     }
 
     @Bean
-    public ReplicaRoutingInterceptor replicaRoutingInterceptor() {
-        return new ReplicaRoutingInterceptor();
-    }
 
     @Bean
-    public Advisor replicaRoutingAdvisor(ReplicaRoutingInterceptor interceptor) {
-        AnnotationMatchingPointcut pointcut = new AnnotationMatchingPointcut(null, Transactional.class);
-        return new DefaultPointcutAdvisor(pointcut, interceptor);
-    }
 }
