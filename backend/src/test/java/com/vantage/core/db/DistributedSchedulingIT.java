@@ -2,7 +2,6 @@
 package com.vantage.core.db;
 
 import org.springframework.transaction.annotation.Transactional;
-import org.junit.jupiter.api.AfterEach;
 
 import com.vantage.core.messaging.app.OutboxPoller;
 import com.vantage.core.messaging.domain.OutboxRepository;
