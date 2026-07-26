@@ -1,5 +1,7 @@
 package com.vantage.analytics.messaging;
 
+import com.vantage.core.events.OrderCreatedEvent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
