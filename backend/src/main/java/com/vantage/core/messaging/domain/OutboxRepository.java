@@ -16,5 +16,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, UUID> {
     @Query("select e from OutboxEvent e where e.status = :status order by e.createdAt asc")
     List<OutboxEvent> findByStatus(@Param("status") OutboxStatus status);
 
+    long countByStatus(OutboxStatus status);
+
     Optional<OutboxEvent> findByAggregateId(UUID aggregateId);
 }

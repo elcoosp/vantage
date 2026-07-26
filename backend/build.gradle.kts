@@ -37,6 +37,7 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("io.micrometer:micrometer-tracing")
     implementation("io.micrometer:micrometer-core")
+    implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:context-propagation")
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
     compileOnly("org.projectlombok:lombok")

@@ -1,10 +1,6 @@
 spring:
   application:
     name: vantage-backend
-  application:
-    name: vantage-backend
-  application:
-    name: vantage-backend
   threads:
     virtual:
       enabled: true
@@ -38,6 +34,14 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
   tracing:
     sampling:
       probability: 1.0
@@ -46,10 +50,10 @@ management:
       endpoint: http://localhost:4317/v1/traces
 ---
 spring:
-config:
-activate:
-on-profile: dev
-jpa:
-properties:
-hibernate:
-generate_statistics: true
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
