@@ -12,9 +12,12 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -42,8 +45,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestAspectConfig.class})
+@Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
 @Testcontainers
+@ExtendWith(OutputCaptureExtension.class)
 public class ReadReplicaRoutingIT {
 
     @TestConfiguration
@@ -99,8 +103,6 @@ public class ReadReplicaRoutingIT {
 
     @BeforeEach
     void setup() {
-        DatabaseContextHolder.clear();
-        TestRoutingAspect.clearCaptured();
         // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
@@ -119,7 +121,6 @@ public class ReadReplicaRoutingIT {
 
     @AfterEach
     void tearDown() {
-        TestRoutingAspect.clearCaptured();
         TenantContext.clear();
     }
 
@@ -151,7 +152,7 @@ public class ReadReplicaRoutingIT {
     }
 
     @Test
-    void should_use_replica_for_read_only_transaction() {
+    void should_use_replica_for_read_only_transaction(CapturedOutput output) {
         UUID productId = createProduct("Routing Test Product", "Description", new BigDecimal("99.99"));
 
         // Perform read-only GET request
@@ -166,13 +167,12 @@ public class ReadReplicaRoutingIT {
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // Verify the aspect captured REPLICA
-        DatabaseType captured = TestRoutingAspect.getCaptured();
-        assertThat(captured).isEqualTo(DatabaseType.REPLICA);
+        // Verify log contains routing to REPLICA
+        assertThat(output).contains("Routing datasource: REPLICA");
     }
 
     @Test
-    void should_use_primary_for_write_transaction() {
+    void should_use_primary_for_write_transaction(CapturedOutput output) {
         UUID productId = createProduct("Write Test Product", "Description", new BigDecimal("99.99"));
         setInventory(productId, 10, 0);
 
@@ -189,8 +189,7 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 
-        // Verify the aspect captured PRIMARY
-        DatabaseType captured = TestRoutingAspect.getCaptured();
-        assertThat(captured).isEqualTo(DatabaseType.PRIMARY);
+        // Verify log contains routing to PRIMARY
+        assertThat(output).contains("Routing datasource: PRIMARY");
     }
 }
