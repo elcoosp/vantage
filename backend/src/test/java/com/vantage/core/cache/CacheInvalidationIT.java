@@ -18,7 +18,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -52,7 +51,7 @@ public class CacheInvalidationIT {
     @TestConfiguration
     static class TestSecurityConfig {
         @Bean
-        @Order(1)
+        @org.springframework.core.annotation.Order(1)
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
                 .securityMatcher("/**")
