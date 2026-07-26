@@ -1,6 +1,6 @@
 package com.vantage.core.cache;
 
-import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
+import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.messaging.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -69,13 +70,16 @@ public class CacheInvalidationIT {
     private OrderRepository orderRepository;
 
     @Autowired
+    private AnalyticsService analyticsService;
+
+    @Autowired
     private CacheManager cacheManager;
 
     @Autowired
-    private ForecastCacheEvictionListener forecastCacheEvictionListener;
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
-    void should_evict_forecast_cache_when_order_created_event_received() {
+    void should_cache_forecast_and_evict_on_order_created_event() {
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "cache-" + UUID.randomUUID() + "@vantage.com",
@@ -110,13 +114,20 @@ public class CacheInvalidationIT {
             Cache forecastCache = cacheManager.getCache("forecastCache");
             assertThat(forecastCache).isNotNull();
 
-            // 5. Manually populate the cache with a dummy forecast value
-            // (This simulates the cache being populated by a previous call)
-            ForecastResponse dummyForecast = new ForecastResponse(java.util.List.of());
-            forecastCache.put(productId, dummyForecast);
+            // 5. First forecast call (cache miss - compute)
+            ForecastResponse firstForecast = analyticsService.getForecast(productId);
+            assertThat(firstForecast).isNotNull();
+            assertThat(firstForecast.forecast()).hasSize(7);
+
+            // Verify cache now contains the value
             assertThat(forecastCache.get(productId)).isNotNull();
 
-            // 6. Insert a new order (to trigger eviction)
+            // 6. Second forecast call (cache hit - should return same result)
+            ForecastResponse secondForecast = analyticsService.getForecast(productId);
+            assertThat(secondForecast).isNotNull();
+            assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
+
+            // 7. Insert a new order (to change history)
             Order newOrder = new Order();
             newOrder.setProductId(productId);
             newOrder.setQuantity(10);
@@ -125,13 +136,18 @@ public class CacheInvalidationIT {
             newOrder.setTenantId(tenantId);
             orderRepository.save(newOrder);
 
-            // 7. Invoke the listener directly (simulating event)
-            forecastCacheEvictionListener.onOrderCreated(
-                new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId)
-            );
+            // 8. Publish event to trigger eviction
+            eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
-            // 8. Verify cache entry was evicted
+            // 9. Verify cache entry was evicted
             assertThat(forecastCache.get(productId)).isNull();
+
+            // 10. Third forecast call (cache miss, recomputed)
+            ForecastResponse thirdForecast = analyticsService.getForecast(productId);
+            assertThat(thirdForecast).isNotNull();
+
+            // The forecast should have changed because new order added
+            assertThat(thirdForecast.forecast()).isNotEqualTo(firstForecast.forecast());
 
         } finally {
             TenantContext.clear();
