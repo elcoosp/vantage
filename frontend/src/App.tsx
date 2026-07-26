@@ -4,6 +4,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { Layout } from "./components/Layout";
 import { InventoryGrid } from "./features/inventory/InventoryGrid";
 import { OpsDashboard } from "./features/ops/OpsDashboard";
+import { OrdersPage } from "./features/orders/OrdersPage";
 
 function Dashboard() {
 	return (
@@ -32,6 +33,7 @@ function App() {
 					<Route path="inventory" element={<InventoryGrid />} />
 					<Route path="ops" element={<OpsDashboard />} />
 					<Route path="products" element={<Products />} />
+					<Route path="orders" element={<OrdersPage />} />
 				</Route>
 			</Routes>
 		</>

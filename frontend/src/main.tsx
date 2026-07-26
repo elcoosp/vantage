@@ -5,12 +5,12 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
 
+const queryClient = new QueryClient();
 const rootElement = document.getElementById("root");
+
 if (!rootElement) {
 	throw new Error("Root element not found");
 }
-
-const queryClient = new QueryClient();
 
 ReactDOM.createRoot(rootElement).render(
 	<React.StrictMode>
