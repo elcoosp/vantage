@@ -142,14 +142,13 @@ public class CacheInvalidationIT {
 
             // 8. Publish event to trigger eviction
             eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            if (forecastCacheEvictionListener != null) {
-                forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            } else {
-                System.out.println("Listener is null, relying on event mechanism");
+            forecastCacheEvictionListener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
                 try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
 
             // 9. Verify cache entry was evicted
+        System.out.println("Is event received? " + ForecastCacheEvictionListener.isEventReceived());
+        System.out.println("Cache entry after eviction: " + forecastCache.get(productId));
             assertThat(forecastCache.get(productId)).isNull();
 
             // 10. Third forecast call (cache miss, recomputed)
