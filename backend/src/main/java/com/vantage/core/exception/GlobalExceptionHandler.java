@@ -1,14 +1,17 @@
 package com.vantage.core.exception;
 
 import com.vantage.inventory.app.InventoryConflictException;
+import com.vantage.payment.app.IdempotencyConflictException;
+import com.vantage.core.ratelimiter.RateLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.vantage.payment.app.IdempotencyConflictException;
-import com.vantage.core.ratelimiter.RateLimitExceededException;
+import org.springframework.web.context.request.WebRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -16,38 +19,53 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(InventoryConflictException.class)
-    public ResponseEntity<ErrorResponse> handleInventoryConflictException(InventoryConflictException ex) {
+    public ResponseEntity<ProblemDetail> handleInventoryConflictException(InventoryConflictException ex, WebRequest request) {
         log.warn("Inventory conflict occurred: {}", ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse("Conflict", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+        ProblemDetail pd = ProblemDetailFactory.createInventoryConflict(ex, request);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("Not Found", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    public ResponseEntity<ProblemDetail> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+        log.warn("Resource not found: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createResourceNotFound(ex, request);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);
     }
 
     @ExceptionHandler(IdempotencyConflictException.class)
-    public ResponseEntity<ErrorResponse> handleIdempotencyConflictException(IdempotencyConflictException ex) {
+    public ResponseEntity<ProblemDetail> handleIdempotencyConflictException(IdempotencyConflictException ex, WebRequest request) {
         log.warn("Idempotency conflict: {}", ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse("Conflict", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+        ProblemDetail pd = ProblemDetailFactory.createIdempotencyConflict(ex, request);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+    public ResponseEntity<ProblemDetail> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         log.warn("Bad request: {}", ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse("Bad Request", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ProblemDetail pd = ProblemDetailFactory.createBadRequest(ex, request);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
     @ExceptionHandler(RateLimitExceededException.class)
-    public ResponseEntity<ErrorResponse> handleRateLimitExceededException(RateLimitExceededException ex) {
+    public ResponseEntity<ProblemDetail> handleRateLimitExceededException(RateLimitExceededException ex, WebRequest request) {
         log.warn("Rate limit exceeded: {}", ex.getMessage());
-        ErrorResponse errorResponse = new ErrorResponse("Too Many Requests", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createRateLimitExceeded(ex, request);
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
-                .body(errorResponse);
+                .body(pd);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ProblemDetail> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex, WebRequest request) {
+        log.warn("Validation failed: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createMethodArgumentNotValid(ex, request);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleGenericException(Exception ex, WebRequest request) {
+        log.error("Unexpected error", ex);
+        ProblemDetail pd = ProblemDetailFactory.createGeneric(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(pd);
     }
 }
