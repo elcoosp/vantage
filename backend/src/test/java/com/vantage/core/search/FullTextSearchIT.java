@@ -154,7 +154,7 @@ public class FullTextSearchIT {
         assertThat(invRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Create order (with status CREATED)
-        com.vantage.order.ui.dto.OrderRequest orderReq = new com.vantage.order.ui.dto.OrderRequest(product1Id, 2);
+        com.vantage.order.ui.dto.OrderRequest orderReq = new com.vantage.order.ui.dto.OrderRequest(product1Id, 2, "Coffee Mug");
         HttpEntity<com.vantage.order.ui.dto.OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
         ResponseEntity<com.vantage.order.ui.dto.OrderResponse> orderRes = restTemplate.postForEntity("/api/v1/orders", orderEntity, com.vantage.order.ui.dto.OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
