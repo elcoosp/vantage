@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -88,6 +89,9 @@ public class CacheInvalidationIT {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Test
     void should_cache_forecast_and_evict_on_order_created_event() {
@@ -170,10 +174,7 @@ public class CacheInvalidationIT {
         // Same result
         assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
 
-        // Verify cache hit: second call should be significantly faster (at least 10x)
-        // In a typical test, we expect the first call to be slow (DB query + calc) and second to be fast.
-        // We'll check that the second duration is less than half of first duration (rough)
-        // However, to avoid flakiness, we just check that it's faster.
+        // Verify cache hit: second call should be faster (or at least not slower)
         assertThat(secondDuration).isLessThan(firstDuration);
 
         // 6. Insert a new order (to change history) and publish OrderCreatedEvent
@@ -193,6 +194,11 @@ public class CacheInvalidationIT {
         // Publish event to trigger eviction
         eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
+        // Verify cache entry was evicted
+        org.springframework.cache.Cache cache = cacheManager.getCache("forecastCache");
+        assertThat(cache).isNotNull();
+        assertThat(cache.get(productId)).isNull();
+
         // 7. Third forecast call (should be cache miss, recomputed)
         startTime = System.nanoTime();
         ResponseEntity<ForecastResponse> thirdResponse = restTemplate.exchange(
@@ -208,7 +214,7 @@ public class CacheInvalidationIT {
         // The forecast should have changed because new order added
         assertThat(thirdForecast.forecast()).isNotEqualTo(firstForecast.forecast());
 
-        // Also verify it was a cache miss: third call should be slower than second (cache hit)
+        // Verify cache miss: third call should be slower than the cached second call
         assertThat(thirdDuration).isGreaterThan(secondDuration);
     }
 }
