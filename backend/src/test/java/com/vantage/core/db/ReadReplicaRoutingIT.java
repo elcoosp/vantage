@@ -12,12 +12,16 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.Advisor;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +34,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -42,9 +47,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, ReadReplicaRoutingIT.TestInterceptorConfig.class})
 @Testcontainers
 public class ReadReplicaRoutingIT {
+
+    @TestConfiguration
+    static class TestInterceptorConfig {
+        @Bean
+        @Primary
+        public Advisor testReplicaRoutingAdvisor(TestReplicaRoutingInterceptor interceptor) {
+            AnnotationMatchingPointcut pointcut = new AnnotationMatchingPointcut(null, Transactional.class);
+            return new DefaultPointcutAdvisor(pointcut, interceptor);
+        }
+
+        @Bean
+        public TestReplicaRoutingInterceptor testReplicaRoutingInterceptor() {
+            return new TestReplicaRoutingInterceptor();
+        }
+    }
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -80,7 +100,6 @@ public class ReadReplicaRoutingIT {
         registry.add("spring.datasource.replica.username", replicaPostgres::getUsername);
         registry.add("spring.datasource.replica.password", replicaPostgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
         registry.add("spring.flyway.enabled", () -> "false");
         registry.add("spring.rabbitmq.host", () -> "localhost");
         registry.add("spring.rabbitmq.port", () -> "5672");
@@ -89,6 +108,7 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.outbox.enabled", () -> "false");
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
+        registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
     }
 
     @Autowired
@@ -100,7 +120,8 @@ public class ReadReplicaRoutingIT {
     @BeforeEach
     void setup() {
         DatabaseContextHolder.clear();
-        // Register vendor once per test
+        TestReplicaRoutingInterceptor.clearCapturedType();
+        // Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "routing-" + UUID.randomUUID() + "@vantage.com",
                 "securePassword123",
@@ -120,6 +141,7 @@ public class ReadReplicaRoutingIT {
     void tearDown() {
         DatabaseContextHolder.clear();
         TenantContext.clear();
+        TestReplicaRoutingInterceptor.clearCapturedType();
     }
 
     private UUID createProduct(String name, String description, BigDecimal price) {
@@ -151,7 +173,6 @@ public class ReadReplicaRoutingIT {
 
     @Test
     void should_use_replica_for_read_only_transaction() {
-        // Create a product
         UUID productId = createProduct("Routing Test Product", "Description", new BigDecimal("99.99"));
 
         // Perform read-only GET request
@@ -166,22 +187,15 @@ public class ReadReplicaRoutingIT {
                 ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // Interceptor should have set REPLICA; we can assert the context was set during the request.
-        // But the interceptor clears after the request, so we cannot check after.
-        // We'll rely on the fact that the test passes if no exception occurred and the request succeeded.
-        // To verify, we could inject a test interceptor, but for now we'll just check that the context was set and cleared.
-        // We'll add a check that the context is null after the request.
-        assertThat(DatabaseContextHolder.getDatabaseType()).isNull();
+        // Verify the interceptor captured REPLICA
+        DatabaseType captured = TestReplicaRoutingInterceptor.getCapturedType();
+        assertThat(captured).isEqualTo(DatabaseType.REPLICA);
     }
 
     @Test
     void should_use_primary_for_write_transaction() {
-        // Create a product
         UUID productId = createProduct("Write Test Product", "Description", new BigDecimal("99.99"));
         setInventory(productId, 10, 0);
-
-        // Clear context before write
-        DatabaseContextHolder.clear();
 
         // Perform write operation (POST /orders)
         HttpHeaders authHeaders = new HttpHeaders();
@@ -196,7 +210,8 @@ public class ReadReplicaRoutingIT {
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 
-        // After the write request, the context should have been cleared
-        assertThat(DatabaseContextHolder.getDatabaseType()).isNull();
+        // Verify the interceptor captured PRIMARY
+        DatabaseType captured = TestReplicaRoutingInterceptor.getCapturedType();
+        assertThat(captured).isEqualTo(DatabaseType.PRIMARY);
     }
 }
