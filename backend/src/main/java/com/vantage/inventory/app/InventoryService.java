@@ -26,7 +26,7 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for product: " + productId));
 
         if (!inventory.getVersion().equals(ifMatch)) {
-            throw new InventoryConflictException("Version mismatch. Expected: " + ifMatch + ", Actual: " + inventory.getVersion());
+            throw new InventoryConflictException("Version mismatch. Expected: " + ifMatch + ", Actual: " + inventory.getVersion(), ifMatch, inventory.getVersion());
         }
 
         inventory.setQuantity(request.quantity());
@@ -34,7 +34,7 @@ public class InventoryService {
         try {
             inventoryRepository.saveAndFlush(inventory);
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new InventoryConflictException("Concurrent modification detected for product: " + productId);
+            throw new InventoryConflictException("Concurrent modification detected for product: " + productId, null, null);
         }
 
         return new InventoryResponse(inventory.getProductId(), inventory.getQuantity(), inventory.getVersion());
