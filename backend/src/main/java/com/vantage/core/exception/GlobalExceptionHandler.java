@@ -3,6 +3,7 @@ package com.vantage.core.exception;
 import com.vantage.inventory.app.InventoryConflictException;
 import com.vantage.payment.app.IdempotencyConflictException;
 import com.vantage.core.ratelimiter.RateLimitExceededException;
+import com.vantage.core.exception.VantageDomainException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -60,6 +61,13 @@ public class GlobalExceptionHandler {
         log.warn("Validation failed: {}", ex.getMessage());
         ProblemDetail pd = ProblemDetailFactory.createMethodArgumentNotValid(ex, request);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
+    }
+
+    @ExceptionHandler(VantageDomainException.class)
+    public ResponseEntity<ProblemDetail> handleVantageDomainException(VantageDomainException ex, WebRequest request) {
+        log.warn("Domain exception: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createVantageDomainException(ex, request);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(pd);
     }
 
     @ExceptionHandler(Exception.class)

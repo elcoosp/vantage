@@ -3,7 +3,20 @@ package com.vantage.inventory.app;
 import com.vantage.core.exception.VantageDomainException;
 
 public class InventoryConflictException extends VantageDomainException {
-    public InventoryConflictException(String message) {
+    private final Long expectedVersion;
+    private final Long currentVersion;
+
+    public InventoryConflictException(String message, Long expectedVersion, Long currentVersion) {
         super(message);
+        this.expectedVersion = expectedVersion;
+        this.currentVersion = currentVersion;
+    }
+
+    public Long getExpectedVersion() {
+        return expectedVersion;
+    }
+
+    public Long getCurrentVersion() {
+        return currentVersion;
     }
 }
