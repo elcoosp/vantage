@@ -2,7 +2,7 @@ package com.vantage.core.cache;
 
 import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.messaging.ForecastCacheEvictionListener;
-import com.vantage.analytics.messaging.OrderCreatedEvent;
+import com.vantage.core.events.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
