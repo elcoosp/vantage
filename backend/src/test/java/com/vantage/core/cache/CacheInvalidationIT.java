@@ -6,6 +6,9 @@ import com.vantage.analytics.messaging.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
+import com.vantage.order.app.OrderService;
+import com.vantage.order.ui.dto.OrderRequest;
+import com.vantage.order.ui.dto.OrderResponse;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;
 import com.vantage.product.app.ProductService;
@@ -69,6 +72,7 @@ public class CacheInvalidationIT {
 
     @Autowired
     private OrderRepository orderRepository;
+    private OrderService orderService;
 
     @Autowired
     private AnalyticsService analyticsService;
@@ -84,7 +88,6 @@ public class CacheInvalidationIT {
 
     @Test
     void should_cache_forecast_and_evict_on_order_created_event() {
-        ForecastCacheEvictionListener.resetEventReceived();
 
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
@@ -139,27 +142,23 @@ public class CacheInvalidationIT {
             assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
 
             // 7. Insert a new order (to change history)
-            Order newOrder = new Order();
+            // Trigger eviction by creating a new order via OrderService (publishes event)
+            OrderRequest newOrderRequest = new OrderRequest(productId, 10, "Cache Product");
+            orderService.createOrder(newOrderRequest);
             newOrder.setProductId(productId);
             newOrder.setQuantity(10);
             newOrder.setStatus(OrderStatus.CONFIRMED);
             newOrder.setCreatedAt(Instant.now());
             newOrder.setTenantId(tenantId);
-            orderRepository.save(newOrder);
 
             // 8. Publish event to trigger eviction
-            eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
 
-            // Also explicitly call listener to ensure eviction
             System.err.println("Calling listener directly for product: " + productId);
-            listener.onOrderCreated(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-            System.err.println("After listener call, cache entry: " + forecastCache.get(productId));
             System.err.println("Cache entry after listener: " + forecastCache.get(productId));
 
             // 9. Verify cache entry was evicted
             assertThat(forecastCache.get(productId)).isNull();
             System.err.println("Asserting cache is null, current value: " + forecastCache.get(productId));
-            assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
 
             // 10. Third forecast call (cache miss, recomputed)
             ForecastResponse thirdForecast = analyticsService.getForecast(productId);

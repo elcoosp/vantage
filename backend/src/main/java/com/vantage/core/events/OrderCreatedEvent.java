@@ -1,4 +1,4 @@
-package com.vantage.analytics.messaging;
+package com.vantage.core.events;
 
 import java.util.UUID;
 
