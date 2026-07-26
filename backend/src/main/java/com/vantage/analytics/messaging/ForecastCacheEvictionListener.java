@@ -14,12 +14,18 @@ public class ForecastCacheEvictionListener {
 
     public ForecastCacheEvictionListener(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
-        log.info("ForecastCacheEvictionListener created");
+        log.info("ForecastCacheEvictionListener created with cacheManager: {}", cacheManager);
     }
 
     @EventListener
     public void onOrderCreated(OrderCreatedEvent event) {
         log.info("Received OrderCreatedEvent for product: {}, evicting forecastCache", event.getProductId());
-        cacheManager.getCache("forecastCache").evict(event.getProductId());
+        var cache = cacheManager.getCache("forecastCache");
+        if (cache != null) {
+            cache.evict(event.getProductId());
+            log.info("Evicted forecastCache for product: {}", event.getProductId());
+        } else {
+            log.warn("forecastCache not found in cacheManager");
+        }
     }
 }

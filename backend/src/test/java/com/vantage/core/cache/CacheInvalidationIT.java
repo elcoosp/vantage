@@ -1,31 +1,23 @@
 package com.vantage.core.cache;
 
+import com.vantage.analytics.app.AnalyticsService;
 import com.vantage.analytics.messaging.OrderCreatedEvent;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;
+import com.vantage.product.app.ProductService;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
-import com.vantage.vendor.ui.dto.AuthResponse;
+import com.vantage.vendor.app.VendorService;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -43,23 +35,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(CacheInvalidationIT.TestSecurityConfig.class)
+@SpringBootTest
 @Testcontainers
 public class CacheInvalidationIT {
-
-    @TestConfiguration
-    static class TestSecurityConfig {
-        @Bean
-        @org.springframework.core.annotation.Order(1)
-        public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-            http
-                .securityMatcher("/**")
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-            return http.build();
-        }
-    }
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -81,49 +59,42 @@ public class CacheInvalidationIT {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private VendorService vendorService;
+
+    @Autowired
+    private ProductService productService;
 
     @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
+    private AnalyticsService analyticsService;
+
+    @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Test
     void should_cache_forecast_and_evict_on_order_created_event() {
-        // Reset flag
-
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "cache-" + UUID.randomUUID() + "@vantage.com",
                 "securePassword123",
                 "Vantage Inc.");
-        HttpHeaders vendorHeaders = new HttpHeaders();
-        vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
-        vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
-        assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        String token = vendorRes.getBody().token();
-        UUID tenantId = vendorRes.getBody().tenantId();
+        var registration = vendorService.register(vendorReq);
+        UUID tenantId = registration.tenantId();
 
-        // 2. Create product
-        HttpHeaders authHeaders = new HttpHeaders();
-        authHeaders.setBearerAuth(token);
-        authHeaders.setContentType(MediaType.APPLICATION_JSON);
-        authHeaders.set("X-Tenant-ID", tenantId.toString());
-
-        ProductRequest productReq = new ProductRequest("Cache Product", "Description", new BigDecimal("99.99"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity(
-                "/api/v1/products", productEntity, ProductResponse.class);
-        assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
-        UUID productId = productRes.getBody().id();
-
-        // 3. Insert some historical orders (30 days) to get meaningful forecast
+        // Set tenant context for subsequent operations
         TenantContext.setTenantId(tenantId);
         try {
+            // 2. Create product
+            ProductRequest productReq = new ProductRequest("Cache Product", "Description", new BigDecimal("99.99"));
+            ProductResponse productRes = productService.createProduct(productReq);
+            UUID productId = productRes.id();
+
+            // 3. Insert some historical orders (30 days)
             LocalDate start = LocalDate.now().minusDays(30);
             for (int i = 0; i < 30; i++) {
                 LocalDate date = start.plusDays(i);
@@ -137,39 +108,26 @@ public class CacheInvalidationIT {
                 order.setTenantId(tenantId);
                 orderRepository.save(order);
             }
-        } finally {
-            TenantContext.clear();
-        }
 
-        // 4. First forecast call (cache miss)
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        headers.set("X-Tenant-ID", tenantId.toString());
+            // Get cache reference
+            Cache forecastCache = cacheManager.getCache("forecastCache");
+            assertThat(forecastCache).isNotNull();
 
-        ResponseEntity<ForecastResponse> firstResponse = restTemplate.exchange(
-                "/api/v1/analytics/forecast/" + productId,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                ForecastResponse.class);
-        assertThat(firstResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(firstResponse.getBody()).isNotNull();
-        ForecastResponse firstForecast = firstResponse.getBody();
+            // 4. First forecast call (cache miss)
+            ForecastResponse firstForecast = analyticsService.getForecast(productId);
+            assertThat(firstForecast).isNotNull();
+            assertThat(firstForecast.forecast()).hasSize(7);
 
-        // 5. Second forecast call (should be cache hit - same result)
-        ResponseEntity<ForecastResponse> secondResponse = restTemplate.exchange(
-                "/api/v1/analytics/forecast/" + productId,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                ForecastResponse.class);
-        assertThat(secondResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(secondResponse.getBody()).isNotNull();
-        ForecastResponse secondForecast = secondResponse.getBody();
-        // Same result (cached)
-        assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
+            // Verify cache now contains the value
+            assertThat(forecastCache.get(productId)).isNotNull();
 
-        // 6. Insert a new order (to change history)
-        TenantContext.setTenantId(tenantId);
-        try {
+            // 5. Second forecast call (cache hit)
+            ForecastResponse secondForecast = analyticsService.getForecast(productId);
+            assertThat(secondForecast).isNotNull();
+            // Same result
+            assertThat(secondForecast.forecast()).isEqualTo(firstForecast.forecast());
+
+            // 6. Insert a new order (to change history)
             Order newOrder = new Order();
             newOrder.setProductId(productId);
             newOrder.setQuantity(10);
@@ -177,33 +135,29 @@ public class CacheInvalidationIT {
             newOrder.setCreatedAt(Instant.now());
             newOrder.setTenantId(tenantId);
             orderRepository.save(newOrder);
+
+            // Publish event to trigger eviction
+            eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
+
+            // Wait a moment for event processing (though synchronous, but just to be safe)
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Verify cache entry was evicted
+            assertThat(forecastCache.get(productId)).isNull();
+
+            // 7. Third forecast call (cache miss, recomputed)
+            ForecastResponse thirdForecast = analyticsService.getForecast(productId);
+            assertThat(thirdForecast).isNotNull();
+
+            // The forecast should have changed because new order added
+            assertThat(thirdForecast.forecast()).isNotEqualTo(firstForecast.forecast());
+
         } finally {
             TenantContext.clear();
         }
-
-        // Publish event to trigger eviction
-        eventPublisher.publishEvent(new OrderCreatedEvent(UUID.randomUUID(), productId, tenantId));
-
-        // Wait a moment for event processing
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        // Verify that the event was received
-
-        // 7. Third forecast call (should be cache miss, recomputed)
-        ResponseEntity<ForecastResponse> thirdResponse = restTemplate.exchange(
-                "/api/v1/analytics/forecast/" + productId,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                ForecastResponse.class);
-        assertThat(thirdResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(thirdResponse.getBody()).isNotNull();
-        ForecastResponse thirdForecast = thirdResponse.getBody();
-
-        // The forecast should have changed because new order added
-        assertThat(thirdForecast.forecast()).isNotEqualTo(firstForecast.forecast());
     }
 }
