@@ -3,13 +3,13 @@ package com.vantage.analytics.messaging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
-public class ForecastCacheEvictionListener {
+public class ForecastCacheEvictionListener implements ApplicationListener<OrderCreatedEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(ForecastCacheEvictionListener.class);
     private final CacheManager cacheManager;
@@ -17,10 +17,11 @@ public class ForecastCacheEvictionListener {
 
     public ForecastCacheEvictionListener(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
+        log.info("ForecastCacheEvictionListener initialized");
     }
 
-    @EventListener
-    public void onOrderCreated(OrderCreatedEvent event) {
+    @Override
+    public void onApplicationEvent(OrderCreatedEvent event) {
         log.info("Received OrderCreatedEvent for product: {}, evicting forecastCache", event.getProductId());
         cacheManager.getCache("forecastCache").evict(event.getProductId());
         eventReceived.set(true);

@@ -194,6 +194,7 @@ public class CacheInvalidationIT {
         }
 
         // Verify that the event was received
+        System.out.println("Flag after publish: " + ForecastCacheEvictionListener.isEventReceived());
         assertThat(ForecastCacheEvictionListener.isEventReceived()).isTrue();
 
         // 7. Third forecast call (should be cache miss, recomputed)
