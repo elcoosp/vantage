@@ -2,8 +2,7 @@ package com.vantage.core.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.audit.ui.dto.AuditEventResponse;
-import com.vantage.core.audit.infrastructure.AuditHelper;
-import com.vantage.core.audit.domain.EntityEventRepository;
+
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
 import com.vantage.order.domain.OrderRepository;
@@ -54,11 +53,6 @@ import org.junit.jupiter.api.BeforeEach;
 @Testcontainers
 public class AuditTimelineIT {
 
-    @BeforeEach
-    void setup() {
-        AuditHelper.setEntityEventRepository(entityEventRepository);
-        System.out.println("*** AuditHelper repository set in test ***");
-    }
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -104,8 +98,6 @@ public class AuditTimelineIT {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private EntityEventRepository entityEventRepository;
 
     @Test
     void should_capture_order_created_and_order_updated_events_and_return_timeline() throws Exception {

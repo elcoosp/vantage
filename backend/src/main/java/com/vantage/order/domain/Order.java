@@ -7,8 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+
 import java.util.UUID;
 
 @Entity
@@ -50,15 +49,4 @@ public class Order extends BaseTenantEntity {
         this.status = status;
     }
 
-    @PrePersist
-    public void prePersist() {
-        System.out.println("*** Order.prePersist called for order " + this.getId());
-        com.vantage.core.audit.infrastructure.AuditHelper.captureInsert(this);
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        System.out.println("*** Order.preUpdate called for order " + this.getId());
-        com.vantage.core.audit.infrastructure.AuditHelper.captureUpdate(this);
-    }
 }
