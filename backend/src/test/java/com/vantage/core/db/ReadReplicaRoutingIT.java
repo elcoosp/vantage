@@ -20,6 +20,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpEntity;
@@ -45,10 +46,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(ReadReplicaRoutingIT.TestSecurityConfig.class)
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, ReadReplicaRoutingIT.TestAspectConfig.class})
 @Testcontainers
 @ExtendWith(OutputCaptureExtension.class)
 public class ReadReplicaRoutingIT {
+
+    @TestConfiguration
+    @EnableAspectJAutoProxy(proxyTargetClass = true)
+    static class TestAspectConfig {
+        // No explicit bean needed; the interceptor is a @Component and will be picked up
+        // The @EnableAspectJAutoProxy enables proxy for it
+    }
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -93,8 +101,8 @@ public class ReadReplicaRoutingIT {
         registry.add("vantage.inventory.consumer.enabled", () -> "false");
         registry.add("vantage.payment.enabled", () -> "false");
         registry.add("spring.autoconfigure.exclude", () -> "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration");
-        // Set log level for our package to INFO
-        registry.add("logging.level.com.vantage.core.db", () -> "INFO");
+        // Set log level to DEBUG for our package
+        registry.add("logging.level.com.vantage.core.db", () -> "DEBUG");
     }
 
     @Autowired
