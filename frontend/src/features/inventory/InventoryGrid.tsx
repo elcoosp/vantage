@@ -10,9 +10,19 @@ interface InventoryItem {
 	version: number;
 }
 
+// TODO: Replace with actual API call once GET /api/v1/inventory is implemented.
+// Currently using mock data for demonstration.
+const MOCK_INVENTORY: InventoryItem[] = [
+	{ productId: "11111111-1111-1111-1111-111111111111", quantity: 10, version: 1 },
+	{ productId: "22222222-2222-2222-2222-222222222222", quantity: 5, version: 2 },
+	{ productId: "33333333-3333-3333-3333-333333333333", quantity: 20, version: 3 },
+];
+
 async function fetchInventory(): Promise<InventoryItem[]> {
-	const res = await apiClient.get("/inventory");
-	return res.data;
+	// Uncomment this when backend endpoint is ready:
+	// const res = await apiClient.get("/inventory");
+	// return res.data;
+	return MOCK_INVENTORY;
 }
 
 async function updateInventory(productId: string, quantity: number, version: number) {

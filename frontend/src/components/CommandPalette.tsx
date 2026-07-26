@@ -1,10 +1,12 @@
 import { Command } from "cmdk";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUIStore } from "../store/uiStore";
 
 export function CommandPalette() {
 	const [open, setOpen] = useState(false);
 	const navigate = useNavigate();
+	const { openAddProductModal, openUpdateStockModal } = useUIStore();
 
 	useEffect(() => {
 		const down = (e: KeyboardEvent) => {
@@ -42,8 +44,8 @@ export function CommandPalette() {
 						<Command.Item onSelect={() => runCommand(() => navigate("/products"))}>Go to Products</Command.Item>
 					</Command.Group>
 					<Command.Group heading="Actions">
-						<Command.Item onSelect={() => runCommand(() => alert("Add New Product"))}>Add New Product</Command.Item>
-						<Command.Item onSelect={() => runCommand(() => alert("Update Stock"))}>Update Stock</Command.Item>
+						<Command.Item onSelect={() => runCommand(openAddProductModal)}>Add New Product</Command.Item>
+						<Command.Item onSelect={() => runCommand(openUpdateStockModal)}>Update Stock</Command.Item>
 					</Command.Group>
 				</Command.List>
 			</div>
