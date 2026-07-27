@@ -114,11 +114,11 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 3 (Frontend Polish):**
-  - [ ] `TASK-025`: Developer Portal Frontend
-  - [ ] `TASK-032`: Frontend Audit Timeline UI
-  - [ ] `TASK-026`: Streaming LLM Support Chat
-  - [ ] `TASK-041`: Server-Driven UI Storefront
-  - [ ] Merge to `main`
+  - [x] `TASK-025`: Developer Portal Frontend
+  - [x] `TASK-032`: Frontend Audit Timeline UI
+  - [x] `TASK-026`: Streaming LLM Support Chat
+  - [x] `TASK-041`: Server-Driven UI Storefront
+  - [x] Merge to `main`
 
 - **Agent 8 (DevOps):**
   - [ ] `TASK-024`: $0 Hosting Deployment Pipeline
