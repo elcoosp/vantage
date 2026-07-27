@@ -110,7 +110,7 @@ sonar {
 sourceSets {
     main {
         java {
-            srcDir("$buildDir/generated/openapi/src/main/java")
+            srcDir("$rootDir/src/generated/src/main/java")
         }
     }
 }
@@ -118,7 +118,7 @@ sourceSets {
 val generateOpenApiModels by tasks.registering(org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
     generatorName.set("spring")
     inputSpec.set("$rootDir/../docs/02-contracts/02-rest-api-spec.yaml")
-    outputDir.set("$buildDir/generated/openapi")
+    outputDir.set("$rootDir/src/generated")
     apiPackage.set("com.vantage.api.api")
     modelPackage.set("com.vantage.api.model")
     configOptions.set(mapOf(
