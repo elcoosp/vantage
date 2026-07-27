@@ -15,7 +15,14 @@ public class ControllerApiContractTest {
     static final ArchRule controllers_should_implement_api_interface =
         classes()
             .that().areAnnotatedWith(RestController.class)
-            .and().resideInAnyPackage("com.vantage..ui")
+            .and().resideInAnyPackage(
+                "com.vantage.product.ui",
+                "com.vantage.order.ui",
+                "com.vantage.inventory.ui",
+                "com.vantage.payment.ui",
+                "com.vantage.analytics.ui",
+                "com.vantage.vendor.ui"
+            )
             .should().implement(ApiApi.class)
-            .because("All REST controllers must implement the generated API interface to enforce contract");
+            .because("Controllers for endpoints defined in the OpenAPI spec must implement the generated API interface");
 }

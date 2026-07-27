@@ -22,7 +22,7 @@ public class OpenApiGenerationTest {
     @Test
     void should_load_generated_product_api_interface() {
         assertDoesNotThrow(() -> {
-            Class.forName("com.vantage.api.api.ProductApi");
-        }, "Generated ProductApi interface should be present");
+            Class.forName("com.vantage.api.api.ApiApi");
+        }, "Generated ApiApi interface should be present");
     }
 }
