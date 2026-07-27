@@ -108,10 +108,10 @@ This document defines the exact execution sequence to build Vantage using up to 
   - [x] Merge to `main`
 
 - **Agent 2 (Backend Polish):**
-  - [ ] `TASK-030`: Resilience4j Bulkhead & Rate Limiter (Touches `payment/`, `integration/`)
-  - [ ] `TASK-043`: Admin Tenant Management UI & Suspension Logic (Touches `core/admin/`, `vendor/`, `core/security/`)
-  - [ ] `TASK-044`: OpenAPI Codegen & Type Sync (Touches `build.gradle.kts`, `frontend/package.json`)
-  - [ ] Merge to `main`
+  - [x] `TASK-030`: Resilience4j Bulkhead & Rate Limiter (Touches `payment/`, `integration/`)
+  - [x] `TASK-043`: Admin Tenant Management UI & Suspension Logic (Touches `core/admin/`, `vendor/`, `core/security/`)
+  - [x] `TASK-044`: OpenAPI Codegen & Type Sync (Touches `build.gradle.kts`, `frontend/package.json`)
+  - [x] Merge to `main`
 
 - **Agent 3 (Frontend Polish):**
   - [ ] `TASK-025`: Developer Portal Frontend

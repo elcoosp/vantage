@@ -3,18 +3,18 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $ProductRequest = {
-    properties: {
-        name: {
-            type: 'string',
-            isRequired: true,
-        },
-        price: {
-            type: 'number',
-            isRequired: true,
-            format: 'double',
-        },
-        sku: {
-            type: 'string',
-        },
-    },
+	properties: {
+		name: {
+			type: "string",
+			isRequired: true,
+		},
+		price: {
+			type: "number",
+			isRequired: true,
+			format: "double",
+		},
+		sku: {
+			type: "string",
+		},
+	},
 } as const;
