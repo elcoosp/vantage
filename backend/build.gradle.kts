@@ -65,7 +65,7 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:1.3.0")
-        mavenBom("org.testcontainers:testcontainers-bom:1.20.4")
+        mavenBom("org.testcontainers:testcontainers-bom:2.0.5")
         mavenBom("io.github.resilience4j:resilience4j-bom:2.2.0")
     }
 }
