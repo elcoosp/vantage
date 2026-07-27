@@ -1,187 +1,127 @@
 # Vantage
 
-<p align="center">
-  <img src="docs/logo.png" alt="Vantage Logo" width="200" />
-</p>
+*A production-grade, multi-tenant SaaS platform enabling independent merchants to manage operations, with distributed order orchestration and AI-driven forecasting.*
 
-> A production-grade, multi-tenant SaaS platform enabling independent merchants to manage operations, with distributed order orchestration, AI-driven forecasting, and end-to-end observability.
-
-[![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![React 19](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
-[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.13-red.svg)](https://www.rabbitmq.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-Vantage is a comprehensive vendor operations platform designed to demonstrate advanced full-stack engineering and distributed systems architecture. It solves complex enterprise challenges such as flash-sale concurrency, distributed transactional consistency, and real-time observability, all deployed on a $0 hosting budget.
-
----
-
-## Table of Contents
-- [Architecture Overview](#architecture-overview)
-- [Core Platform Capabilities](#core-platform-capabilities)
-- [Technology Stack](#technology-stack)
-- [Engineering Maturity & DevSecOps](#engineering-maturity--devsecops)
-- [Quickstart (Local Development)](#quickstart-local-development)
-- [System Tour](#system-tour)
-- [Project Structure & Documentation](#project-structure--documentation)
+![Java 21](https://img.shields.io/badge/Java-21-blue?logo=openjdk)
+![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4-green?logo=spring)
+![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?logo=rabbitmq)
+![CI](https://img.shields.io/badge/CI-Passing-brightgreen)
+![License](https://img.shields.io/badge/License-Proprietary-red)
 
 ---
 
 ## Architecture Overview
 
-Vantage is built as a Modular Monolith using Spring Modulith. This provides strict bounded contexts (Vendor, Product, Inventory, Order, Payment) while maintaining the operational simplicity of a single deployable unit.
+Vantage is built as a modular monolith with clear separation of concerns, leveraging Spring Modulith for bounded contexts and asynchronous event-driven communication via RabbitMQ.
 
 ```mermaid
-graph TD
+graph TB
     subgraph Client
         React[React 19 SPA]
     end
 
-    subgraph Vantage Backend
-        API[REST & GraphQL API]
-        WS[WebSocket STOMP]
-
-        subgraph Domain Modules
-            Order[Order Saga]
-            Inventory[Optimistic Locking]
-            Payment[Resilience4j]
-            Analytics[Holt-Winters]
-        end
-
-        Outbox[Transactional Outbox]
+    subgraph Backend
+        API[Spring Boot 3.4 API]
+        Worker[Spring Boot Async Workers]
     end
 
-    subgraph Data and Messaging
-        PG[(PostgreSQL)]
+    subgraph Data
+        PG[(PostgreSQL 16)]
         RMQ{{RabbitMQ}}
     end
 
-    subgraph External Services
+    subgraph External
         Pay[Mock Payment Gateway]
-        Geo[Nominatim Geocoding]
+        Geo[Nominatim]
+        Grafana[Grafana Cloud]
     end
 
-    React -->|HTTPS / JWT| API
-    React -->|WSS| WS
-
-    API -->|JPA / Hibernate Filters| PG
-    API --> Order
-    API --> Inventory
-    API --> Payment
-    API --> Analytics
-
-    Order <--> Outbox
-    Inventory <--> Outbox
-    Payment <--> Outbox
-    Analytics <--> Outbox
-
-    Outbox -->|AMQP| RMQ
-    RMQ -->|AMQP| Order
-    RMQ -->|AMQP| Inventory
-    RMQ -->|AMQP| Payment
-
-    Payment -->|HTTPS| Pay
-    Inventory -->|HTTPS| Geo
+    React -- HTTPS/JWT --> API
+    API -- JDBC/JPA --> PG
+    API -- AMQP --> RMQ
+    Worker -- AMQP --> RMQ
+    Worker -- JDBC/JPA --> PG
+    Worker -- HTTPS --> Pay
+    Worker -- HTTPS --> Geo
+    API -- OTLP --> Grafana
+    Worker -- OTLP --> Grafana
 ```
 
 ---
 
-## Core Platform Capabilities
+## The "Wow" Features
 
-The platform implements enterprise-grade patterns to ensure data integrity, resilience, and performance:
-
-1. **Enterprise-Grade Multi-Tenancy**: Strict data isolation is enforced at the ORM layer using Hibernate `@FilterDef` and `ThreadLocal` tenant contexts. A vendor can never access another vendor's data, guaranteed by the database layer.
-2. **High-Concurrency Inventory Management**: Inventory updates utilize JPA `@Version` for optimistic locking. During traffic spikes, the database prevents overselling without pessimistic locks, and the API gracefully returns `409 Conflict` with RFC 7807 Problem Details.
-3. **Distributed Transaction Orchestration**: The platform solves the dual-write problem via a transactional outbox. Database commits and RabbitMQ publications are guaranteed. If a payment fails, a compensating transaction is automatically orchestrated to release the reserved inventory.
-4. **Resilient Integrations**: External calls (Payment Gateway, Geocoding) are wrapped in Resilience4j Circuit Breakers, Bulkheads, Rate Limiters, and Retries. The system fails fast and degrades gracefully.
-5. **End-to-End Observability**: Distributed tracing via OpenTelemetry provides full visibility. A single order placement can be traced from the React frontend, through the Spring Boot API, JPA queries, Outbox Poller, RabbitMQ, and asynchronous consumers in Grafana Tempo.
-6. **Demand Forecasting Engine**: A custom pure-Java implementation of the Holt-Winters Triple Exponential Smoothing algorithm generates 7-day demand forecasts with 95% confidence intervals without relying on external ML libraries.
-7. **CQRS Read Model**: Order search queries hit a denormalized `order_search_view` projection built asynchronously from domain events, ensuring read-optimized performance.
-8. **Developer-First API Design**: Idempotent payment endpoints (`Idempotency-Key` header) and HMAC-SHA256 signed webhooks with exponential backoff and dead-letter queues provide a robust integration surface for external systems.
+- **Multi-Tenant Isolation** – Hibernate `@Filter` ensures tenant data is never leaked across vendors.
+- **Flash-Sale Concurrency** – JPA `@Version` optimistic locking prevents overselling under high load.
+- **Distributed Saga & Outbox Pattern** – At‑least‑once delivery with Transactional Outbox ensures consistency across services.
+- **Resilience4j Circuit Breakers & Retries** – Graceful degradation and automatic recovery from downstream failures.
+- **OpenTelemetry End-to-End Tracing** – Distributed traces span the React frontend, API, workers, and external calls.
+- **Pure-Java AI Demand Forecasting** – Holt‑Winters exponential smoothing with confidence intervals, built entirely in Java 21.
 
 ---
 
 ## Technology Stack
 
-| Category | Technology | Details |
-|----------|------------|---------|
-| **Backend** | Java 21, Spring Boot 3.4 | Virtual Threads, Spring Modulith, Spring Security, Spring Data JPA |
-| **Frontend** | React 19, Vite, TypeScript | TanStack Query/Table, Zustand, TailwindCSS, Recharts, Leaflet |
-| **Database** | PostgreSQL 16 | Flyway migrations, Full-Text Search, CQRS, Optimistic Locking |
-| **Messaging** | RabbitMQ | Transactional Outbox, Publisher Confirms, Dead Letter Queues |
-| **Observability**| OpenTelemetry, Grafana Stack | Tempo (Traces), Loki (Logs), Prometheus (Metrics) |
-| **Infrastructure**| Docker, GitHub Actions | Testcontainers, PITest, k6 Load Testing, SonarCloud, CodeQL |
-
----
-
-## Engineering Maturity & DevSecOps
-
-- **Testing**: >80% line coverage enforced by JaCoCo. >70% mutation score enforced by PITest. Property-based testing using jqwik for the forecasting algorithm.
-- **Architecture Enforcement**: Spring Modulith verification tests and ArchUnit rules prevent architectural drift.
-- **CI/CD**: GitHub Actions matrix builds (JDK 21/22), automated Trivy container scanning, Dependabot, and Semantic Versioning via `release-please`.
-- **Performance**: k6 load testing simulating 1,000 concurrent users, validating P95 latency < 200ms.
+| Layer          | Technologies                                                                 |
+|----------------|------------------------------------------------------------------------------|
+| **Backend**    | Java 21, Spring Boot 3.4, Spring Modulith, Hibernate, Flyway, JWT, Resilience4j |
+| **Frontend**   | React 19, TypeScript, Vite, TanStack Query, Tailwind CSS, Recharts, Leaflet   |
+| **Infrastructure** | PostgreSQL 16, RabbitMQ, Testcontainers, Docker Compose                  |
+| **Observability**  | Micrometer, OpenTelemetry, Grafana Tempo, Loki, Prometheus               |
 
 ---
 
 ## Quickstart (Local Development)
 
-### Prerequisites
-- Java 21
-- Node.js 20+
-- Docker & Docker Compose
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/vantage.git
+   cd vantage
+   ```
 
-### 1. Start Infrastructure
-```bash
-docker-compose up -d
-```
-*Starts PostgreSQL (5432), RabbitMQ (5672/15672), Prometheus (9090), and Grafana (3000).*
+2. **Start dependencies (PostgreSQL & RabbitMQ)**
+   ```bash
+   docker-compose up -d
+   ```
 
-### 2. Start Backend
-```bash
-cd backend
-./gradlew bootRun
-```
-*API available at `http://localhost:8080`. Swagger UI at `http://localhost:8080/swagger-ui.html`.*
+3. **Run the backend**
+   ```bash
+   cd backend
+   ./gradlew bootRun
+   ```
 
-### 3. Start Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*Dashboard available at `http://localhost:5173`.*
+4. **Run the frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
----
-
-## System Tour
-
-A brief walkthrough of the platform's operational flow:
-
-1. **UI & State Management**: The React 19 dashboard utilizes optimistic updates for instant feedback, a `Cmd+K` command palette for power users, and TanStack Virtual for rendering large datasets at 60fps.
-2. **Concurrency Handling**: Setting a product's inventory to `1` and simulating simultaneous purchases demonstrates the optimistic lock in action. One request succeeds, while others receive a clean `409 Conflict` without server degradation.
-3. **Distributed Saga & Compensation**: Toggling a "Simulate Payment Gateway Failure" flag triggers the Chaos Monkey. An order is placed, inventory decrements, and payment fails. The Saga orchestrator automatically fires a compensating transaction, restoring the inventory and marking the order as `CANCELLED`.
-4. **Observability**: The failed transaction is fully traceable in Grafana Tempo. The 14-span waterfall highlights the HTTP ingress, JPA save, Outbox polling, RabbitMQ publish, Circuit Breaker trip, and the final inventory restoration.
-5. **Analytics & Real-Time Ops**: The platform features a pure-Java Holt-Winters forecasting chart with confidence intervals. A live operations dashboard uses WebSockets to drop pulsing pins on a Leaflet.js map as orders ship globally in real-time.
+5. **Open** `http://localhost:5173` and start using Vantage.
 
 ---
 
-## Project Structure & Documentation
+## 90‑Second Demo Script
 
-This repository uses a strict, code-free documentation architecture to fuel AI-driven development. All specifications, contracts, and tasks are defined in the `docs/` directory.
+| Time      | Scene                                                                                                                              |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------|
+| 0:00‑0:15 | **Intro & React 19 UI** – Show the dashboard with optimistic updates and the global command palette (Cmd+K).                       |
+| 0:15‑0:45 | **Flash Sale Concurrency** – Open three browser tabs, simultaneously hit **Buy** on the same product. One succeeds (202), two get **409 Conflict** – inventory versioning works. |
+| 0:45‑1:00 | **Chaos Monkey** – Enable payment failure via the admin toggle. Place an order; watch the saga automatically compensate and restore inventory. |
+| 1:00‑1:15 | **Observability** – Open Grafana Tempo and show the distributed trace of the failed payment, including the compensating transaction. |
+| 1:15‑1:30 | **AI Forecasting** – Navigate to the Forecast dashboard, select a product, and display the 7‑day demand forecast with confidence intervals using Recharts. |
+| 1:30‑1:45 | **Live Ops Map** – Show the WebSocket‑driven live map, with pins dropping globally in real‑time as orders are placed.            |
 
-```text
-vantage/
-├── backend/                      # Spring Boot 3.4 + Java 21
-├── frontend/                     # React 19 + Vite
-├── docs/
-│   ├── 00-product/               # Vision, Personas, and Business Rules
-│   ├── 01-architecture/          # System Design, ADRs, and C4 Diagrams
-│   ├── 02-contracts/             # AsyncAPI (YAML), OpenAPI (YAML), DB Schema
-│   ├── 03-meta/                  # AI Agent Protocol & Coding Standards
-│   ├── 04-tasks/                 # 50 Isolated AI Work Orders (Task Manifests)
-│   └── 05-ops/                   # Deployment & Local Dev Guides
-├── scripts/
-│   └── dispatch.sh               # Injects context into AI prompts for task execution
-└── README.md
-```
+---
+
+## Contributing
+
+Please read our [Contribution Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
+
+---
+
+## License
+
+Proprietary – all rights reserved.
