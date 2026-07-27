@@ -41,7 +41,7 @@ public class ProductController implements ApiApi {
         com.vantage.product.ui.dto.ProductRequest internalRequest =
             new com.vantage.product.ui.dto.ProductRequest(
                 productRequest.getName(),
-                productRequest.getDescription(),
+                null,  // description not present in generated ProductRequest
                 java.math.BigDecimal.valueOf(productRequest.getPrice())
             );
         com.vantage.product.ui.dto.ProductResponse internalResponse = productService.createProduct(internalRequest);
