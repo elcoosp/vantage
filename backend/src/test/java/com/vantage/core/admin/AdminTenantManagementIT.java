@@ -96,6 +96,7 @@ public class AdminTenantManagementIT {
         // Ensure admin exists (seeded by migration)
         // Generate admin token
         // Ensure admin exists in DB (since flyway is disabled)
+        // Note: JDBC seeding is used as a test workaround; in production, migration handles this.
         jdbcTemplate.execute(
             "INSERT INTO vendors (id, tenant_id, email, password_hash, company_name, status, is_admin, created_at, updated_at) " +
             "SELECT gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 'admin@vantage.com', '$2a$10$dummyhashforadmin', 'Vantage Admin', 'ACTIVE', TRUE, NOW(), NOW() " +
@@ -134,8 +135,8 @@ public class AdminTenantManagementIT {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<TenantResponse> tenants = List.of(response.getBody());
         assertThat(tenants).isNotEmpty();
-        // Should include at least the admin and the registered vendor
-        assertThat(tenants).anyMatch(t -> t.id().equals(adminTenantId) || t.tenantSlug().equals(adminTenantId.toString()));
+        // Should include the admin (by tenantSlug) and the registered vendor
+        assertThat(tenants).anyMatch(t -> t.tenantSlug().equals(adminTenantId.toString()));
         assertThat(tenants).anyMatch(t -> t.tenantSlug().equals(vendorTenantId.toString()));
     }
 

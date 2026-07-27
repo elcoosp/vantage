@@ -11,10 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
 
 @Service
 public class AdminTenantService {
+    private static final Logger log = LoggerFactory.getLogger(AdminTenantService.class);
+
 
     private final VendorRepository vendorRepository;
 
