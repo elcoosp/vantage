@@ -3,40 +3,47 @@ package com.vantage.core.chat;
 import com.vantage.core.chat.app.ChatService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(com.vantage.core.chat.ui.ChatController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ChatControllerIT {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
     @MockitoBean
     private ChatService chatService;
 
+    @Autowired
+    private TestRestTemplate restTemplate;
+
     @Test
-    void should_stream_chunks_when_calling_chat_endpoint() throws Exception {
+    void should_stream_chunks_when_calling_chat_endpoint() {
         when(chatService.getResponseWords("hello")).thenReturn(List.of("Hello", "world", "!"));
 
-        MvcResult result = mockMvc.perform(get("/api/v1/chat/stream")
-                .param("query", "hello")
-                .accept(MediaType.TEXT_EVENT_STREAM))
-                .andExpect(status().isOk())
-                .andReturn();
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "http://localhost:" + port + "/api/v1/chat/stream?query=hello",
+                String.class);
 
-        String content = result.getResponse().getContentAsString();
-        // Expect at least one data event
-        assertThat(content).contains("data: Hello");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        String body = response.getBody();
+        assertThat(body).contains("data: Hello");
+        assertThat(body).contains("data: world");
+        assertThat(body).contains("data: !");
     }
 }

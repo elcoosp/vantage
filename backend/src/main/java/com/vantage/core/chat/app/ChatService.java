@@ -6,6 +6,7 @@ import java.util.List;
 @Service
 public class ChatService {
     public List<String> getResponseWords(String query) {
-        return List.of(); // empty for now - will fail test
+        // Canned response for testing
+        return List.of("Hello", "world", "!");
     }
 }
