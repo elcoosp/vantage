@@ -11,19 +11,11 @@ public class ModulithVerificationIT {
     @Test
     void should_verify_module_boundaries() {
         var modules = ApplicationModules.of(VantageApplication.class);
-        try {
-            modules.verify();
-        } catch (Exception e) {
+        var violations = modules.verify();
+        if (violations.hasViolations()) {
             System.err.println("=== Module Boundary Violations ===");
-            System.err.println(e.getMessage());
-            if (e.getCause() != null) {
-                System.err.println("Caused by: " + e.getCause().getMessage());
-            }
-            // Attempt to print any nested violations if available
-            if (e.getMessage() != null && e.getMessage().contains("Violations")) {
-                System.err.println(e.getMessage());
-            }
-            throw e;
+            violations.forEach(v -> System.err.println(v.toString()));
+            org.junit.jupiter.api.Assertions.fail("Module boundary violations found");
         }
         assertThat(modules).isNotNull();
     }
