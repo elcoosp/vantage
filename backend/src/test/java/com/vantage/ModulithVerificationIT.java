@@ -15,9 +15,11 @@ public class ModulithVerificationIT {
         var modules = ApplicationModules.of(VantageApplication.class);
         Violations violations = modules.detectViolations();
 
-        if (violations.iterator().hasNext()) {
+        if (violations.hasViolations()) {
             System.err.println("=== Module Boundary Violations ===");
-            violations.forEach(v -> System.err.println("  - " + v.toString()));
+            for (String msg : violations.getMessages()) {
+                System.err.println("  - " + msg);
+            }
             System.err.println("=== End of violations ===");
             fail("Module boundary violations found");
         }

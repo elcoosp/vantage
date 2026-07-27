@@ -1,4 +1,5 @@
 package com.vantage.core;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.domain.Order;
