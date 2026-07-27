@@ -54,13 +54,13 @@ public class AuditHelper {
     private static String serialize(Object obj) {
         if (objectMapper == null) {
             log.warn("ObjectMapper not initialized, using fallback serialization");
-            return "{"error":"objectMapper not available"}";
+            return "{\"error\":\"objectMapper not available\"}";
         }
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize object", e);
-            return "{"error":"serialization failed"}";
+            return "{\"error\":\"serialization failed\"}";
         }
     }
 }
