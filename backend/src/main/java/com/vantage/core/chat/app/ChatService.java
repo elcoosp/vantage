@@ -6,7 +6,7 @@ import java.util.List;
 @Service
 public class ChatService {
     public List<String> getResponseWords(String query) {
-        // Canned response for testing
+        // Canned response for demonstration
         return List.of("Hello", "world", "!");
     }
 }
