@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 public class StorefrontConfig extends BaseTenantEntity {
 
     @Column(columnDefinition = "jsonb", nullable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String layoutPayload;
 
     public String getLayoutPayload() {

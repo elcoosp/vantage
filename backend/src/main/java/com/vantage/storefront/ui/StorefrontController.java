@@ -40,7 +40,7 @@ public class StorefrontController {
         }
 
         return storefrontRepository.findByTenantId(tenantId)
-                .map(config -> {
+                .<ResponseEntity<StorefrontLayoutResponse>>map(config -> {
                     try {
                         List<Map<String, Object>> components = objectMapper.readValue(
                                 config.getLayoutPayload(),
@@ -48,7 +48,7 @@ public class StorefrontController {
                         );
                         return ResponseEntity.ok(new StorefrontLayoutResponse(components));
                     } catch (JsonProcessingException e) {
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<StorefrontLayoutResponse>build();
                     }
                 })
                 .orElseGet(() -> ResponseEntity.ok(new StorefrontLayoutResponse(new ArrayList<>())));

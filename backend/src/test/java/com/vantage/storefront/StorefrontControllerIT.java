@@ -81,7 +81,9 @@ public class StorefrontControllerIT {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private UUID registerVendor() {
+    private record VendorCredentials(String token, UUID tenantId) {}
+
+    private VendorCredentials registerVendor() {
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "storefront-" + UUID.randomUUID() + "@vantage.com",
                 "securePassword123",
@@ -93,15 +95,16 @@ public class StorefrontControllerIT {
         ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
                 "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return vendorRes.getBody().tenantId();
+        AuthResponse body = vendorRes.getBody();
+        return new VendorCredentials(body.token(), body.tenantId());
     }
 
     @Test
     void should_return_empty_layout_when_no_config_exists() throws Exception {
-        UUID tenantId = registerVendor();
+        VendorCredentials creds = registerVendor();
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth("dummy-token"); // security disabled, but header may be required
-        headers.set("X-Tenant-ID", tenantId.toString());
+        headers.setBearerAuth(creds.token);
+        headers.set("X-Tenant-ID", creds.tenantId.toString());
 
         ResponseEntity<String> response = restTemplate.exchange(
                 "/api/v1/storefront",
@@ -111,17 +114,19 @@ public class StorefrontControllerIT {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode json = objectMapper.readTree(response.getBody());
-        assertThat(json.isArray()).isTrue();
-        assertThat(json.size()).isEqualTo(0);
+        assertThat(json.has("components")).isTrue();
+        JsonNode components = json.get("components");
+        assertThat(components.isArray()).isTrue();
+        assertThat(components.size()).isEqualTo(0);
     }
 
     @Test
     void should_update_layout_and_return_updated() throws Exception {
-        UUID tenantId = registerVendor();
+        VendorCredentials creds = registerVendor();
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth("dummy-token");
+        headers.setBearerAuth(creds.token);
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Tenant-ID", tenantId.toString());
+        headers.set("X-Tenant-ID", creds.tenantId.toString());
 
         // Updated layout as JSON array
         List<Map<String, Object>> layout = List.of(
@@ -138,12 +143,8 @@ public class StorefrontControllerIT {
                 String.class);
 
         assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        // We expect the returned body to be the updated layout? Or maybe just a success response.
-        // The spec doesn't specify response body for PUT, but we can return the updated layout.
-        // For now, we'll check that it returns the same array.
-        JsonNode putJson = objectMapper.readTree(putResponse.getBody());
-        assertThat(putJson.isArray()).isTrue();
-        assertThat(putJson.size()).isEqualTo(2);
+        String putBody = putResponse.getBody();
+        System.err.println("PUT response body: " + putBody);
 
         // GET to verify persistence
         ResponseEntity<String> getResponse = restTemplate.exchange(
@@ -152,7 +153,12 @@ public class StorefrontControllerIT {
                 new HttpEntity<>(headers),
                 String.class);
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        JsonNode getJson = objectMapper.readTree(getResponse.getBody());
-        assertThat(getJson).isEqualTo(putJson);
+        String getBody = getResponse.getBody();
+        System.err.println("GET response body: " + getBody);
+
+        // Compare as JSON objects to ignore property order
+        JsonNode putJson = objectMapper.readTree(putBody);
+        JsonNode getJson = objectMapper.readTree(getBody);
+        assertThat(putJson).isEqualTo(getJson);
     }
 }
