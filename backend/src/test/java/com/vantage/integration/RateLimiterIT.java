@@ -90,12 +90,13 @@ public class RateLimiterIT {
         executor.shutdown();
         Duration elapsed = Duration.between(start, Instant.now());
 
-        // With rate limiter: limitForPeriod=1, limitRefreshPeriod=1s, we expect at most 1 successful call per second.
-        // The fallback returns (0,0) so we count how many are zero.
+        // With rate limiter: limitForPeriod=1, limitRefreshPeriod=1s, we expect exactly 1 successful call per second.
+        // The fallback returns (0,0) and the success returns (1.0, 1.0).
+        long successCount = results.stream().filter(c -> c.lat() == 1.0 && c.lon() == 1.0).count();
         long zeroCount = results.stream().filter(c -> c.lat() == 0.0 && c.lon() == 0.0).count();
 
-        // At least 4 calls should fallback (since only 1 per second, and we made 5 rapidly)
-        // This test will fail until RateLimiter is applied.
+        // At least 1 success, and at least 4 fallbacks (since we made 5 rapid calls)
+        assertThat(successCount).isGreaterThanOrEqualTo(1);
         assertThat(zeroCount).isGreaterThanOrEqualTo(4);
         // Elapsed time should be at least ~1 second (to allow one successful call)
         assertThat(elapsed.toMillis()).isGreaterThanOrEqualTo(1000);

@@ -7,6 +7,8 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +16,7 @@ import java.util.UUID;
 
 @Component
 public class MockPaymentGatewayClient {
+    private static final Logger log = LoggerFactory.getLogger(MockPaymentGatewayClient.class);
     private final ChaosMonkeyService chaosMonkeyService;
     private final MeterRegistry meterRegistry;
 
@@ -52,8 +55,10 @@ public class MockPaymentGatewayClient {
 
     private PaymentResult paymentFallback(UUID orderId, Exception e) {
         if (e instanceof CallNotPermittedException) {
+            log.warn("Payment fallback due to circuit open for order: {}", orderId);
             return PaymentResult.CIRCUIT_OPEN;
         }
+        log.warn("Payment fallback due to exception: {}", e.getMessage(), e);
         return PaymentResult.GATEWAY_TIMEOUT;
     }
 }
