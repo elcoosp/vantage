@@ -21,11 +21,7 @@ public class Inventory extends BaseTenantEntity {
     @Version
     private Long version;
 
-@jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
-@jakarta.persistence.JoinColumn(name = "product_id", insertable = false, updatable = false)
-private com.vantage.product.domain.Product product;
 
-public com.vantage.product.domain.Product getProduct() { return product; }
 
     public UUID getProductId() {
         return productId;

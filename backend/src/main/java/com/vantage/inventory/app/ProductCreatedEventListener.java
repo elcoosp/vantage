@@ -2,7 +2,7 @@ package com.vantage.inventory.app;
 
 import com.vantage.inventory.domain.Inventory;
 import com.vantage.inventory.domain.InventoryRepository;
-import com.vantage.product.app.ProductCreatedEvent;
+import com.vantage.core.events.ProductCreatedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

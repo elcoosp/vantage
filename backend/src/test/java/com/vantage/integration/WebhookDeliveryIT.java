@@ -2,7 +2,7 @@ package com.vantage.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.config.RabbitMQConfig;
-import com.vantage.payment.app.event.PaymentSucceededPayload;
+import com.vantage.core.events.PaymentSucceededPayload;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import okhttp3.mockwebserver.MockResponse;

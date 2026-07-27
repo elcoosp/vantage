@@ -1,4 +1,5 @@
 package com.vantage.inventory.app;
+import com.vantage.core.exception.InventoryConflictException;
 
 import com.vantage.core.exception.ResourceNotFoundException;
 import com.vantage.inventory.domain.Inventory;

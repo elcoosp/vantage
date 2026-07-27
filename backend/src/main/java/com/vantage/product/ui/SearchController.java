@@ -1,8 +1,8 @@
-package com.vantage.core.search.ui;
+package com.vantage.product.ui;
 
-import com.vantage.core.search.app.SearchService;
-import com.vantage.core.search.domain.SearchResult;
-import com.vantage.core.search.ui.dto.SearchResultResponse;
+import com.vantage.product.app.SearchService;
+import com.vantage.product.domain.SearchResult;
+import com.vantage.product.ui.dto.SearchResultResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;

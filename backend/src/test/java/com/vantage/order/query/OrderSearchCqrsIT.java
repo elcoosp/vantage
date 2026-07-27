@@ -6,7 +6,7 @@ import com.vantage.core.tenant.TenantContext;
 import com.vantage.order.query.ui.dto.OrderSearchResultResponse;
 import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.order.ui.dto.OrderResponse;
-import com.vantage.payment.app.event.PaymentSucceededPayload;
+import com.vantage.core.events.PaymentSucceededPayload;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;

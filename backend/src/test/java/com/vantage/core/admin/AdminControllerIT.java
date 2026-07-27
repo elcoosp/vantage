@@ -1,7 +1,7 @@
 package com.vantage.core.admin;
 
-import com.vantage.core.admin.ui.dto.ChaosMonkeyToggleRequest;
-import com.vantage.core.admin.ui.dto.SystemMetricsResponse;
+import com.vantage.admin.ui.dto.ChaosMonkeyToggleRequest;
+import com.vantage.admin.ui.dto.SystemMetricsResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import com.vantage.vendor.ui.dto.AuthResponse;

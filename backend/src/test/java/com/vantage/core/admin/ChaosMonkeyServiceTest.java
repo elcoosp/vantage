@@ -1,6 +1,6 @@
 package com.vantage.core.admin;
 
-import com.vantage.core.admin.app.ChaosMonkeyService;
+import com.vantage.core.admin.ChaosMonkeyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

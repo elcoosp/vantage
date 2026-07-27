@@ -8,7 +8,7 @@ import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
 import com.vantage.core.events.OrderCreatedEvent;
 import org.springframework.context.ApplicationEventPublisher;
-import com.vantage.order.app.event.OrderCreatedPayload;
+import com.vantage.core.events.OrderCreatedPayload;
 import com.vantage.order.domain.Order;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.domain.OrderStatus;

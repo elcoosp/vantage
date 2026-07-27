@@ -1,5 +1,6 @@
-package com.vantage.core.security;
+package com.vantage.integration.security;
 
+import com.vantage.core.security.TenantFilterActivator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,7 +16,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, TenantSecurityFilter tenantSecurityFilter, TenantFilterActivator tenantFilterActivator) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                    TenantSecurityFilter tenantSecurityFilter,
+                                                    TenantFilterActivator tenantFilterActivator) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

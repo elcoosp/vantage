@@ -1,4 +1,4 @@
-package com.vantage.core.admin.app;
+package com.vantage.core.admin;
 
 import org.springframework.stereotype.Service;
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -1,2 +1,2 @@
 @org.springframework.modulith.ApplicationModule
-package com.vantage.core;
+package com.vantage.admin;

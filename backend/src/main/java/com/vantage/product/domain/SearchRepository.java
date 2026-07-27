@@ -1,4 +1,4 @@
-package com.vantage.core.search.domain;
+package com.vantage.product.domain;
 
 import com.vantage.product.domain.Product;
 import org.springframework.data.jpa.repository.JpaRepository;

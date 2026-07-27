@@ -1,7 +1,7 @@
 package com.vantage.core.exception;
 
-import com.vantage.inventory.app.InventoryConflictException;
-import com.vantage.payment.app.IdempotencyConflictException;
+import com.vantage.core.exception.InventoryConflictException;
+import com.vantage.core.exception.IdempotencyConflictException;
 import com.vantage.core.ratelimiter.RateLimitExceededException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;

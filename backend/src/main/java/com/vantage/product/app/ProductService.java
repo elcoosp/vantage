@@ -1,4 +1,5 @@
 package com.vantage.product.app;
+import com.vantage.core.events.ProductCreatedEvent;
 
 import com.vantage.core.exception.ResourceNotFoundException;
 import com.vantage.product.domain.Product;
