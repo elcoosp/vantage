@@ -5,6 +5,7 @@ import com.vantage.core.admin.ChaosMonkeyService;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,7 @@ public class MockPaymentGatewayClient {
 
     @Retry(name = "payment")
     @CircuitBreaker(name = "payment", fallbackMethod = "paymentFallback")
+    @Bulkhead(name = "payment", fallbackMethod = "paymentFallback")
     public PaymentResult processPayment(UUID orderId) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
