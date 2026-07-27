@@ -1,4 +1,5 @@
 package com.vantage.integration.security;
+import com.vantage.core.security.JwtService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.tenant.TenantContext;
