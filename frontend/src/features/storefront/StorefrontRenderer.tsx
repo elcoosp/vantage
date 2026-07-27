@@ -4,6 +4,8 @@ import apiClient from '../../lib/api';
 import { HeroBanner } from './components/HeroBanner';
 import { ProductGrid } from './components/ProductGrid';
 import { MarkdownText } from './components/MarkdownText';
+// NOTE: To use this renderer, import it into your route and wrap with React Query provider.
+// Example: <Route path="/storefront" element={<StorefrontRenderer />} />
 
 interface ComponentDefinition {
   componentType: string;
