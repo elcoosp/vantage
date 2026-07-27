@@ -2,10 +2,10 @@ import { Toaster } from "react-hot-toast";
 import { Route, Routes } from "react-router-dom";
 import { CommandPalette } from "./components/CommandPalette";
 import { Layout } from "./components/Layout";
+import { ForecastDashboard } from "./features/analytics/ForecastDashboard";
 import { InventoryGrid } from "./features/inventory/InventoryGrid";
 import { OpsDashboard } from "./features/ops/OpsDashboard";
 import { OrdersPage } from "./features/orders/OrdersPage";
-import { ForecastDashboard } from "./features/analytics/ForecastDashboard";
 
 function Dashboard() {
 	return (
