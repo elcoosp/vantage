@@ -4,6 +4,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     id("org.sonarqube") version "5.1.0.4882"
     id("jacoco")
+    id("org.openapi.generator") version "7.5.0"
 }
 
 group = "com.vantage"
@@ -44,6 +45,8 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("io.swagger.core.v3:swagger-annotations:2.2.20")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     implementation("com.bucket4j:bucket4j-core:8.7.0")
@@ -102,4 +105,31 @@ sonar {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory.get().asFile}/reports/jacoco/test/jacocoTestReport.xml")
     }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir("$rootDir/src/generated/src/main/java")
+        }
+    }
+}
+
+val generateOpenApiModels by tasks.registering(org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+    generatorName.set("spring")
+    inputSpec.set("$projectDir/../docs/02-contracts/02-rest-api-spec.yaml")
+    outputDir.set("$rootDir/src/generated")
+    apiPackage.set("com.vantage.api.api")
+    modelPackage.set("com.vantage.api.model")
+    configOptions.set(mapOf(
+        "useSpringBoot3" to "true",
+        "interfaceOnly" to "true",
+        "useJakartaEe" to "true",
+        "dateLibrary" to "java8",
+        "serializableModel" to "true"
+    ))
+}
+
+tasks.compileJava {
+    dependsOn(generateOpenApiModels)
 }
