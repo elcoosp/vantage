@@ -1,4 +1,4 @@
-package com.vantage.core.search.ui.dto;
+package com.vantage.product.ui.dto;
 
 import java.util.UUID;
 

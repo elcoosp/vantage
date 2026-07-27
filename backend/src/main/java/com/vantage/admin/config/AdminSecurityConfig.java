@@ -1,4 +1,4 @@
-package com.vantage.core.admin.config;
+package com.vantage.admin.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;

@@ -1,6 +1,4 @@
-package com.vantage.inventory.app;
-
-import com.vantage.core.exception.VantageDomainException;
+package com.vantage.core.exception;
 
 public class InventoryConflictException extends VantageDomainException {
     private final Long expectedVersion;

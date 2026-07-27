@@ -1,7 +1,5 @@
 package com.vantage.core.exception;
 
-import com.vantage.inventory.app.InventoryConflictException;
-import com.vantage.payment.app.IdempotencyConflictException;
 import com.vantage.core.ratelimiter.RateLimitExceededException;
 import com.vantage.core.exception.VantageDomainException;
 import org.slf4j.Logger;
@@ -19,12 +17,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(InventoryConflictException.class)
-    public ResponseEntity<ProblemDetail> handleInventoryConflictException(InventoryConflictException ex, WebRequest request) {
-        log.warn("Inventory conflict occurred: {}", ex.getMessage());
-        ProblemDetail pd = ProblemDetailFactory.createInventoryConflict(ex, request);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
-    }
+
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
@@ -33,12 +26,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);
     }
 
-    @ExceptionHandler(IdempotencyConflictException.class)
-    public ResponseEntity<ProblemDetail> handleIdempotencyConflictException(IdempotencyConflictException ex, WebRequest request) {
-        log.warn("Idempotency conflict: {}", ex.getMessage());
-        ProblemDetail pd = ProblemDetailFactory.createIdempotencyConflict(ex, request);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
-    }
+
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {

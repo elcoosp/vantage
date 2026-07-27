@@ -1,6 +1,4 @@
-package com.vantage.payment.app;
-
-import com.vantage.core.exception.VantageDomainException;
+package com.vantage.core.exception;
 
 public class IdempotencyConflictException extends VantageDomainException {
     public IdempotencyConflictException(String message) {

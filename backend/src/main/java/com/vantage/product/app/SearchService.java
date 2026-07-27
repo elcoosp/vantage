@@ -1,7 +1,7 @@
-package com.vantage.core.search.app;
+package com.vantage.product.app;
 
-import com.vantage.core.search.domain.SearchRepository;
-import com.vantage.core.search.domain.SearchResult;
+import com.vantage.product.domain.SearchRepository;
+import com.vantage.product.domain.SearchResult;
 import com.vantage.core.tenant.TenantContext;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;

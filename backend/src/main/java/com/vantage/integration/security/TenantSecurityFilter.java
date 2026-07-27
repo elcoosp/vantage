@@ -1,4 +1,4 @@
-package com.vantage.core.security;
+package com.vantage.integration.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.tenant.TenantContext;

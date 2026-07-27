@@ -1,4 +1,5 @@
 package com.vantage.core.security;
+import com.vantage.integration.security.TenantSecurityFilter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

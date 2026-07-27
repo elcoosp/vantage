@@ -1,8 +1,8 @@
-package com.vantage.core.admin.ui;
+package com.vantage.admin.ui;
 
-import com.vantage.core.admin.app.ChaosMonkeyService;
-import com.vantage.core.admin.ui.dto.ChaosMonkeyToggleRequest;
-import com.vantage.core.admin.ui.dto.SystemMetricsResponse;
+import com.vantage.admin.app.ChaosMonkeyService;
+import com.vantage.admin.ui.dto.ChaosMonkeyToggleRequest;
+import com.vantage.admin.ui.dto.SystemMetricsResponse;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.vendor.domain.VendorRepository;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -48,7 +48,7 @@ public class AdminController {
     public SystemMetricsResponse getMetrics() {
         long totalVendors = vendorRepository.count();
         long totalOrders = orderRepository.count();
-                        String circuitBreakerState = circuitBreakerRegistry.find("payment")
+        String circuitBreakerState = circuitBreakerRegistry.find("payment")
                 .map(cb -> cb.getState().name())
                 .orElse("UNKNOWN");
         return new SystemMetricsResponse(totalVendors, totalOrders, circuitBreakerState);
