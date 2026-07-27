@@ -2,6 +2,7 @@ package com.vantage;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.Violations;
 import org.springframework.modulith.docs.Documenter;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,12 +13,15 @@ public class ModulithVerificationIT {
     @Test
     void should_verify_module_boundaries() {
         var modules = ApplicationModules.of(VantageApplication.class);
-        var violations = modules.verify();
+        Violations violations = modules.detectViolations();
+
         if (violations.iterator().hasNext()) {
             System.err.println("=== Module Boundary Violations ===");
-            violations.forEach(v -> System.err.println(v.toString()));
+            violations.forEach(v -> System.err.println("  - " + v.toString()));
+            System.err.println("=== End of violations ===");
             fail("Module boundary violations found");
         }
+
         assertThat(modules).isNotNull();
     }
 
