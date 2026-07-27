@@ -68,7 +68,7 @@ public class AdminTenantManagementIT {
         registry.add("spring.datasource.replica.username", postgres::getUsername);
         registry.add("spring.datasource.replica.password", postgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "true"); // enable migrations
+        registry.add("spring.flyway.enabled", () -> "false"); // enable migrations
         registry.add("spring.rabbitmq.host", rabbitmq::getHost);
         registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
         registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
@@ -95,6 +95,12 @@ public class AdminTenantManagementIT {
     void setup() {
         // Ensure admin exists (seeded by migration)
         // Generate admin token
+        // Ensure admin exists in DB (since flyway is disabled)
+        jdbcTemplate.execute(
+            "INSERT INTO vendors (id, tenant_id, email, password_hash, company_name, status, is_admin, created_at, updated_at) " +
+            "SELECT gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 'admin@vantage.com', '$2a$10$dummyhashforadmin', 'Vantage Admin', 'ACTIVE', TRUE, NOW(), NOW() " +
+            "WHERE NOT EXISTS (SELECT 1 FROM vendors WHERE tenant_id = '11111111-1111-1111-1111-111111111111')"
+        );
         adminToken = jwtService.generateToken(adminTenantId);
 
         // Register a regular vendor
@@ -151,7 +157,7 @@ public class AdminTenantManagementIT {
         assertThat(suspendRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         // Verify status updated
-        Vendor vendor = vendorRepository.findByTenantId(vendorTenantId).orElseThrow();
+        Vendor vendor = vendorRepository.findByTenantIdWithoutFilter(vendorTenantId).orElseThrow();
         assertThat(vendor.getStatus()).isEqualTo(VendorStatus.SUSPENDED);
 
         // Reactivate

@@ -22,13 +22,13 @@ public class AdminTenantService {
         this.vendorRepository = vendorRepository;
     }
 
-    // TODO: Add admin authorization check
     private void ensureAdmin() {
         UUID currentTenant = TenantContext.getTenantId();
         if (currentTenant == null) {
             throw new IllegalStateException("No tenant context");
         }
-        Vendor admin = vendorRepository.findByTenantId(currentTenant)
+        // Use findByTenantIdWithoutFilter to bypass tenant filter
+        Vendor admin = vendorRepository.findByTenantIdWithoutFilter(currentTenant)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
         if (!admin.isAdmin()) {
             throw new SecurityException("Only admin users can access this endpoint");
@@ -38,7 +38,9 @@ public class AdminTenantService {
     @Transactional(readOnly = true)
     public List<TenantResponse> getAllTenants() {
         ensureAdmin();
-        return vendorRepository.findAllVendors().stream()
+        // Use findAllVendors to bypass tenant filter
+        List<Vendor> vendors = vendorRepository.findAllVendors();
+        return vendors.stream()
                 .map(TenantResponse::from)
                 .collect(Collectors.toList());
     }
@@ -46,7 +48,8 @@ public class AdminTenantService {
     @Transactional
     public void updateStatus(UUID tenantId, VendorStatus newStatus) {
         ensureAdmin();
-        Vendor vendor = vendorRepository.findByTenantId(tenantId)
+        // Use findByTenantIdWithoutFilter to bypass tenant filter
+        Vendor vendor = vendorRepository.findByTenantIdWithoutFilter(tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found for tenant: " + tenantId));
         vendor.setStatus(newStatus);
         vendorRepository.save(vendor);
