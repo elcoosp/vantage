@@ -7,6 +7,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.GenerationMode;
 
 public class ForecastPropertyTest {
 
@@ -19,7 +20,7 @@ public class ForecastPropertyTest {
                 .array(double[].class).ofSize(30);
     }
 
-    @Property(tries = 1000)
+    @Property(generation = GenerationMode.RANDOMIZED, tries = 1000)
     void should_adhere_to_forecasting_invariants(@ForAll("history30Days") double[] history) {
         ForecastResult result = calculator.forecast(history, 7);
 
