@@ -1,3 +1,2 @@
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"integration", "order", "vendor", "payment", "inventory", "product", "admin", "analytics"})
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"integration", "order", "vendor", "payment", "inventory", "product", "admin", "analytics"})
+ @org.springframework.modulith.ApplicationModule
 package com.vantage.core;

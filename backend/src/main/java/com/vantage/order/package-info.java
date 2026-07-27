@@ -1,4 +1,2 @@
-@org.springframework.modulith.ApplicationModule
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"core", "payment", "inventory"})
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"core", "payment", "inventory"})
+ @org.springframework.modulith.ApplicationModule
 package com.vantage.order;

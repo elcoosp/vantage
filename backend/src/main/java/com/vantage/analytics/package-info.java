@@ -1,4 +1,2 @@
-@org.springframework.modulith.ApplicationModule
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"core"})
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"core"})
+ @org.springframework.modulith.ApplicationModule
 package com.vantage.analytics;
