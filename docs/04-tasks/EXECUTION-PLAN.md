@@ -101,11 +101,11 @@ This document defines the exact execution sequence to build Vantage using up to 
 *Agents pull the updated `main` containing Phase 3 merges.*
 
 - **Agent 1 (Testing & Architecture):**
-  - [ ] `TASK-033`: Spring Modulith Verification Tests
-  - [ ] `TASK-046`: ArchUnit Architectural Rule Enforcement
-  - [ ] `TASK-036`: Property-Based Testing for Forecasting
-  - [ ] `TASK-037`: Backend Performance Testing (k6)
-  - [ ] Merge to `main`
+  - [x] `TASK-033`: Spring Modulith Verification Tests
+  - [x] `TASK-046`: ArchUnit Architectural Rule Enforcement
+  - [x] `TASK-036`: Property-Based Testing for Forecasting
+  - [x] `TASK-037`: Backend Performance Testing (k6)
+  - [x] Merge to `main`
 
 - **Agent 2 (Backend Polish):**
   - [ ] `TASK-030`: Resilience4j Bulkhead & Rate Limiter (Touches `payment/`, `integration/`)

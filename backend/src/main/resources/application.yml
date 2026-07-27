@@ -48,6 +48,20 @@ management:
   otlp:
     tracing:
       endpoint: http://localhost:4317/v1/traces
+
+resilience4j:
+  bulkhead:
+    instances:
+      payment:
+        maxConcurrentCalls: 5
+        maxWaitDuration: 0ms
+  ratelimiter:
+    instances:
+      geocoding:
+        limitForPeriod: 1
+        limitRefreshPeriod: 1s
+        timeoutDuration: 2s
+
 ---
 spring:
   config:
