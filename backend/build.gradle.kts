@@ -79,8 +79,8 @@ tasks.withType<JavaCompile> {
 tasks.withType<Test> {
     useJUnitPlatform()
     // Exclude integration tests (they require Docker and external services)
-    exclude("**/*IT.class")
-    exclude("**/*IntegrationTest.class")
+    // exclude("**/*IT.class")
+    // exclude("**/*IntegrationTest.class")
 }
 
 jacoco {

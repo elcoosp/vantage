@@ -19,4 +19,6 @@ public interface VendorRepository extends JpaRepository<Vendor, UUID> {
 
     @Query(value = "SELECT * FROM vendors WHERE id = :id", nativeQuery = true)
     Optional<Vendor> findByIdWithoutFilter(@Param("id") UUID id);
+    @Query(value = "SELECT * FROM vendors WHERE tenant_id = :tenantId", nativeQuery = true)
+    Optional<Vendor> findByTenantIdWithoutFilter(@Param("tenantId") UUID tenantId);
 }

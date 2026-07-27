@@ -167,4 +167,54 @@ public class AdminTenantManagementIT {
         vendor = vendorRepository.findByTenantId(vendorTenantId).orElseThrow();
         assertThat(vendor.getStatus()).isEqualTo(VendorStatus.ACTIVE);
     }
+
+    @Test
+    void should_return_403_when_suspended_tenant_tries_to_access_protected_endpoint() {
+        // 1. Register a vendor and get token
+        VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
+                "suspension-" + UUID.randomUUID() + "@vantage.com",
+                "securePassword123",
+                "Suspension Store");
+        HttpHeaders vendorHeaders = new HttpHeaders();
+        vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
+        vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
+        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
+        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
+                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        String vendorToken = vendorRes.getBody().token();
+        UUID vendorTenantId = vendorRes.getBody().tenantId();
+
+        // 2. Suspend the vendor via admin
+        HttpHeaders adminHeaders = new HttpHeaders();
+        adminHeaders.setBearerAuth(adminToken);
+        adminHeaders.setContentType(MediaType.APPLICATION_JSON);
+        adminHeaders.set("X-Tenant-ID", adminTenantId.toString());
+        StatusUpdateRequest suspendRequest = new StatusUpdateRequest(VendorStatus.SUSPENDED);
+        HttpEntity<StatusUpdateRequest> suspendEntity = new HttpEntity<>(suspendRequest, adminHeaders);
+        ResponseEntity<Void> suspendRes = restTemplate.exchange(
+                "/api/v1/admin/tenants/" + vendorTenantId + "/status",
+                HttpMethod.PUT,
+                suspendEntity,
+                Void.class);
+        assertThat(suspendRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // 3. Attempt to access a protected endpoint with vendor token
+        HttpHeaders vendorAuthHeaders = new HttpHeaders();
+        vendorAuthHeaders.setBearerAuth(vendorToken);
+        vendorAuthHeaders.set("X-Tenant-ID", vendorTenantId.toString());
+        HttpEntity<Void> entity = new HttpEntity<>(vendorAuthHeaders);
+
+        // Try to get products (or any protected endpoint)
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/v1/products",
+                HttpMethod.GET,
+                entity,
+                String.class);
+
+        // 4. Expect 403 Forbidden
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).contains("Tenant account is suspended");
+    }
+
 }
