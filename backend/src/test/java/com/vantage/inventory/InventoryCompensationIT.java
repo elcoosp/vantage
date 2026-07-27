@@ -8,7 +8,7 @@ import com.vantage.inventory.domain.Inventory;
 import com.vantage.inventory.domain.InventoryRepository;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
-import com.vantage.order.app.event.InventoryReleasedPayload;
+import com.vantage.core.events.InventoryReleasedPayload;
 import com.vantage.product.ui.dto.ProductRequest;
 import com.vantage.product.ui.dto.ProductResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;

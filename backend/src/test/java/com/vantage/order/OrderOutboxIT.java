@@ -6,7 +6,7 @@ import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
 import com.vantage.core.tenant.TenantContext;
-import com.vantage.order.app.event.OrderCreatedPayload;
+import com.vantage.core.events.OrderCreatedPayload;
 import com.vantage.order.domain.OrderRepository;
 import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.order.ui.dto.OrderResponse;

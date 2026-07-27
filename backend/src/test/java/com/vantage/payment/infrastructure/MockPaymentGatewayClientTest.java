@@ -1,6 +1,6 @@
 package com.vantage.payment.infrastructure;
 
-import com.vantage.admin.app.ChaosMonkeyService;
+import com.vantage.core.admin.ChaosMonkeyService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

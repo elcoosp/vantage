@@ -1,6 +1,6 @@
 package com.vantage.payment.infrastructure;
 
-import com.vantage.admin.app.ChaosMonkeyService;
+import com.vantage.core.admin.ChaosMonkeyService;
 
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

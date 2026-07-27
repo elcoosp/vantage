@@ -8,7 +8,7 @@ import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.exception.ResourceNotFoundException;
 import com.vantage.inventory.domain.Inventory;
 import com.vantage.inventory.domain.InventoryRepository;
-import com.vantage.order.app.event.InventoryReleasedPayload;
+import com.vantage.core.events.InventoryReleasedPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.Exchange;

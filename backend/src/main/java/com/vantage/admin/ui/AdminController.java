@@ -1,6 +1,6 @@
 package com.vantage.admin.ui;
 
-import com.vantage.admin.app.ChaosMonkeyService;
+import com.vantage.core.admin.ChaosMonkeyService;
 import com.vantage.admin.ui.dto.ChaosMonkeyToggleRequest;
 import com.vantage.admin.ui.dto.SystemMetricsResponse;
 import com.vantage.order.domain.OrderRepository;
