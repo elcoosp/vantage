@@ -1,10 +1,13 @@
 package com.vantage.integration.security;
-import com.vantage.core.security.JwtService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vantage.core.security.JwtService;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.integration.domain.ApiKey;
 import com.vantage.integration.domain.ApiKeyRepository;
+import com.vantage.vendor.domain.Vendor;
+import com.vantage.vendor.domain.VendorRepository;
+import com.vantage.vendor.domain.VendorStatus;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -39,15 +42,19 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final ApiKeyRepository apiKeyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VendorRepository vendorRepository;
 
-    public TenantSecurityFilter(JwtService jwtService, ApiKeyRepository apiKeyRepository, PasswordEncoder passwordEncoder) {
+    public TenantSecurityFilter(JwtService jwtService, ApiKeyRepository apiKeyRepository,
+                                PasswordEncoder passwordEncoder, VendorRepository vendorRepository) {
         this.jwtService = jwtService;
         this.apiKeyRepository = apiKeyRepository;
         this.passwordEncoder = passwordEncoder;
+        this.vendorRepository = vendorRepository;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String authHeader = request.getHeader(AUTHORIZATION_HEADER);
         boolean authenticated = false;
 
@@ -55,10 +62,19 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
             String token = authHeader.substring(BEARER_PREFIX.length());
             try {
                 UUID tenantId = jwtService.extractTenantId(token);
+                // Check vendor status before allowing access
+                Vendor vendor = vendorRepository.findByTenantIdWithoutFilter(tenantId)
+                        .orElseThrow(() -> new IllegalStateException("Vendor not found for tenant: " + tenantId));
+                if (vendor.getStatus() == VendorStatus.SUSPENDED) {
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    OBJECT_MAPPER.writeValue(response.getWriter(),
+                            Map.of("error", "Forbidden", "message", "Tenant account is suspended"));
+                    return;
+                }
                 TenantContext.setTenantId(tenantId);
                 authenticated = true;
                 log.info("Authenticated via JWT for tenant: {}", tenantId);
-                // Set SecurityContext
                 Authentication authentication = new UsernamePasswordAuthenticationToken(tenantId.toString(), null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException | IllegalArgumentException e) {
@@ -73,7 +89,6 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
                 authenticated = authenticateWithApiKey(apiKey, response);
                 if (authenticated) {
                     log.info("API key authentication succeeded");
-                    // Set SecurityContext
                     UUID tenantId = TenantContext.getTenantId();
                     if (tenantId != null) {
                         Authentication authentication = new UsernamePasswordAuthenticationToken(tenantId.toString(), null, List.of());
@@ -96,7 +111,6 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            // Clear security context and tenant context after request
             SecurityContextHolder.clearContext();
             TenantContext.clear();
         }
@@ -114,6 +128,12 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
         for (ApiKey key : keys) {
             log.info("Checking key with id: {}, hash: {}", key.getId(), key.getKeyHash());
             if (passwordEncoder.matches(apiKey, key.getKeyHash())) {
+                // Check if tenant is suspended
+                Vendor vendor = vendorRepository.findByTenantIdWithoutFilter(key.getTenantId()).orElse(null);
+                if (vendor == null || vendor.getStatus() == VendorStatus.SUSPENDED) {
+                    log.warn("API key belongs to suspended or non-existent tenant: {}", key.getTenantId());
+                    continue;
+                }
                 log.info("API key matched for tenant: {}", key.getTenantId());
                 TenantContext.setTenantId(key.getTenantId());
                 key.setLastUsedAt(Instant.now());
