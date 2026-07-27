@@ -117,7 +117,7 @@ sourceSets {
 
 val generateOpenApiModels by tasks.registering(org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
     generatorName.set("spring")
-    inputSpec.set("$rootDir/../docs/02-contracts/02-rest-api-spec.yaml")
+    inputSpec.set("$projectDir/../docs/02-contracts/02-rest-api-spec.yaml")
     outputDir.set("$rootDir/src/generated")
     apiPackage.set("com.vantage.api.api")
     modelPackage.set("com.vantage.api.model")

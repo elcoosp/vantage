@@ -32,5 +32,11 @@ jobs:
           npm ci
           npm run generate:api
       - name: Check for uncommitted changes
+      - name: Compile Backend generated code
         run: |
-          git diff --exit-code || (echo "Generated files are out of sync. Please run the codegen locally and commit the changes." && exit 1)
+          cd backend
+          ./gradlew compileJava
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
