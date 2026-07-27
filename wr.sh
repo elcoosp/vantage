@@ -1,36 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WT="../vantage-worktrees/agent-1-task-044"
+WT="../vantage-worktrees/agent-1-task-026"
 cd "$WT"
 
-echo "=== Resolving merge conflicts ==="
+echo "=== Fetching latest main ==="
+git fetch origin main
 
-# Check if we are in a merge state
-if ! git status --porcelain | grep -q "^UU"; then
-    echo "No merge conflicts detected. Exiting."
-    exit 0
+echo "=== Merging origin/main into current branch ==="
+# Attempt merge, but don't commit automatically
+if git merge origin/main --no-commit --no-ff; then
+    echo "✅ No conflicts. Committing merge."
+    git commit -m "chore: merge main into agent-1/TASK-026"
+else
+    echo "⚠️  Merge conflicts detected."
+
+    # List conflicted files
+    CONFLICTED=$(git diff --name-only --diff-filter=U)
+    echo "Conflicted files:"
+    echo "$CONFLICTED"
+
+    # Resolve each conflicted file
+    for file in $CONFLICTED; do
+        echo "Resolving $file"
+        # Decide which version to keep
+        if [[ "$file" =~ ^backend/src/main/java/com/vantage/core/chat/ ]] || \
+           [[ "$file" =~ ^frontend/src/features/chat/ ]] || \
+           [[ "$file" == "frontend/src/components/Layout.tsx" ]]; then
+            echo "  Keeping our version (--ours) for $file"
+            git checkout --ours "$file"
+        else
+            echo "  Accepting main version (--theirs) for $file"
+            git checkout --theirs "$file"
+        fi
+        git add "$file"
+    done
+
+    echo "=== Committing merge resolution ==="
+    git commit -m "chore: resolve merge conflicts with main (keep chat changes, accept others from main)"
 fi
 
-# For package.json: take our version (HEAD)
-git checkout --ours -- frontend/package.json
-git add frontend/package.json
+echo "=== Pushing branch ==="
+git push origin agent-1/TASK-026
 
-# For package-lock.json: we modified it, origin/main deleted it. Keep ours.
-git checkout --ours -- frontend/package-lock.json
-git add frontend/package-lock.json
-
-# Verify all conflicts are resolved
-if git diff --name-only --diff-filter=U | grep -q .; then
-    echo "There are still unresolved conflicts:"
-    git diff --name-only --diff-filter=U
-    exit 1
-fi
-
-echo "All conflicts resolved. Committing merge."
-git commit -m "merge: resolve conflicts with origin/main by keeping HEAD (openapi generation) changes"
-
-echo "=== Merge complete. Pushing to origin ==="
-git push origin HEAD
-
-echo "✅ Merge conflict resolution done."
+echo "✅ Merge and push complete."
