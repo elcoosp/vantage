@@ -1,0 +1,68 @@
+name: Performance Testing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  perf-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install k6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v0.50.0/k6-v0.50.0-linux-amd64.tar.gz -o k6.tar.gz
+          tar -xzf k6.tar.gz
+          sudo mv k6-v0.50.0-linux-amd64/k6 /usr/local/bin/
+
+      - name: Start backend and database via Docker Compose
+        run: |
+          docker compose up -d
+          timeout 120s bash -c 'until curl -s http://localhost:8080/actuator/health | grep -q "UP"; do sleep 2; done'
+
+      - name: Seed vendor and product data
+        run: |
+          RESPONSE=$(curl -s -X POST http://localhost:8080/api/v1/vendors/register \
+            -H "Content-Type: application/json" \
+            -H "X-Tenant-ID: 00000000-0000-0000-0000-000000000000" \
+            -d '{"email": "perf-test@vantage.com", "password": "securePassword123", "name": "Perf Vendor"}')
+
+          TOKEN=$(echo "$RESPONSE" | jq -r '.token')
+          TENANT_ID=$(echo "$RESPONSE" | jq -r '.tenantId')
+
+          PRODUCT_RESPONSE=$(curl -s -X POST http://localhost:8080/api/v1/products \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "X-Tenant-ID: $TENANT_ID" \
+            -d '{"name": "Flash Sale Product", "description": "High demand", "price": 99.99}')
+
+          PRODUCT_ID=$(echo "$PRODUCT_RESPONSE" | jq -r '.id')
+
+          echo "VENDOR_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          echo "TENANT_ID=$TENANT_ID" >> "$GITHUB_ENV"
+          echo "PRODUCT_ID=$PRODUCT_ID" >> "$GITHUB_ENV"
+
+          echo "Seeded TENANT_ID: $TENANT_ID"
+          echo "Seeded PRODUCT_ID: $PRODUCT_ID"
+
+      - name: Run k6 performance test
+        run: |
+          k6 run backend/src/test/performance/flash_sale.js \
+            --env BASE_URL=http://localhost:8080 \
+            --env VENDOR_TOKEN="${{ env.VENDOR_TOKEN }}" \
+            --env TENANT_ID="${{ env.TENANT_ID }}" \
+            --env PRODUCT_ID="${{ env.PRODUCT_ID }}" \
+            --summary-export=k6-summary.json
+
+      - name: Upload k6 summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-performance-summary
+          path: k6-summary.json
+        if: always()
