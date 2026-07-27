@@ -9,11 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import com.vantage.api.api.ApiApi;
-import com.vantage.api.model.AuthResponse;
-import com.vantage.api.model.VendorRegistrationRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/vendors")
@@ -33,7 +32,7 @@ public class VendorController implements ApiApi {
     }
 
     @Override
-    public ResponseEntity<AuthResponse> apiV1VendorsRegisterPost(VendorRegistrationRequest vendorRegistrationRequest) {
+    public ResponseEntity<com.vantage.api.model.AuthResponse> apiV1VendorsRegisterPost(com.vantage.api.model.VendorRegistrationRequest vendorRegistrationRequest) {
         com.vantage.vendor.ui.dto.VendorRegistrationRequest internalRequest =
             new com.vantage.vendor.ui.dto.VendorRegistrationRequest(
                 vendorRegistrationRequest.getEmail(),
@@ -41,7 +40,7 @@ public class VendorController implements ApiApi {
                 vendorRegistrationRequest.getStoreName()
             );
         com.vantage.vendor.app.VendorRegistrationResult result = vendorService.register(internalRequest);
-        AuthResponse response = new AuthResponse()
+        com.vantage.api.model.AuthResponse response = new com.vantage.api.model.AuthResponse()
             .accessToken(result.token())
             .tenantId(result.tenantId());
         return new ResponseEntity<>(response, HttpStatus.CREATED);

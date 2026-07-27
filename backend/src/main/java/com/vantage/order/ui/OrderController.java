@@ -8,13 +8,12 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.vantage.api.api.ApiApi;
-import com.vantage.api.model.OrderRequest;
-import com.vantage.api.model.OrderResponse;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -33,7 +32,7 @@ public class OrderController implements ApiApi {
     }
 
     @Override
-    public ResponseEntity<OrderResponse> apiV1OrdersPost(OrderRequest orderRequest) {
+    public ResponseEntity<com.vantage.api.model.OrderResponse> apiV1OrdersPost(com.vantage.api.model.OrderRequest orderRequest) {
         com.vantage.order.ui.dto.OrderRequest internalRequest =
             new com.vantage.order.ui.dto.OrderRequest(
                 orderRequest.getProductId(),
@@ -41,9 +40,9 @@ public class OrderController implements ApiApi {
                 null
             );
         com.vantage.order.ui.dto.OrderResponse internalResponse = orderService.createOrder(internalRequest);
-        OrderResponse response = new OrderResponse()
+        com.vantage.api.model.OrderResponse response = new com.vantage.api.model.OrderResponse()
             .orderId(internalResponse.id())
-            .status(OrderResponse.StatusEnum.fromValue(internalResponse.status().name()));
+            .status(com.vantage.api.model.OrderResponse.StatusEnum.fromValue(internalResponse.status().name()));
         return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
 

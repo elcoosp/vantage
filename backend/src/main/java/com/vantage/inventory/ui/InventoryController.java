@@ -10,12 +10,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import com.vantage.api.api.ApiApi;
-import com.vantage.api.model.InventoryResponse;
-import com.vantage.api.model.InventoryUpdateRequest;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/v1/inventory")
@@ -35,12 +34,12 @@ public class InventoryController implements ApiApi {
     }
 
     @Override
-    public ResponseEntity<InventoryResponse> apiV1InventoryProductIdPut(UUID productId, Integer ifMatch, InventoryUpdateRequest inventoryUpdateRequest) {
+    public ResponseEntity<com.vantage.api.model.InventoryResponse> apiV1InventoryProductIdPut(UUID productId, Integer ifMatch, com.vantage.api.model.InventoryUpdateRequest inventoryUpdateRequest) {
         com.vantage.inventory.ui.dto.InventoryUpdateRequest internalRequest =
             new com.vantage.inventory.ui.dto.InventoryUpdateRequest(inventoryUpdateRequest.getQuantity());
         com.vantage.inventory.ui.dto.InventoryResponse internalResponse =
             inventoryService.updateInventory(productId, ifMatch.longValue(), internalRequest);
-        InventoryResponse response = new InventoryResponse()
+        com.vantage.api.model.InventoryResponse response = new com.vantage.api.model.InventoryResponse()
             .productId(internalResponse.productId())
             .quantity(internalResponse.quantity())
             .version(internalResponse.version().intValue());

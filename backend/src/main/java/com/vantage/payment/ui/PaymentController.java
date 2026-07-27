@@ -10,10 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import com.vantage.api.api.ApiApi;
-import com.vantage.api.model.PaymentRequest;
-import com.vantage.api.model.PaymentResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -37,7 +36,7 @@ public class PaymentController implements ApiApi {
     }
 
     @Override
-    public ResponseEntity<PaymentResponse> apiV1PaymentsPost(UUID idempotencyKey, PaymentRequest paymentRequest) {
+    public ResponseEntity<com.vantage.api.model.PaymentResponse> apiV1PaymentsPost(UUID idempotencyKey, com.vantage.api.model.PaymentRequest paymentRequest) {
         com.vantage.payment.ui.dto.PaymentRequest internalRequest =
             new com.vantage.payment.ui.dto.PaymentRequest(
                 paymentRequest.getOrderId(),
@@ -46,9 +45,9 @@ public class PaymentController implements ApiApi {
             );
         com.vantage.payment.ui.dto.PaymentResponse internalResponse =
             paymentService.processPayment(idempotencyKey.toString(), internalRequest);
-        PaymentResponse response = new PaymentResponse()
+        com.vantage.api.model.PaymentResponse response = new com.vantage.api.model.PaymentResponse()
             .transactionId(internalResponse.transactionId().toString())
-            .status(PaymentResponse.StatusEnum.fromValue(internalResponse.status()));
+            .status(com.vantage.api.model.PaymentResponse.StatusEnum.fromValue(internalResponse.status()));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
