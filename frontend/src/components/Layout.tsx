@@ -30,6 +30,9 @@ export function Layout() {
 					<Link to="/ops" className="block px-3 py-2 rounded hover:bg-gray-700">
 						Ops
 					</Link>
+					<Link to="/developer" className="block px-3 py-2 rounded hover:bg-gray-700">
+						Developer
+					</Link>
 				</nav>
 				{accessToken && (
 					<div className="p-4 border-t border-gray-700">

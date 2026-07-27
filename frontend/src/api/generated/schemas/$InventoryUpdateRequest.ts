@@ -3,10 +3,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $InventoryUpdateRequest = {
-    properties: {
-        quantity: {
-            type: 'number',
-            isRequired: true,
-        },
-    },
+	properties: {
+		quantity: {
+			type: "number",
+			isRequired: true,
+		},
+	},
 } as const;

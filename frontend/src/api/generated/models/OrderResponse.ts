@@ -3,12 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 export type OrderResponse = {
-    orderId?: string;
-    status?: OrderResponse.status;
+	orderId?: string;
+	status?: OrderResponse.status;
 };
 export namespace OrderResponse {
-    export enum status {
-        CREATED = 'CREATED',
-    }
+	export enum status {
+		CREATED = "CREATED",
+	}
 }
-

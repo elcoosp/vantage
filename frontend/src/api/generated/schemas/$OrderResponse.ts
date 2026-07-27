@@ -3,13 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $OrderResponse = {
-    properties: {
-        orderId: {
-            type: 'string',
-            format: 'uuid',
-        },
-        status: {
-            type: 'Enum',
-        },
-    },
+	properties: {
+		orderId: {
+			type: "string",
+			format: "uuid",
+		},
+		status: {
+			type: "Enum",
+		},
+	},
 } as const;

@@ -3,16 +3,16 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $AuthResponse = {
-    properties: {
-        accessToken: {
-            type: 'string',
-        },
-        refreshToken: {
-            type: 'string',
-        },
-        tenantId: {
-            type: 'string',
-            format: 'uuid',
-        },
-    },
+	properties: {
+		accessToken: {
+			type: "string",
+		},
+		refreshToken: {
+			type: "string",
+		},
+		tenantId: {
+			type: "string",
+			format: "uuid",
+		},
+	},
 } as const;
