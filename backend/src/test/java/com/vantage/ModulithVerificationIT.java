@@ -11,8 +11,8 @@ public class ModulithVerificationIT {
     @Test
     void should_verify_module_boundaries() {
         var modules = ApplicationModules.of(VantageApplication.class);
-        var violations = modules.verify();
-        if (violations.hasViolations()) {
+        var violations = modules.getViolations();
+        if (!violations.isEmpty()) {
             System.err.println("=== Module Boundary Violations ===");
             violations.forEach(v -> System.err.println(v.toString()));
             org.junit.jupiter.api.Assertions.fail("Module boundary violations found");
