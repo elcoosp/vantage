@@ -48,6 +48,9 @@ jobs:
           echo "TENANT_ID=$TENANT_ID" >> "$GITHUB_ENV"
           echo "PRODUCT_ID=$PRODUCT_ID" >> "$GITHUB_ENV"
 
+          echo "Seeded TENANT_ID: $TENANT_ID"
+          echo "Seeded PRODUCT_ID: $PRODUCT_ID"
+
       - name: Run k6 performance test
         run: |
           k6 run backend/src/test/performance/flash_sale.js \

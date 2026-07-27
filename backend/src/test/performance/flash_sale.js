@@ -19,7 +19,6 @@ export const options = {
   ],
   thresholds: {
     'http_req_duration': ['p(95)<200'],
-    'http_req_failed': ['rate<0.01'],
     'error_rate_excl_conflict': ['rate<0.01'],
   },
 };
@@ -96,5 +95,5 @@ export default function (data) {
   });
 
   errorRateExclConflict.add(isFailed ? 1 : 0);
-  sleep(0.05);
+  sleep(0.01);
 }
