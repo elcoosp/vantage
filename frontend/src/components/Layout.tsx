@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/authStore";
 import { ChatWidget } from "../features/chat/ChatWidget";
+import { useAuthStore } from "../store/authStore";
 
 export function Layout() {
 	const navigate = useNavigate();

@@ -24,15 +24,15 @@ interface AuditTimelineProps {
 }
 
 function getColorClass(eventType: string): string {
-  const color = EVENT_COLORS[eventType] || "gray";
-  const map: Record<string, string> = {
-    blue: "bg-blue-500 border-blue-500",
-    green: "bg-green-500 border-green-500",
-    red: "bg-red-500 border-red-500",
-    orange: "bg-orange-500 border-orange-500",
-    gray: "bg-gray-500 border-gray-500",
-  };
-  return map[color] || "bg-gray-500 border-gray-500";
+	const color = EVENT_COLORS[eventType] || "gray";
+	const map: Record<string, string> = {
+		blue: "bg-blue-500 border-blue-500",
+		green: "bg-green-500 border-green-500",
+		red: "bg-red-500 border-red-500",
+		orange: "bg-orange-500 border-orange-500",
+		gray: "bg-gray-500 border-gray-500",
+	};
+	return map[color] || "bg-gray-500 border-gray-500";
 }
 
 export function AuditTimeline({ events }: AuditTimelineProps) {
