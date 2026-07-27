@@ -3,9 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export type VendorRegistrationRequest = {
-    email: string;
-    password: string;
-    storeName: string;
-    tenantSlug: string;
+	email: string;
+	password: string;
+	storeName: string;
+	tenantSlug: string;
 };
-

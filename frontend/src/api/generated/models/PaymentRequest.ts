@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type PaymentRequest = {
-    orderId: string;
-    amount: number;
-    currency?: string;
+	orderId: string;
+	amount: number;
+	currency?: string;
 };
-

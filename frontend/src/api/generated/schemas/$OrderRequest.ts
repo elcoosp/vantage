@@ -3,15 +3,15 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $OrderRequest = {
-    properties: {
-        productId: {
-            type: 'string',
-            isRequired: true,
-            format: 'uuid',
-        },
-        quantity: {
-            type: 'number',
-            isRequired: true,
-        },
-    },
+	properties: {
+		productId: {
+			type: "string",
+			isRequired: true,
+			format: "uuid",
+		},
+		quantity: {
+			type: "number",
+			isRequired: true,
+		},
+	},
 } as const;

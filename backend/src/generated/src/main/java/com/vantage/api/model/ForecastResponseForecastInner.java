@@ -23,7 +23,7 @@ import jakarta.annotation.Generated;
  */
 
 @JsonTypeName("ForecastResponse_forecast_inner")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-27T17:17:38.378056+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-27T17:18:07.183202+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
 public class ForecastResponseForecastInner implements Serializable {
 
   private static final long serialVersionUID = 1L;

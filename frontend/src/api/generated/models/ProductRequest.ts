@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type ProductRequest = {
-    name: string;
-    price: number;
-    sku?: string;
+	name: string;
+	price: number;
+	sku?: string;
 };
-

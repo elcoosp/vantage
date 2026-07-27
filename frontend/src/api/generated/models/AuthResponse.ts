@@ -3,8 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type AuthResponse = {
-    accessToken?: string;
-    refreshToken?: string;
-    tenantId?: string;
+	accessToken?: string;
+	refreshToken?: string;
+	tenantId?: string;
 };
-

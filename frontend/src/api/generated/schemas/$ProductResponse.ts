@@ -3,19 +3,19 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $ProductResponse = {
-    properties: {
-        id: {
-            type: 'string',
-            format: 'uuid',
-        },
-        name: {
-            type: 'string',
-        },
-        price: {
-            type: 'number',
-        },
-        sku: {
-            type: 'string',
-        },
-    },
+	properties: {
+		id: {
+			type: "string",
+			format: "uuid",
+		},
+		name: {
+			type: "string",
+		},
+		price: {
+			type: "number",
+		},
+		sku: {
+			type: "string",
+		},
+	},
 } as const;

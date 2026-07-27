@@ -3,12 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $PaymentResponse = {
-    properties: {
-        transactionId: {
-            type: 'string',
-        },
-        status: {
-            type: 'Enum',
-        },
-    },
+	properties: {
+		transactionId: {
+			type: "string",
+		},
+		status: {
+			type: "Enum",
+		},
+	},
 } as const;

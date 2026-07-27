@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type OrderRequest = {
-    productId: string;
-    quantity: number;
+	productId: string;
+	quantity: number;
 };
-
