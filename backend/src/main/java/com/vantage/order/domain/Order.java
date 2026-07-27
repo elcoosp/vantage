@@ -27,11 +27,7 @@ public class Order extends BaseTenantEntity {
     @Column(nullable = false)
     private OrderStatus status;
 
-@jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
-@jakarta.persistence.JoinColumn(name = "product_id", insertable = false, updatable = false)
-private com.vantage.product.domain.Product product;
 
-public com.vantage.product.domain.Product getProduct() { return product; }
 
     public UUID getProductId() {
         return productId;
@@ -60,11 +56,11 @@ public com.vantage.product.domain.Product getProduct() { return product; }
 
     @PrePersist
     public void prePersist() {
-        com.vantage.core.audit.infrastructure.AuditHelper.captureInsert(this);
+        com.vantage.core.audit.infrastructure.AuditHelper.captureEvent("ORDER", this.getId(), "ORDER_CREATED", this, this.getTenantId());
     }
 
     @PreUpdate
     public void preUpdate() {
-        com.vantage.core.audit.infrastructure.AuditHelper.captureUpdate(this);
+        com.vantage.core.audit.infrastructure.AuditHelper.captureEvent("ORDER", this.getId(), "ORDER_UPDATED", this, this.getTenantId());
     }
 }

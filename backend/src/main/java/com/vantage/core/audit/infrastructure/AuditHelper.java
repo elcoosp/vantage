@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.audit.domain.EntityEvent;
 import com.vantage.core.audit.domain.EntityEventRepository;
-import com.vantage.order.domain.Order;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 import java.time.Instant;
-import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class AuditHelper {
@@ -35,51 +34,33 @@ public class AuditHelper {
         log.info("AuditHelper initialized with repository and object mapper");
     }
 
-    public static void captureInsert(Order order) {
+    public static void captureEvent(String aggregateType, UUID aggregateId, String eventType, Object payload, UUID tenantId) {
         if (entityEventRepository == null) {
-            log.warn("AuditHelper not initialized - skipping audit for order {}", order.getId());
+            log.warn("AuditHelper not initialized - skipping audit for aggregate {}", aggregateId);
             return;
         }
-        createAuditEvent(order, "ORDER_CREATED", serialize(order));
-    }
-
-    public static void captureUpdate(Order order) {
-        if (entityEventRepository == null) {
-            log.warn("AuditHelper not initialized - skipping audit for order {}", order.getId());
-            return;
-        }
-        createAuditEvent(order, "ORDER_UPDATED", serialize(order));
-    }
-
-    private static void createAuditEvent(Order order, String eventType, String payload) {
+        String jsonPayload = serialize(payload);
         EntityEvent event = new EntityEvent();
-        event.setTenantId(order.getTenantId());
-        event.setAggregateType("ORDER");
-        event.setAggregateId(order.getId());
+        event.setTenantId(tenantId);
+        event.setAggregateType(aggregateType);
+        event.setAggregateId(aggregateId);
         event.setEventType(eventType);
-        event.setPayload(payload);
+        event.setPayload(jsonPayload);
         event.setCreatedAt(Instant.now());
         entityEventRepository.save(event);
-        log.info("Saved audit event {} for order {}", eventType, order.getId());
+        log.info("Saved audit event {} for aggregate {}", eventType, aggregateId);
     }
 
-    private static String serialize(Order order) {
+    private static String serialize(Object obj) {
         if (objectMapper == null) {
             log.warn("ObjectMapper not initialized, using fallback serialization");
-            return "{\"id\":\"" + order.getId() + "\",\"productId\":\"" + order.getProductId() +
-                   "\",\"quantity\":" + order.getQuantity() + ",\"status\":\"" + order.getStatus().name() + "\"}";
+            return "{"error":"objectMapper not available"}";
         }
         try {
-            Map<String, Object> map = Map.of(
-                "id", order.getId().toString(),
-                "productId", order.getProductId().toString(),
-                "quantity", order.getQuantity(),
-                "status", order.getStatus().name()
-            );
-            return objectMapper.writeValueAsString(map);
+            return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize order", e);
-            return "{}";
+            log.error("Failed to serialize object", e);
+            return "{"error":"serialization failed"}";
         }
     }
 }

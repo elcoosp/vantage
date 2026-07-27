@@ -8,6 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-@org.springframework.data.jpa.repository.Query("SELECT o FROM Order o JOIN FETCH o.product")
-java.util.List<Order> findAllWithProduct();
+
 }
