@@ -25,6 +25,7 @@ spring:
         connection-timeout: 5000
         idle-timeout: 600000
         max-lifetime: 1800000
+
 logging:
   level:
     org.springframework.security: TRACE
@@ -62,7 +63,6 @@ resilience4j:
         timeoutDuration: 2s
 
 ---
-
 spring:
   config:
     activate:
@@ -71,12 +71,3 @@ spring:
     properties:
       hibernate:
         generate_statistics: true
-  datasource:
-    primary:
-      url: jdbc:postgresql://localhost:5432/vantage_primary
-      username: vantage
-      password: vantage_pw
-    replica:
-      url: jdbc:postgresql://localhost:5432/vantage_replica
-      username: vantage
-      password: vantage_pw
