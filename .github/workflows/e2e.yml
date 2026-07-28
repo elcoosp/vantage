@@ -1,0 +1,73 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Start backend and database
+        run: docker compose -f docker-compose.yml up -d --wait
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become healthy in time"
+          exit 1
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm run build
+
+      - name: Start frontend preview server
+        working-directory: frontend
+        run: |
+          pnpm run preview &
+          echo $! > preview.pid
+          # Wait for server to be ready
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:4173 > /dev/null; then
+              echo "Frontend preview is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run Playwright tests
+        working-directory: frontend
+        run: pnpm run test:e2e
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
