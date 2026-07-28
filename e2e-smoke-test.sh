@@ -132,7 +132,7 @@ log "Starting Spring Boot backend"
 cd backend
 
 # Use --args to pass datasource properties directly to Spring Boot
-./gradlew bootRun --no-daemon --args="--spring.profiles.active=dev --spring.datasource.primary.url=jdbc:postgresql://localhost:5432/vantage_primary --spring.datasource.primary.username=vantage --spring.datasource.primary.password=vantage_pw --spring.datasource.replica.url=jdbc:postgresql://localhost:5432/vantage_replica --spring.datasource.replica.username=vantage --spring.datasource.replica.password=vantage_pw" > ../backend.log 2>&1 &
+SPRING_PROFILES_ACTIVE=smoke-test ./gradlew bootRun --no-daemon > ../backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..
 log "Backend PID: $BACKEND_PID"
