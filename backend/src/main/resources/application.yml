@@ -71,3 +71,18 @@ spring:
     properties:
       hibernate:
         generate_statistics: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: smoke-test
+  datasource:
+    primary:
+      url: jdbc:postgresql://localhost:5432/vantage_primary
+      username: vantage
+      password: vantage_pw
+    replica:
+      url: jdbc:postgresql://localhost:5432/vantage_replica
+      username: vantage
+      password: vantage_pw
