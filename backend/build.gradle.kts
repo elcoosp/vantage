@@ -46,7 +46,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.swagger.core.v3:swagger-annotations:2.2.20")
-    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.11")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     implementation("com.bucket4j:bucket4j-core:8.7.0")
