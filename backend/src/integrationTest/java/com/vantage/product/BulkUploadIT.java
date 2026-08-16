@@ -1,5 +1,6 @@
 // backend/src/test/java/com/vantage/product/BulkUploadIT.java
 package com.vantage.product;
+import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.product.ui.dto.BulkUploadResponse;
 import com.vantage.vendor.ui.dto.AuthResponse;
@@ -28,8 +29,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
@@ -38,8 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(BulkUploadIT.TestSecurityConfig.class)
-@Testcontainers
-public class BulkUploadIT {
+public class BulkUploadIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -47,33 +45,17 @@ public class BulkUploadIT {
         @Order(1)
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
-                .securityMatcher("/**")
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }
     }
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Container
-    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-management-alpine");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.primary.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.primary.username", postgres::getUsername);
-        registry.add("spring.datasource.primary.password", postgres::getPassword);
-        registry.add("spring.datasource.replica.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.replica.username", postgres::getUsername);
-        registry.add("spring.datasource.replica.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "false");
-        registry.add("spring.rabbitmq.host", rabbitmq::getHost);
-        registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
-        registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
-        registry.add("spring.rabbitmq.publisher-returns", () -> "true");
+        baseProperties(registry);
     }
 
     @Autowired

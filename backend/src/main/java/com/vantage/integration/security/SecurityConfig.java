@@ -1,6 +1,7 @@
 package com.vantage.integration.security;
 
 import com.vantage.core.security.TenantFilterActivator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,6 +14,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+// Disabled in integration tests: they provide their own permit-all TestSecurityConfig and
+// would otherwise create a second "any request" filter chain that conflicts with this one
+// (Spring Security 6.4 forbids two chains both matching any request).
+@ConditionalOnProperty(name = "vantage.test.security.bypass", havingValue = "true", matchIfMissing = false)
 public class SecurityConfig {
 
     @Bean

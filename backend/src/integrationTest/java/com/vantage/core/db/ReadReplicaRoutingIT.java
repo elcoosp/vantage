@@ -59,7 +59,6 @@ public class ReadReplicaRoutingIT {
         @Order(1)
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
-                .securityMatcher("/**")
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();

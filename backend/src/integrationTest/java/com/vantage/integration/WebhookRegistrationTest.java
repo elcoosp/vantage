@@ -1,4 +1,5 @@
 package com.vantage.integration;
+import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.integration.ui.dto.WebhookUpdateRequest;
 import com.vantage.integration.ui.dto.WebhookUpdateResponse;
@@ -30,8 +31,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
@@ -41,9 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
 @Import(WebhookRegistrationTest.TestSecurityConfig.class)
-@Testcontainers
 @SuppressWarnings("removal")
-public class WebhookRegistrationTest {
+public class WebhookRegistrationTest extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -51,33 +49,17 @@ public class WebhookRegistrationTest {
         @Order(1)
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
-                .securityMatcher("/**")
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }
     }
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Container
-    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-management-alpine");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.primary.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.primary.username", postgres::getUsername);
-        registry.add("spring.datasource.primary.password", postgres::getPassword);
-        registry.add("spring.datasource.replica.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.replica.username", postgres::getUsername);
-        registry.add("spring.datasource.replica.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "false");
-        registry.add("spring.rabbitmq.host", rabbitmq::getHost);
-        registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
-        registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
-        registry.add("spring.rabbitmq.publisher-returns", () -> "true");
+        baseProperties(registry);
     }
 
     @Autowired

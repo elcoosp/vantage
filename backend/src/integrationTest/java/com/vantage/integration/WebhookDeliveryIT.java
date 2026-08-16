@@ -1,4 +1,5 @@
 package com.vantage.integration;
+import com.vantage.AbstractIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.config.RabbitMQConfig;
@@ -42,11 +43,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -67,8 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.main.allow-bean-definition-overriding=true"
 })
 @Import({WebhookDeliveryIT.TestSecurityConfig.class, WebhookDeliveryIT.TestRabbitMQConfig.class})
-@Testcontainers
-public class WebhookDeliveryIT {
+public class WebhookDeliveryIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
     static class TestSecurityConfig {
@@ -76,7 +71,6 @@ public class WebhookDeliveryIT {
         @Order(1)
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
-                .securityMatcher("/**")
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
@@ -108,31 +102,11 @@ public class WebhookDeliveryIT {
         }
     }
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
-
-    @Container
-    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-management-alpine")
-            .withExposedPorts(5672, 15672)
-            .waitingFor(Wait.forListeningPorts(5672, 15672)
-                    .withStartupTimeout(Duration.ofSeconds(60)));
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.primary.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.primary.username", postgres::getUsername);
-        registry.add("spring.datasource.primary.password", postgres::getPassword);
-        registry.add("spring.datasource.replica.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.replica.username", postgres::getUsername);
-        registry.add("spring.datasource.replica.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "false");
-        registry.add("spring.rabbitmq.host", rabbitmq::getHost);
-        registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
-        registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
-        registry.add("spring.rabbitmq.publisher-returns", () -> "true");
-        System.out.println("RabbitMQ host: " + rabbitmq.getHost());
-        System.out.println("RabbitMQ port: " + rabbitmq.getAmqpPort());
+        baseProperties(registry);
+        System.out.println("RabbitMQ host: " + RABBITMQ.getHost());
+        System.out.println("RabbitMQ port: " + RABBITMQ.getAmqpPort());
     }
 
     @Autowired

@@ -7,11 +7,16 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableScheduling
@@ -23,6 +28,23 @@ public class RabbitMQConfig {
     public static final String INVENTORY_QUEUE = "vantage.inventory.events";
     public static final String INVENTORY_RESERVED_ROUTING_KEY = "InventoryReservedEvent";
     public static final String INVENTORY_FAILED_ROUTING_KEY = "InventoryReservationFailedEvent";
+
+    /**
+     * JSON message converter for inbound listeners.
+     *
+     * <p>The outbox relay publishes payloads as raw JSON ({@code content-type: application/json})
+     * without a Jackson {@code __TypeId__} header, so the listeners rely on the target type
+     * declared by their {@code @RabbitListener} method signature. The {@link DefaultClassMapper}
+     * is configured to trust the application packages so those payloads deserialize correctly.</p>
+     */
+    @Bean
+    public MessageConverter jackson2JsonMessageConverter(ObjectMapper objectMapper) {
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+        DefaultClassMapper classMapper = new DefaultClassMapper();
+        classMapper.setTrustedPackages("com.vantage");
+        converter.setClassMapper(classMapper);
+        return converter;
+    }
 
     // Webhook delivery exchange and queue with DLX
     public static final String WEBHOOK_DELIVERY_EXCHANGE = "vantage.webhook.delivery.exchange";

@@ -1,4 +1,5 @@
 package com.vantage.core;
+import com.vantage.AbstractIntegrationTest;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vantage.core.tenant.TenantContext;
@@ -17,8 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -28,22 +27,12 @@ import static org.assertj.core.api.Assertions.assertThat;
     "spring.jpa.properties.hibernate.generate_statistics=true",
     "spring.jpa.show-sql=true"
 })
-@Testcontainers
-public class QueryOptimizationIT {
+public class QueryOptimizationIT extends AbstractIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.primary.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.primary.username", postgres::getUsername);
-        registry.add("spring.datasource.primary.password", postgres::getPassword);
-        registry.add("spring.datasource.replica.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.replica.username", postgres::getUsername);
-        registry.add("spring.datasource.replica.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "false");
+        baseProperties(registry);
     }
 
     @Autowired
