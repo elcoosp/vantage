@@ -54,7 +54,11 @@ class InventoryConcurrencyIT {
     @Test
     void should_return_409_conflict_when_concurrent_inventory_updates_use_same_version() throws Exception {
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest("test@vantage.com", "securePassword123", "Vantage Inc.");
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorReq, AuthResponse.class);
+        HttpHeaders vendorHeaders = new HttpHeaders();
+        vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
+        vendorHeaders.set("X-Tenant-ID", java.util.UUID.randomUUID().toString());
+        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
+        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorEntity, AuthResponse.class);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 

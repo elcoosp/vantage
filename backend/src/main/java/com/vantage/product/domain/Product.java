@@ -3,9 +3,11 @@ package com.vantage.product.domain;
 import com.vantage.core.domain.BaseTenantEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
 import java.math.BigDecimal;
 
 @Entity
+@Filter(name = "tenantFilter")
 @Table(name = "products")
 public class Product extends BaseTenantEntity {
     private String name;

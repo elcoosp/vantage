@@ -6,9 +6,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
 import java.util.UUID;
 
 @Entity
+@Filter(name = "tenantFilter")
 @Table(name = "vendors")
 public class Vendor extends BaseTenantEntity {
 

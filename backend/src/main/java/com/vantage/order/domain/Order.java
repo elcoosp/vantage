@@ -9,10 +9,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import org.hibernate.annotations.Filter;
 
 import java.util.UUID;
 
 @Entity
+@Filter(name = "tenantFilter")
 @Table(name = "orders")
 
 public class Order extends BaseTenantEntity {

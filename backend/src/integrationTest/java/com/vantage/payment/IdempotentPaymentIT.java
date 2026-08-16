@@ -87,7 +87,7 @@ public class IdempotentPaymentIT {
         return headers;
     }
 
-    private UUID registerVendorAndGetTenant() {
+    private AuthResponse registerVendorAndGetTenant() {
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
             "payment-" + UUID.randomUUID() + "@vantage.com",
             "securePassword123",
@@ -99,19 +99,20 @@ public class IdempotentPaymentIT {
         ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
             "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return vendorRes.getBody().tenantId();
+        return vendorRes.getBody();
     }
 
     @Test
     void should_return_200_and_transactionId_when_valid_request_with_new_key() {
-        UUID tenantId = registerVendorAndGetTenant();
-        // Register a product (needed for order? Actually payment doesn't require product, but we need an orderId?
-        // We can just generate a random orderId for test)
-        String token = "Bearer dummy"; // we disabled security, but we still need to set header maybe not needed
-        // Since we disabled security, we don't need token; but we need tenant header.
+        AuthResponse auth = registerVendorAndGetTenant();
+        UUID tenantId = auth.tenantId();
+        // Since we disabled security, we don't need token; but we still need to set header maybe not needed
+        // We use the real JWT so TenantSecurityFilter authenticates the request.
+        String token = auth.token();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
+        headers.setBearerAuth(token);
         headers.set("Idempotency-Key", "key-1");
 
         PaymentRequest request = new PaymentRequest(UUID.randomUUID(), new BigDecimal("500"), "USD");
@@ -128,12 +129,15 @@ public class IdempotentPaymentIT {
 
     @Test
     void should_return_same_transactionId_when_duplicate_request_with_same_key() {
-        UUID tenantId = registerVendorAndGetTenant();
+        AuthResponse auth = registerVendorAndGetTenant();
+        UUID tenantId = auth.tenantId();
+        String token = auth.token();
         String idempotencyKey = "key-2";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
+        headers.setBearerAuth(token);
         headers.set("Idempotency-Key", idempotencyKey);
 
         PaymentRequest request = new PaymentRequest(UUID.randomUUID(), new BigDecimal("500"), "USD");
@@ -157,12 +161,15 @@ public class IdempotentPaymentIT {
 
     @Test
     void should_return_409_when_same_key_with_different_payload() {
-        UUID tenantId = registerVendorAndGetTenant();
+        AuthResponse auth = registerVendorAndGetTenant();
+        UUID tenantId = auth.tenantId();
+        String token = auth.token();
         String idempotencyKey = "key-3";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
+        headers.setBearerAuth(token);
         headers.set("Idempotency-Key", idempotencyKey);
 
         PaymentRequest request1 = new PaymentRequest(UUID.randomUUID(), new BigDecimal("500"), "USD");

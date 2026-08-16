@@ -4,8 +4,10 @@ import com.vantage.core.domain.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
 
 @Entity
+@Filter(name = "tenantFilter")
 @Table(name = "storefront_configs")
 public class StorefrontConfig extends BaseTenantEntity {
 

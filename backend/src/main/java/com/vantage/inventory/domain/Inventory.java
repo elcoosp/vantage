@@ -5,10 +5,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.Filter;
 
 import java.util.UUID;
 
 @Entity
+@Filter(name = "tenantFilter")
 @Table(name = "inventory")
 public class Inventory extends BaseTenantEntity {
 
