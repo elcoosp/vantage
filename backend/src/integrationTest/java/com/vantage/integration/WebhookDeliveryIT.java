@@ -72,6 +72,7 @@ public class WebhookDeliveryIT  extends AbstractIntegrationTest {
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
                 .csrf(csrf -> csrf.disable())
+                .securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }

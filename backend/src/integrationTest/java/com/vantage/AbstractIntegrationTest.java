@@ -46,5 +46,10 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.rabbitmq.port", RABBITMQ::getAmqpPort);
         registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
         registry.add("spring.rabbitmq.publisher-returns", () -> "true");
+        // Keep the Hikari pool tiny: tests run sequentially (one context at a time) and only need
+        // a handful of connections. A large pool across 30 contexts against one shared Postgres
+        // exhausts its connection limit and destabilizes the shared container.
+        registry.add("spring.datasource.hikari.maximum-pool-size", () -> "3");
+        registry.add("spring.datasource.hikari.minimum-idle", () -> "1");
     }
 }
