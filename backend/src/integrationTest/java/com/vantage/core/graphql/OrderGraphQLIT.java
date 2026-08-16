@@ -53,6 +53,7 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
                 .csrf(csrf -> csrf.disable())
+                .securityMatcher("/api/**", "/graphql")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }

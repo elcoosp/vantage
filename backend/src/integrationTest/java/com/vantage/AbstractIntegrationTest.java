@@ -46,8 +46,5 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.rabbitmq.port", RABBITMQ::getAmqpPort);
         registry.add("spring.rabbitmq.publisher-confirm-type", () -> "CORRELATED");
         registry.add("spring.rabbitmq.publisher-returns", () -> "true");
-        // Disable the production SecurityConfig so each test's permit-all TestSecurityConfig is
-        // the single filter chain (Spring Security 6.4 rejects two chains matching "any request").
-        registry.add("vantage.test.security.bypass", () -> "true");
     }
 }

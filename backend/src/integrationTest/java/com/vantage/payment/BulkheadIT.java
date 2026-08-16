@@ -30,7 +30,7 @@ import java.util.concurrent.Future;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(BulkheadIT.TestSecurityConfig.class)
 public class BulkheadIT  extends AbstractIntegrationTest {
 
@@ -41,6 +41,7 @@ public class BulkheadIT  extends AbstractIntegrationTest {
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
                 .csrf(csrf -> csrf.disable())
+                .securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }

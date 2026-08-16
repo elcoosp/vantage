@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(RateLimiterIT.TestSecurityConfig.class)
 public class RateLimiterIT  extends AbstractIntegrationTest {
 
@@ -40,6 +40,7 @@ public class RateLimiterIT  extends AbstractIntegrationTest {
         public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
             http
                 .csrf(csrf -> csrf.disable())
+                .securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }
