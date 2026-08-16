@@ -4,8 +4,9 @@ import toast from "react-hot-toast";
 import apiClient from "../../lib/api";
 
 interface ComponentDefinition {
+	id: string;
 	componentType: string;
-	props: Record<string, any>;
+	props: Record<string, unknown>;
 }
 
 async function fetchStorefrontLayout(): Promise<ComponentDefinition[]> {
@@ -48,7 +49,7 @@ export function StorefrontEditor() {
 	const addComponent = () => {
 		setEditingComponents([
 			...editingComponents,
-			{ componentType: "HeroBanner", props: { title: "New Component", imageUrl: "" } },
+			{ id: crypto.randomUUID(), componentType: "HeroBanner", props: { title: "New Component", imageUrl: "" } },
 		]);
 	};
 
@@ -70,7 +71,7 @@ export function StorefrontEditor() {
 		setEditingComponents(newComponents);
 	};
 
-	const updateProp = (index: number, key: string, value: any) => {
+	const updateProp = (index: number, key: string, value: unknown) => {
 		const newComponents = [...editingComponents];
 		newComponents[index].props[key] = value;
 		setEditingComponents(newComponents);
@@ -87,10 +88,15 @@ export function StorefrontEditor() {
 			<div className="flex justify-between items-center mb-4">
 				<h2 className="text-2xl font-bold">Storefront Editor</h2>
 				<div className="space-x-2">
-					<button onClick={addComponent} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+					<button
+						type="button"
+						onClick={addComponent}
+						className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+					>
 						Add Component
 					</button>
 					<button
+						type="button"
 						onClick={handleSave}
 						disabled={mutation.isPending}
 						className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
@@ -102,12 +108,15 @@ export function StorefrontEditor() {
 
 			<div className="space-y-4">
 				{editingComponents.map((comp, index) => (
-					<div key={index} className="border rounded p-4 bg-white shadow-sm">
+					<div key={comp.id} className="border rounded p-4 bg-white shadow-sm">
 						<div className="flex justify-between items-start">
 							<div className="flex-1 space-y-2">
 								<div>
-									<label className="block text-sm font-medium">Component Type</label>
+									<label htmlFor={`component-type-${comp.id}`} className="block text-sm font-medium">
+										Component Type
+									</label>
 									<select
+										id={`component-type-${comp.id}`}
 										value={comp.componentType}
 										onChange={(e) => updateComponentType(index, e.target.value)}
 										className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded"
@@ -120,8 +129,11 @@ export function StorefrontEditor() {
 									</select>
 								</div>
 								<div>
-									<label className="block text-sm font-medium">Props (JSON)</label>
+									<label htmlFor={`component-props-${comp.id}`} className="block text-sm font-medium">
+										Props (JSON)
+									</label>
 									<textarea
+										id={`component-props-${comp.id}`}
 										value={JSON.stringify(comp.props, null, 2)}
 										onChange={(e) => {
 											try {
@@ -138,6 +150,7 @@ export function StorefrontEditor() {
 							</div>
 							<div className="flex flex-col space-y-1 ml-4">
 								<button
+									type="button"
 									onClick={() => moveComponent(index, "up")}
 									disabled={index === 0}
 									className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
@@ -145,6 +158,7 @@ export function StorefrontEditor() {
 									↑
 								</button>
 								<button
+									type="button"
 									onClick={() => moveComponent(index, "down")}
 									disabled={index === editingComponents.length - 1}
 									className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
@@ -152,6 +166,7 @@ export function StorefrontEditor() {
 									↓
 								</button>
 								<button
+									type="button"
 									onClick={() => removeComponent(index)}
 									className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
 								>

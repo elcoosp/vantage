@@ -1,6 +1,7 @@
 import { useState, useTransition } from "react";
 
 type Message = {
+	id: string;
 	role: "user" | "assistant";
 	content: string;
 };
@@ -13,11 +14,11 @@ export function useChatStream() {
 	const sendMessage = (query: string) => {
 		if (!query.trim()) return;
 
-		const userMessage: Message = { role: "user", content: query };
+		const userMessage: Message = { id: crypto.randomUUID(), role: "user", content: query };
 		setMessages((prev) => [...prev, userMessage]);
 
 		setIsStreaming(true);
-		const assistantMessage: Message = { role: "assistant", content: "" };
+		const assistantMessage: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
 		setMessages((prev) => [...prev, assistantMessage]);
 
 		const eventSource = new EventSource(`/api/v1/chat/stream?query=${encodeURIComponent(query)}`);

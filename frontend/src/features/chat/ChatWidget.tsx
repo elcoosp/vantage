@@ -18,11 +18,13 @@ export function ChatWidget() {
 		<div className="fixed bottom-4 right-4 z-50">
 			{!isOpen ? (
 				<button
+					type="button"
 					onClick={toggleOpen}
 					className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
 					aria-label="Open chat"
 				>
-					<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" role="img" aria-hidden="true">
+						<title>Chat icon</title>
 						<path
 							strokeLinecap="round"
 							strokeLinejoin="round"
@@ -36,19 +38,28 @@ export function ChatWidget() {
 					<div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
 						<h3 className="text-white font-semibold">Support Assistant</h3>
 						<button
+							type="button"
 							onClick={toggleOpen}
 							className="text-gray-400 hover:text-white transition-colors"
 							aria-label="Close chat"
 						>
-							<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg
+								className="w-5 h-5"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								role="img"
+								aria-hidden="true"
+							>
+								<title>Close icon</title>
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
 							</svg>
 						</button>
 					</div>
 
 					<div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-						{messages.map((msg, idx) => (
-							<div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+						{messages.map((msg) => (
+							<div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
 								<div
 									className={`max-w-[80%] px-4 py-2 rounded-lg ${
 										msg.role === "user"
@@ -57,7 +68,7 @@ export function ChatWidget() {
 									}`}
 								>
 									{msg.content}
-									{isStreaming && msg.role === "assistant" && idx === messages.length - 1 && (
+									{isStreaming && msg.role === "assistant" && msg.id === messages[messages.length - 1]?.id && (
 										<span className="inline-block w-2 h-4 ml-1 bg-white animate-pulse" />
 									)}
 								</div>
@@ -84,6 +95,7 @@ export function ChatWidget() {
 								className="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
 							/>
 							<button
+								type="button"
 								onClick={handleSend}
 								disabled={!input.trim() || isStreaming}
 								className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors"

@@ -8,8 +8,9 @@ import { ProductGrid } from "./components/ProductGrid";
 // Example: <Route path="/storefront" element={<StorefrontRenderer />} />
 
 interface ComponentDefinition {
+	id: string;
 	componentType: string;
-	props: Record<string, any>;
+	props: Record<string, unknown>;
 }
 
 async function fetchStorefrontLayout(): Promise<ComponentDefinition[]> {
@@ -17,10 +18,10 @@ async function fetchStorefrontLayout(): Promise<ComponentDefinition[]> {
 	return response.data.components || [];
 }
 
-const componentMap: Record<string, React.ComponentType<any>> = {
-	HeroBanner,
-	ProductGrid,
-	MarkdownText,
+const componentMap: Record<string, React.ComponentType<Record<string, unknown>>> = {
+	HeroBanner: HeroBanner as unknown as React.ComponentType<Record<string, unknown>>,
+	ProductGrid: ProductGrid as unknown as React.ComponentType<Record<string, unknown>>,
+	MarkdownText: MarkdownText as unknown as React.ComponentType<Record<string, unknown>>,
 };
 
 export function StorefrontRenderer() {
@@ -48,16 +49,16 @@ export function StorefrontRenderer() {
 
 	return (
 		<div className="storefront-renderer">
-			{components.map((comp, index) => {
+			{components.map((comp) => {
 				const Component = componentMap[comp.componentType];
 				if (!Component) {
 					return (
-						<div key={index} className="p-4 border border-yellow-300 bg-yellow-50 text-yellow-800">
+						<div key={comp.id} className="p-4 border border-yellow-300 bg-yellow-50 text-yellow-800">
 							Unknown component type: {comp.componentType}
 						</div>
 					);
 				}
-				return <Component key={index} {...comp.props} />;
+				return <Component key={comp.id} {...comp.props} />;
 			})}
 		</div>
 	);

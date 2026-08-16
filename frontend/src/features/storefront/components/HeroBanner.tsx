@@ -1,4 +1,3 @@
-
 interface HeroBannerProps {
 	title: string;
 	imageUrl: string;

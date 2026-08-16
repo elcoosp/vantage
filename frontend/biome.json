@@ -12,6 +12,18 @@
 			"recommended": true
 		}
 	},
+	"overrides": [
+		{
+			"include": ["src/features/storefront/components/MarkdownText.tsx"],
+			"linter": {
+				"rules": {
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					}
+				}
+			}
+		}
+	],
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",

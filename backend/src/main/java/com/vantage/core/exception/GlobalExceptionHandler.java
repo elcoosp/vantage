@@ -26,6 +26,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(pd);
     }
 
+    @ExceptionHandler(InventoryConflictException.class)
+    public ResponseEntity<ProblemDetail> handleInventoryConflictException(InventoryConflictException ex, WebRequest request) {
+        log.warn("Inventory conflict: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createInventoryConflict(ex, request);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+    }
+
+    @ExceptionHandler(IdempotencyConflictException.class)
+    public ResponseEntity<ProblemDetail> handleIdempotencyConflictException(IdempotencyConflictException ex, WebRequest request) {
+        log.warn("Idempotency conflict: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createIdempotencyConflict(ex, request);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+    }
+
 
 
     @ExceptionHandler(IllegalArgumentException.class)

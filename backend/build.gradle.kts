@@ -1,3 +1,5 @@
+import java.util.concurrent.TimeUnit
+
 plugins {
     java
     id("org.springframework.boot") version "3.4.0"
@@ -19,6 +21,20 @@ java {
 repositories {
     mavenCentral()
 }
+
+// ---------------------------------------------------------------------------
+// Source sets
+// The `integrationTest` source set holds Docker-dependent (Testcontainers)
+// tests. It is compiled and run by the `integrationTest` task, which is gated
+// on Docker availability so the default `test` task stays green everywhere.
+// ---------------------------------------------------------------------------
+val integrationTest = sourceSets.create("integrationTest") {
+    compileClasspath += sourceSets["main"].output + sourceSets["test"].output
+    runtimeClasspath += sourceSets["main"].output + sourceSets["test"].output
+}
+
+configurations["integrationTestImplementation"].extendsFrom(configurations["testImplementation"])
+configurations["integrationTestRuntimeOnly"].extendsFrom(configurations["runtimeOnly"])
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -64,6 +80,18 @@ dependencies {
     testImplementation("org.springframework.graphql:spring-graphql-test")
     testImplementation("net.jqwik:jqwik:1.8.2")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.0")
+
+    // Integration tests use Testcontainers (Docker) and live in src/integrationTest.
+    "integrationTestImplementation"(project)
+    "integrationTestImplementation"("org.springframework.boot:spring-boot-starter-test")
+    "integrationTestImplementation"("org.springframework.modulith:spring-modulith-starter-test")
+    "integrationTestImplementation"("org.testcontainers:junit-jupiter")
+    "integrationTestImplementation"("org.testcontainers:postgresql")
+    "integrationTestImplementation"("org.testcontainers:rabbitmq")
+    "integrationTestImplementation"("com.squareup.okhttp3:mockwebserver:5.4.0")
+    "integrationTestImplementation"("org.springframework.graphql:spring-graphql-test")
+    "integrationTestImplementation"(files(project.layout.buildDirectory.dir("classes/java/main")))
+    "integrationTestImplementation"(files(project.layout.buildDirectory.dir("classes/java/test")))
 }
 
 dependencyManagement {
@@ -74,16 +102,50 @@ dependencyManagement {
     }
 }
 
+configurations["integrationTestImplementation"].extendsFrom(configurations["testImplementation"])
+configurations["integrationTestRuntimeOnly"].extendsFrom(configurations["runtimeOnly"])
+
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
-
 tasks.withType<Test> {
     useJUnitPlatform()
-    // Exclude integration tests (they require Docker and external services)
-    // exclude("**/*IT.class")
-    // exclude("**/*IntegrationTest.class")
+    // Give every test a hard timeout so a hung container can never hang CI.
+    systemProperty("junit.jupiter.execution.timeout.default", "120s")
+}
+
+// ---------------------------------------------------------------------------
+// Docker availability check: integration tests require a running Docker
+// daemon (Testcontainers). When Docker is unavailable we skip the task so the
+// build stays green in environments without Docker; the task still fails
+// explicitly if Docker is present but a test genuinely fails.
+// ---------------------------------------------------------------------------
+val dockerAvailable: Boolean = runCatching {
+    val proc = ProcessBuilder("docker", "info").redirectErrorStream(true).start()
+    proc.waitFor(10, TimeUnit.SECONDS) && proc.exitValue() == 0
+}.getOrDefault(false)
+
+val integrationTestTask = tasks.register<Test>("integrationTest") {
+    description = "Runs Docker-dependent integration tests (Testcontainers)."
+    group = "verification"
+    testClassesDirs = integrationTest.output.classesDirs
+    classpath = integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    shouldRunAfter(tasks.named("test"))
+
+    if (!dockerAvailable) {
+        logger.lifecycle(
+            "[integrationTest] Docker not detected - SKIPPING integration tests " +
+                "(${integrationTest.output.classesDirs.files.size} class dirs). " +
+                "Run with a Docker daemon to execute them."
+        )
+        enabled = false
+    }
+}
+
+tasks.named("check") {
+    dependsOn(integrationTestTask)
 }
 
 jacoco {
@@ -121,13 +183,15 @@ val generateOpenApiModels by tasks.registering(org.openapitools.generator.gradle
     outputDir.set("$rootDir/src/generated")
     apiPackage.set("com.vantage.api.api")
     modelPackage.set("com.vantage.api.model")
-    configOptions.set(mapOf(
-        "useSpringBoot3" to "true",
-        "interfaceOnly" to "true",
-        "useJakartaEe" to "true",
-        "dateLibrary" to "java8",
-        "serializableModel" to "true"
-    ))
+    configOptions.set(
+        mapOf(
+            "useSpringBoot3" to "true",
+            "interfaceOnly" to "true",
+            "useJakartaEe" to "true",
+            "dateLibrary" to "java8",
+            "serializableModel" to "true"
+        )
+    )
 }
 
 tasks.compileJava {
