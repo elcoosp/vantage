@@ -21,6 +21,7 @@ public class ProductCreatedEventListener {
     public void handleProductCreatedEvent(ProductCreatedEvent event) {
         Inventory inventory = new Inventory();
         inventory.setProductId(event.productId());
+        inventory.setTenantId(event.tenantId());
         inventory.setQuantity(0);
         inventoryRepository.save(inventory);
     }

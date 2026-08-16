@@ -2,5 +2,5 @@ package com.vantage.core.events;
 
 import java.util.UUID;
 
-public record ProductCreatedEvent(UUID productId) {
+public record ProductCreatedEvent(UUID productId, UUID tenantId) {
 }

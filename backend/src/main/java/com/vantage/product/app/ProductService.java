@@ -2,6 +2,7 @@ package com.vantage.product.app;
 import com.vantage.core.events.ProductCreatedEvent;
 
 import com.vantage.core.exception.ResourceNotFoundException;
+import com.vantage.core.tenant.TenantContext;
 import com.vantage.product.domain.Product;
 import com.vantage.product.domain.ProductRepository;
 import com.vantage.product.ui.dto.ProductRequest;
@@ -34,7 +35,7 @@ public class ProductService {
 
         productRepository.save(product);
 
-        eventPublisher.publishEvent(new ProductCreatedEvent(product.getId()));
+        eventPublisher.publishEvent(new ProductCreatedEvent(product.getId(), TenantContext.getTenantId()));
 
         return new ProductResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice());
     }

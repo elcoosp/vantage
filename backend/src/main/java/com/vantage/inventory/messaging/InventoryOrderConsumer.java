@@ -48,7 +48,8 @@ public class InventoryOrderConsumer {
 
     @RabbitListener(queues = "vantage.order.events")
     @Transactional
-    public void handleOrderCreatedEvent(@Payload OrderCreatedPayload payload, @Header("eventId") String eventIdHeader) {
+    public void handleOrderCreatedEvent(@Payload String payloadJson, @Header("eventId") String eventIdHeader) throws JsonProcessingException {
+        OrderCreatedPayload payload = objectMapper.readValue(payloadJson, OrderCreatedPayload.class);
         UUID eventId = UUID.fromString(eventIdHeader);
         TenantContext.setTenantId(payload.tenantId());
 
