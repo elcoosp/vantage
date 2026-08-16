@@ -6,11 +6,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.Filter;
 import java.util.UUID;
 
 @Entity
-@Filter(name = "tenantFilter")
+@FilterDef(name = "tenantFilter_Vendor", parameters = @ParamDef(name = "tenantId", type = UUID.class))
+@Filter(name = "tenantFilter_Vendor", condition = "tenant_id = :tenantId")
 @Table(name = "vendors")
 public class Vendor extends BaseTenantEntity {
 

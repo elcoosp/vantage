@@ -6,13 +6,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Filter(name = "tenantFilter")
+@FilterDef(name = "tenantFilter_OutboxEvent", parameters = @ParamDef(name = "tenantId", type = UUID.class))
+@Filter(name = "tenantFilter_OutboxEvent", condition = "tenant_id = :tenantId")
 @Table(name = "outbox_events")
 public class OutboxEvent extends BaseTenantEntity {
 

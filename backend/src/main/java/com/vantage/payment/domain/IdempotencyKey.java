@@ -5,13 +5,16 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Filter(name = "tenantFilter")
+@FilterDef(name = "tenantFilter_IdempotencyKey", parameters = @ParamDef(name = "tenantId", type = UUID.class))
+@Filter(name = "tenantFilter_IdempotencyKey", condition = "tenant_id = :tenantId")
 @Table(name = "idempotency_keys", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"idempotency_key", "tenant_id"})
 })

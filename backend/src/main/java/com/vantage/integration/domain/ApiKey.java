@@ -4,12 +4,16 @@ import com.vantage.core.domain.BaseTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
-@Filter(name = "tenantFilter")
+@FilterDef(name = "tenantFilter_ApiKey", parameters = @ParamDef(name = "tenantId", type = UUID.class))
+@Filter(name = "tenantFilter_ApiKey", condition = "tenant_id = :tenantId")
 @Table(name = "api_keys")
 public class ApiKey extends BaseTenantEntity {
 

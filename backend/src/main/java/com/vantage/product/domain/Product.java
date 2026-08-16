@@ -3,11 +3,15 @@ package com.vantage.product.domain;
 import com.vantage.core.domain.BaseTenantEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.Filter;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
-@Filter(name = "tenantFilter")
+@FilterDef(name = "tenantFilter_Product", parameters = @ParamDef(name = "tenantId", type = UUID.class))
+@Filter(name = "tenantFilter_Product", condition = "tenant_id = :tenantId")
 @Table(name = "products")
 public class Product extends BaseTenantEntity {
     private String name;
