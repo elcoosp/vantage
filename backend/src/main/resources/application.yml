@@ -60,7 +60,7 @@ resilience4j:
       geocoding:
         limitForPeriod: 1
         limitRefreshPeriod: 1s
-        timeoutDuration: 2s
+        timeoutDuration: 0s
 
 ---
 spring:

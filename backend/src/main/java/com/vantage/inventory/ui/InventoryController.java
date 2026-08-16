@@ -1,12 +1,14 @@
 package com.vantage.inventory.ui;
 
+import com.vantage.api.api.ApiApi;
 import com.vantage.inventory.app.InventoryService;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
-import com.vantage.api.api.ApiApi;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +24,13 @@ public class InventoryController implements ApiApi {
 
     public InventoryController(InventoryService inventoryService) {
         this.inventoryService = inventoryService;
+    }
+
+    @PutMapping("/{productId}")
+    public InventoryResponse update(@PathVariable UUID productId,
+                                    @RequestHeader("If-Match") String ifMatch,
+                                    @Valid @RequestBody InventoryUpdateRequest request) {
+        return inventoryService.updateInventory(productId, Long.parseLong(ifMatch), request);
     }
 
     @Override

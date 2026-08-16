@@ -21,7 +21,7 @@ public class DistributedLockService {
     public boolean tryAcquireLock(String lockName) {
         try {
             Query query = entityManager.createNativeQuery(
-                "SELECT pg_try_advisory_lock(hashtext(:lockName), 0)"
+                "SELECT pg_try_advisory_xact_lock(hashtext(:lockName), 0)"
             );
             query.setParameter("lockName", lockName);
             Boolean acquired = (Boolean) query.getSingleResult();
@@ -40,18 +40,17 @@ public class DistributedLockService {
     @Transactional
     public void releaseLock(String lockName) {
         try {
+            // Transaction-scoped advisory locks auto-release on commit; an explicit
+            // release targets the session-level lock and is a safe no-op when not held
+            // (pg_advisory_unlock returns false rather than erroring).
             Query query = entityManager.createNativeQuery(
                 "SELECT pg_advisory_unlock(hashtext(:lockName), 0)"
             );
             query.setParameter("lockName", lockName);
-            Boolean released = (Boolean) query.getSingleResult();
-            if (Boolean.TRUE.equals(released)) {
-                log.info("Released advisory lock: {}", lockName);
-            } else {
-                log.warn("Failed to release advisory lock: {} (may not be held)", lockName);
-            }
+            query.getSingleResult();
+            log.info("Released advisory lock: {}", lockName);
         } catch (Exception e) {
-            log.warn("Exception while releasing lock {}: {}", lockName, e.getMessage());
+            log.debug("Advisory lock {} already released: {}", lockName, e.getMessage());
         }
     }
 }

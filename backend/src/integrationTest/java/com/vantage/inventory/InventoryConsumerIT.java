@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,7 +49,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(InventoryConsumerIT.TestSecurityConfig.class)
-@org.springframework.test.context.TestPropertySource(properties = "vantage.inventory.consumer.enabled=true")
+@org.springframework.test.context.TestPropertySource(properties = {
+        "vantage.inventory.consumer.enabled=true",
+        "vantage.outbox.enabled=true"
+})
 class InventoryConsumerIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -84,6 +88,9 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
+    private RabbitAdmin rabbitAdmin;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Test
@@ -101,7 +108,7 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
                 try {
                     Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
                     assertThat(inventory.getQuantity()).isEqualTo(5);
-                    assertThat(processedEventRepository.existsById(eventId)).isTrue();
+                    assertThat(processedEventRepository.existsById(new com.vantage.core.messaging.domain.ProcessedEventId(eventId, "inventory-order"))).isTrue();
                 } finally {
                     TenantContext.clear();
                 }
@@ -169,7 +176,7 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
                 try {
                     Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
                     assertThat(inventory.getQuantity()).isEqualTo(10);
-                    assertThat(processedEventRepository.existsById(eventId)).isTrue();
+                    assertThat(processedEventRepository.existsById(new com.vantage.core.messaging.domain.ProcessedEventId(eventId, "inventory-order"))).isTrue();
                 } finally {
                     TenantContext.clear();
                 }
@@ -187,6 +194,11 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
     private record TestSetup(UUID tenantId, UUID productId, UUID orderId) {}
 
     private TestSetup setupProductAndInventory(int initialQuantity) {
+        // Shared RabbitMQ persists messages across tests. Drain the queues that this test's
+        // consumer and assertions rely on so a leftover event from a previous test cannot be
+        // consumed and corrupt the assertions.
+        purgeQueues();
+
         UUID dummyTenantId = UUID.randomUUID();
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest("test_" + UUID.randomUUID() + "@vantage.com", "securePassword123", "Vantage Inc.");
         HttpHeaders vendorHeaders = new HttpHeaders();
@@ -217,6 +229,15 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
 
         UUID orderId = UUID.randomUUID();
         return new TestSetup(tenantId, productId, orderId);
+    }
+
+    private void purgeQueues() {
+        try {
+            rabbitAdmin.purgeQueue(RabbitMQConfig.QUEUE, false);
+            rabbitAdmin.purgeQueue(RabbitMQConfig.INVENTORY_QUEUE, false);
+        } catch (Exception e) {
+            // RabbitMQ may be mid-restart; the awaitility loops below will surface a real failure.
+        }
     }
 
     private void publishOrderCreatedEvent(UUID eventId, UUID tenantId, UUID productId, UUID orderId, int quantity) throws Exception {

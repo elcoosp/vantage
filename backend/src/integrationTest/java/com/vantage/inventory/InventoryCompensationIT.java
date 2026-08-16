@@ -104,7 +104,7 @@ class InventoryCompensationIT  extends AbstractIntegrationTest {
                 try {
                     Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
                     assertThat(inventory.getQuantity()).isEqualTo(14);
-                    assertThat(processedEventRepository.existsById(eventId)).isTrue();
+                    assertThat(processedEventRepository.existsById(new com.vantage.core.messaging.domain.ProcessedEventId(eventId, "inventory-compensation"))).isTrue();
                 } finally {
                     TenantContext.clear();
                 }
@@ -120,7 +120,7 @@ class InventoryCompensationIT  extends AbstractIntegrationTest {
                 try {
                     Inventory inventory = inventoryRepository.findByProductId(setup.productId()).orElseThrow();
                     assertThat(inventory.getQuantity()).isEqualTo(14);
-                    assertThat(processedEventRepository.existsById(eventId)).isTrue();
+                    assertThat(processedEventRepository.existsById(new com.vantage.core.messaging.domain.ProcessedEventId(eventId, "inventory-compensation"))).isTrue();
                 } finally {
                     TenantContext.clear();
                 }

@@ -6,6 +6,7 @@ import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
 import com.vantage.core.messaging.domain.ProcessedEvent;
+import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.events.InventoryReservedPayload;
@@ -66,15 +67,15 @@ public class PaymentInventoryConsumer {
         TenantContext.setTenantId(eventPayload.tenantId());
 
         try {
-            if (processedEventRepository.existsById(eventId)) {
+            if (processedEventRepository.existsById(new ProcessedEventId(eventId, "payment-inventory"))) {
                 log.info("Event {} already processed. Skipping.", eventId);
                 return;
             }
 
-            ProcessedEvent processedEvent = new ProcessedEvent();
-            processedEvent.setEventId(eventId);
-            processedEvent.setTenantId(eventPayload.tenantId());
-            processedEvent.setProcessedAt(Instant.now());
+            ProcessedEvent processedEvent = new ProcessedEvent(
+                    new ProcessedEventId(eventId, "payment-inventory"),
+                    eventPayload.tenantId(),
+                    Instant.now());
             processedEventRepository.save(processedEvent);
 
             PaymentResult result = mockPaymentGatewayClient.processPayment(eventPayload.orderId());

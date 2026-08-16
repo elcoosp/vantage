@@ -2,6 +2,7 @@ package com.vantage.order.query.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.ProcessedEvent;
+import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.events.OrderCreatedPayload;
@@ -53,7 +54,7 @@ public class OrderSearchProjector {
             OrderCreatedPayload eventPayload = objectMapper.readValue(payload, OrderCreatedPayload.class);
             TenantContext.setTenantId(eventPayload.tenantId());
 
-            if (processedEventRepository.existsById(eventId)) {
+            if (processedEventRepository.existsById(new ProcessedEventId(eventId, "order-search-projector"))) {
                 log.info("Event {} already processed. Skipping.", eventId);
                 return;
             }
@@ -67,10 +68,10 @@ public class OrderSearchProjector {
             view.setCreatedAt(Instant.now());
             orderSearchViewRepository.save(view);
 
-            ProcessedEvent processedEvent = new ProcessedEvent();
-            processedEvent.setEventId(eventId);
-            processedEvent.setTenantId(eventPayload.tenantId());
-            processedEvent.setProcessedAt(Instant.now());
+            ProcessedEvent processedEvent = new ProcessedEvent(
+                    new ProcessedEventId(eventId, "order-search-projector"),
+                    eventPayload.tenantId(),
+                    Instant.now());
             processedEventRepository.save(processedEvent);
 
             log.info("Projected OrderCreatedEvent {} to search view", eventId);
@@ -96,7 +97,7 @@ public class OrderSearchProjector {
         UUID eventId = UUID.fromString(eventIdHeader);
 
         try {
-            if (processedEventRepository.existsById(eventId)) {
+            if (processedEventRepository.existsById(new ProcessedEventId(eventId, "order-search-projector"))) {
                 log.info("Event {} already processed. Skipping.", eventId);
                 return;
             }
@@ -127,10 +128,10 @@ public class OrderSearchProjector {
             view.setStatus(newStatus);
             orderSearchViewRepository.save(view);
 
-            ProcessedEvent processedEvent = new ProcessedEvent();
-            processedEvent.setEventId(eventId);
-            processedEvent.setTenantId(tenantId);
-            processedEvent.setProcessedAt(Instant.now());
+            ProcessedEvent processedEvent = new ProcessedEvent(
+                    new ProcessedEventId(eventId, "order-search-projector"),
+                    tenantId,
+                    Instant.now());
             processedEventRepository.save(processedEvent);
 
             log.info("Projected {} {} to search view with status {}", routingKey, eventId, newStatus);

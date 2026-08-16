@@ -6,6 +6,7 @@ import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
 import com.vantage.core.messaging.domain.ProcessedEvent;
+import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.events.InventoryReservationFailedPayload;
@@ -54,15 +55,15 @@ public class InventoryOrderConsumer {
         TenantContext.setTenantId(payload.tenantId());
 
         try {
-            if (processedEventRepository.existsById(eventId)) {
+            if (processedEventRepository.existsById(new ProcessedEventId(eventId, "inventory-order"))) {
                 log.info("Event {} already processed. Skipping.", eventId);
                 return;
             }
 
-            ProcessedEvent processedEvent = new ProcessedEvent();
-            processedEvent.setEventId(eventId);
-            processedEvent.setTenantId(payload.tenantId());
-            processedEvent.setProcessedAt(Instant.now());
+            ProcessedEvent processedEvent = new ProcessedEvent(
+                    new ProcessedEventId(eventId, "inventory-order"),
+                    payload.tenantId(),
+                    Instant.now());
             processedEventRepository.save(processedEvent);
 
             try {

@@ -2,6 +2,7 @@ package com.vantage.integration.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.ProcessedEvent;
+import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.integration.app.WebhookPayload;
@@ -66,7 +67,7 @@ public class WebhookDispatchConsumer {
                                    @Header("amqp_receivedRoutingKey") String routingKey) {
         UUID eventId = UUID.fromString(eventIdHeader);
         try {
-            if (processedEventRepository.existsById(eventId)) {
+            if (processedEventRepository.existsById(new ProcessedEventId(eventId, "webhook-dispatch"))) {
                 log.info("Event {} already processed, skipping webhook dispatch", eventId);
                 return;
             }
@@ -105,10 +106,10 @@ public class WebhookDispatchConsumer {
                 }
 
                 // Mark as processed to prevent duplicate dispatch
-                ProcessedEvent processed = new ProcessedEvent();
-                processed.setEventId(eventId);
-                processed.setTenantId(tenantId);
-                processed.setProcessedAt(Instant.now());
+                ProcessedEvent processed = new ProcessedEvent(
+                        new ProcessedEventId(eventId, "webhook-dispatch"),
+                        tenantId,
+                        Instant.now());
                 processedEventRepository.save(processed);
 
                 WebhookPayload webhookPayload = new WebhookPayload(

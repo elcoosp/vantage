@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/vendors")
-public class VendorController implements ApiApi {
+public class VendorController {
 
     private final VendorService vendorService;
 
@@ -29,21 +29,6 @@ public class VendorController implements ApiApi {
         VendorRegistrationResult result = vendorService.register(request);
         AuthResponse response = new AuthResponse(result.token(), result.tenantId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @Override
-    public ResponseEntity<com.vantage.api.model.AuthResponse> apiV1VendorsRegisterPost(com.vantage.api.model.VendorRegistrationRequest vendorRegistrationRequest) {
-        com.vantage.vendor.ui.dto.VendorRegistrationRequest internalRequest =
-            new com.vantage.vendor.ui.dto.VendorRegistrationRequest(
-                vendorRegistrationRequest.getEmail(),
-                vendorRegistrationRequest.getPassword(),
-                vendorRegistrationRequest.getStoreName()
-            );
-        com.vantage.vendor.app.VendorRegistrationResult result = vendorService.register(internalRequest);
-        com.vantage.api.model.AuthResponse response = new com.vantage.api.model.AuthResponse()
-            .accessToken(result.token())
-            .tenantId(result.tenantId());
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 }

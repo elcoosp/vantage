@@ -81,7 +81,9 @@ public class RateLimiterIT  extends AbstractIntegrationTest {
         // At least 1 success, and at least 4 fallbacks (since we made 5 rapid calls)
         assertThat(successCount).isGreaterThanOrEqualTo(1);
         assertThat(zeroCount).isGreaterThanOrEqualTo(4);
-        // Elapsed time should be at least ~1 second (to allow one successful call)
-        assertThat(elapsed.toMillis()).isGreaterThanOrEqualTo(1000);
+        // Elapsed time is not asserted: with fail-fast rate limiting the excess calls use the
+        // fallback immediately rather than blocking, so the whole batch can finish quickly.
+        // The limiting is proven by exactly one successful call and four fallbacks.
+        assertThat(successCount).isEqualTo(1);
     }
 }

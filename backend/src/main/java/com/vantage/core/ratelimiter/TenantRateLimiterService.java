@@ -17,8 +17,11 @@ public class TenantRateLimiterService {
     }
 
     private Bucket createBucket(String tenantId) {
+        // Interval-based refill: the full quota is restored only after the full period elapses,
+        // so a burst of 100 requests is rejected on the 101st even if the burst spans many seconds.
+        // (Greedy refill would trickle tokens back continuously and never reject a slow burst.)
         return Bucket.builder()
-                .addLimit(Bandwidth.classic(100, Refill.greedy(100, Duration.ofMinutes(1))))
+                .addLimit(Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1))))
                 .build();
     }
 }

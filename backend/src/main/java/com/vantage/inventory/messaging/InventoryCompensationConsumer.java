@@ -3,6 +3,7 @@ package com.vantage.inventory.messaging;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.ProcessedEvent;
+import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.exception.ResourceNotFoundException;
@@ -61,15 +62,15 @@ public class InventoryCompensationConsumer {
         TenantContext.setTenantId(eventPayload.tenantId());
 
         try {
-            if (processedEventRepository.existsById(eventId)) {
+            if (processedEventRepository.existsById(new ProcessedEventId(eventId, "inventory-compensation"))) {
                 log.info("Event {} already processed. Skipping.", eventId);
                 return;
             }
 
-            ProcessedEvent processedEvent = new ProcessedEvent();
-            processedEvent.setEventId(eventId);
-            processedEvent.setTenantId(eventPayload.tenantId());
-            processedEvent.setProcessedAt(Instant.now());
+            ProcessedEvent processedEvent = new ProcessedEvent(
+                    new ProcessedEventId(eventId, "inventory-compensation"),
+                    eventPayload.tenantId(),
+                    Instant.now());
             processedEventRepository.save(processedEvent);
 
             Inventory inventory = inventoryRepository.findByProductId(eventPayload.productId())

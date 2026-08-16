@@ -48,7 +48,7 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
         @Bean
         @Primary
         public TenantFilter tenantFilter() {
-            return new TenantFilter() {
+            return new TenantFilter(null) {
                 @Override
                 protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                         throws ServletException, IOException {
