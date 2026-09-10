@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 
@@ -29,6 +31,16 @@ public class ProductController implements ApiApi {
     @PostMapping
     public ProductResponse create(@Valid @RequestBody ProductRequest request) {
         return productService.createProduct(request);
+    }
+
+    @PutMapping("/{id}")
+    public ProductResponse update(@PathVariable UUID id, @Valid @RequestBody ProductRequest request) {
+        return productService.updateProduct(id, request);
+    }
+
+    @GetMapping
+    public List<ProductResponse> listProducts() {
+        return productService.listProducts();
     }
 
     @GetMapping("/{id}")
