@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react";
 import type React from "react";
 import { useAdminMetrics } from "./useAdminMetrics";
 import { useChaosMonkey } from "./useChaosMonkey";
@@ -62,8 +63,9 @@ export function AdminDashboard() {
 					</div>
 				</div>
 				{isEnabled && (
-					<div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-						⚠️ Chaos Monkey is active – payment failures will be simulated.
+					<div className="mt-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded flex items-center gap-2">
+						<AlertTriangle className="h-4 w-4 flex-shrink-0" />
+						<span>Chaos Monkey is active – payment failures will be simulated.</span>
 					</div>
 				)}
 			</div>
