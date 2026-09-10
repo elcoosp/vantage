@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import apiClient from "../../lib/api";
 
 export interface SystemMetrics {
 	totalVendors: number;
@@ -8,7 +8,7 @@ export interface SystemMetrics {
 }
 
 async function fetchMetrics(): Promise<SystemMetrics> {
-	const response = await axios.get<SystemMetrics>("/api/v1/admin/metrics");
+	const response = await apiClient.get<SystemMetrics>("/admin/metrics");
 	return response.data;
 }
 
@@ -18,5 +18,6 @@ export function useAdminMetrics() {
 		queryFn: fetchMetrics,
 		refetchInterval: 5000,
 		staleTime: 4000,
+		retry: false,
 	});
 }
