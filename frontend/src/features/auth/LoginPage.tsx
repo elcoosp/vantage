@@ -19,7 +19,7 @@ export function LoginPage() {
 		try {
 			const response = await login({ email, password });
 			setAuth(response.token, response.tenantId);
-			navigate("/dashboard");
+			navigate("/");
 		} catch (err: unknown) {
 			const errorObj = err as { response?: { data?: { message?: string } } };
 			const message = errorObj.response?.data?.message || (err instanceof Error ? err.message : "Login failed");
