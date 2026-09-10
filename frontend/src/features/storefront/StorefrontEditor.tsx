@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "../../lib/api";
@@ -170,7 +171,7 @@ export function StorefrontEditor() {
 									onClick={() => removeComponent(index)}
 									className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
 								>
-									✕
+									<X className="h-4 w-4" />
 								</button>
 							</div>
 						</div>
