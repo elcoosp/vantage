@@ -2,6 +2,7 @@ package com.vantage.inventory.app;
 import com.vantage.core.exception.InventoryConflictException;
 
 import com.vantage.core.exception.ResourceNotFoundException;
+import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.domain.Inventory;
 import com.vantage.inventory.domain.InventoryRepository;
 import com.vantage.inventory.ui.dto.InventoryResponse;
@@ -10,6 +11,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,6 +21,14 @@ public class InventoryService {
 
     public InventoryService(InventoryRepository inventoryRepository) {
         this.inventoryRepository = inventoryRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryResponse> listInventory() {
+        UUID tenantId = TenantContext.getTenantId();
+        return inventoryRepository.findByTenantId(tenantId).stream()
+                .map(inv -> new InventoryResponse(inv.getProductId(), inv.getQuantity(), inv.getVersion()))
+                .toList();
     }
 
     @Transactional
