@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import apiClient from "../../lib/api";
 
 async function fetchChaosMonkeyStatus(): Promise<boolean> {
-	const response = await axios.get<boolean>("/api/v1/admin/chaos-monkey/payment-failure");
+	const response = await apiClient.get<boolean>("/admin/chaos-monkey/payment-failure");
 	return response.data;
 }
 
 async function toggleChaosMonkey(enabled: boolean): Promise<void> {
-	await axios.post("/api/v1/admin/chaos-monkey/payment-failure", { enabled });
+	await apiClient.post("/admin/chaos-monkey/payment-failure", { enabled });
 }
 
 export function useChaosMonkey() {
@@ -17,6 +17,7 @@ export function useChaosMonkey() {
 		queryKey: ["chaosMonkeyStatus"],
 		queryFn: fetchChaosMonkeyStatus,
 		staleTime: 2000,
+		retry: false,
 	});
 
 	const toggleMutation = useMutation({
