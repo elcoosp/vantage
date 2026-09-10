@@ -24,7 +24,7 @@ VALUES (
     gen_random_uuid(),
     '11111111-1111-1111-1111-111111111111',
     'admin@vantage.com',
-    '$2a$10$dummyhashforadmin',
+    '$2b$10$Gf0sPogcNB6Mwfg4nU3A9e5xVA72rrVFhcVbuI6o2.WRRYpad98Fu',
     'Vantage Admin',
     'ACTIVE',
     TRUE,
