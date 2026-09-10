@@ -1,16 +1,18 @@
-# Vantage
-
-[![Java 21](https://img.shields.io/badge/Java-21-blue?logo=openjdk)](https://adoptium.net/)
-[![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4-green?logo=spring)](https://spring.io/projects/spring-boot)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
-[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org/)
-[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?logo=rabbitmq)](https://www.rabbitmq.com/)
-[![CI](https://img.shields.io/badge/CI-Passing-brightgreen)](https://github.com/your-org/vantage/actions)
-[![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
-
-A production‑grade, multi‑tenant SaaS platform for independent merchants – with distributed order orchestration, optimistic concurrency control, and AI‑driven demand forecasting.
-
-![Vantage Logo](docs/logo.png)
+<div align="center">
+  <img src="docs/logo.png" alt="Vantage Logo" width="200"/>
+  <p>
+    <strong>Vantage</strong> — A production‑grade, multi‑tenant SaaS platform for independent merchants – with distributed order orchestration, optimistic concurrency control, and AI‑driven demand forecasting.
+  </p>
+  <p>
+    <a href="https://adoptium.net/"><img src="https://img.shields.io/badge/Java-21-blue?logo=openjdk" alt="Java 21"/></a>
+    <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-3.4-green?logo=spring" alt="Spring Boot 3.4"/></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19"/></a>
+    <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql" alt="PostgreSQL 16"/></a>
+    <a href="https://www.rabbitmq.com/"><img src="https://img.shields.io/badge/RabbitMQ-FF6600?logo=rabbitmq" alt="RabbitMQ"/></a>
+    <a href="https://github.com/your-org/vantage/actions"><img src="https://img.shields.io/badge/CI-Passing-brightgreen" alt="CI"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red" alt="License"/></a>
+  </p>
+</div>
 
 ---
 
