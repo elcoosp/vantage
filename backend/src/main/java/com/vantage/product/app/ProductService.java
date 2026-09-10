@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.List;
 
 @Service
 public class ProductService {
@@ -46,6 +47,14 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
         return new ProductResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> listProducts() {
+        UUID tenantId = TenantContext.getTenantId();
+        return productRepository.findByTenantId(tenantId).stream()
+                .map(p -> new ProductResponse(p.getId(), p.getName(), p.getDescription(), p.getPrice()))
+                .toList();
     }
 
     @CacheEvict(value = "productCache", key = "#id")
