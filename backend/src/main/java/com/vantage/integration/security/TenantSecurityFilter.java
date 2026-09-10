@@ -147,6 +147,8 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
 
     private boolean isPublicEndpoint(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/v1/vendors/register") || path.startsWith("/actuator/health");
+        return path.startsWith("/api/v1/vendors/register") 
+            || path.startsWith("/api/v1/vendors/login")
+            || path.startsWith("/actuator/health");
     }
 }
