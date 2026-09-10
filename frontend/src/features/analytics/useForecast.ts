@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import apiClient from "../../lib/api";
 
 export interface ForecastDataPoint {
 	date: string;
@@ -13,7 +13,7 @@ export interface ForecastResponse {
 }
 
 async function fetchForecast(productId: string): Promise<ForecastResponse> {
-	const response = await axios.get<ForecastResponse>(`/api/v1/analytics/forecast/${productId}`);
+	const response = await apiClient.get<ForecastResponse>(`/analytics/forecast/${productId}`);
 	return response.data;
 }
 
