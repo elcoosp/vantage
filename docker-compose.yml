@@ -5,8 +5,9 @@ services:
       POSTGRES_USER: vantage
       POSTGRES_PASSWORD: vantage_pw
       POSTGRES_DB: vantage_dev
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
   rabbitmq:
