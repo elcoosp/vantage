@@ -19,9 +19,9 @@ export function RegisterPage() {
 		setError(null);
 		setLoading(true);
 		try {
-			const response = await register({ email, password, name: storeName, slug: storeSlug });
+			const response = await register({ email, password, name: storeName });
 			setAuth(response.token, response.tenantId);
-			navigate("/dashboard");
+			navigate("/");
 		} catch (err: unknown) {
 			const errorObj = err as { response?: { data?: { message?: string } } };
 			const message = errorObj.response?.data?.message || (err instanceof Error ? err.message : "Registration failed");
