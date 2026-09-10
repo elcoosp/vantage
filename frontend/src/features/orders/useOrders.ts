@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import apiClient from "../../lib/api";
 
 export interface Order {
 	orderId: string;
@@ -18,7 +18,7 @@ export interface OrderSearchResponse {
 }
 
 async function fetchOrders(): Promise<OrderSearchResponse> {
-	const response = await axios.get<OrderSearchResponse>("/api/v1/orders/search", {
+	const response = await apiClient.get<OrderSearchResponse>("/orders/search", {
 		params: {
 			size: 10000,
 		},
@@ -31,5 +31,6 @@ export function useOrders() {
 		queryKey: ["orders", 10000],
 		queryFn: fetchOrders,
 		staleTime: 1000 * 60 * 5,
+		retry: false,
 	});
 }
