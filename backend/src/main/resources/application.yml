@@ -6,7 +6,7 @@ spring:
       enabled: true
   datasource:
     primary:
-      url: jdbc:postgresql://localhost:5432/vantage_primary
+      url: jdbc:postgresql://localhost:15432/vantage_primary
       username: vantage
       password: vantage_pw
       hikari:
@@ -16,7 +16,7 @@ spring:
         idle-timeout: 600000
         max-lifetime: 1800000
     replica:
-      url: jdbc:postgresql://localhost:5432/vantage_replica
+      url: jdbc:postgresql://localhost:15432/vantage_replica
       username: vantage
       password: vantage_pw
       hikari:
@@ -79,10 +79,10 @@ spring:
       on-profile: smoke-test
   datasource:
     primary:
-      url: jdbc:postgresql://localhost:5432/vantage_primary
+      url: jdbc:postgresql://localhost:15432/vantage_primary
       username: vantage
       password: vantage_pw
     replica:
-      url: jdbc:postgresql://localhost:5432/vantage_replica
+      url: jdbc:postgresql://localhost:15432/vantage_replica
       username: vantage
       password: vantage_pw
