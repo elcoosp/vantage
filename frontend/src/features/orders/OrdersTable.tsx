@@ -10,16 +10,25 @@ interface OrdersTableProps {
 
 function SkeletonRow() {
 	return (
-		<tr className="border-b border-slate-800">
+		<tr className="border-b border-slate-200">
 			{Array.from({ length: 5 }).map((_, i) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton cells
 				<td key={i} className="px-6 py-4">
-					<div className="h-4 bg-slate-700 rounded animate-pulse w-full" />
+					<div className="h-4 bg-slate-200 rounded animate-pulse w-full" />
 				</td>
 			))}
 		</tr>
 	);
 }
+
+const statusColors: Record<string, { bg: string; text: string; label: string }> = {
+	CREATED: { bg: "bg-blue-100", text: "text-blue-800", label: "Created" },
+	CONFIRMED: { bg: "bg-indigo-100", text: "text-indigo-800", label: "Confirmed" },
+	PAID: { bg: "bg-green-100", text: "text-green-800", label: "Paid" },
+	CANCELLED: { bg: "bg-red-100", text: "text-red-800", label: "Cancelled" },
+	SHIPPED: { bg: "bg-amber-100", text: "text-amber-800", label: "Shipped" },
+	DELIVERED: { bg: "bg-emerald-100", text: "text-emerald-800", label: "Delivered" },
+};
 
 export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 	const columns = useMemo<ColumnDef<Order>[]>(
@@ -28,39 +37,51 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 				accessorKey: "orderId",
 				header: "Order ID",
 				cell: (info) => (
-					<span className="font-mono text-xs text-slate-300">{info.getValue<string>().slice(0, 8)}...</span>
+					<span className="font-mono text-xs text-slate-600 dark:text-slate-300">
+						{info.getValue<string>().slice(0, 8)}...
+					</span>
 				),
 			},
 			{
 				accessorKey: "productName",
 				header: "Product Name",
-				cell: (info) => <span className="text-slate-100 font-medium">{info.getValue<string>()}</span>,
+				cell: (info) => (
+					<span className="text-slate-900 dark:text-slate-100 font-medium">
+						{info.getValue<string>()}
+					</span>
+				),
 			},
 			{
 				accessorKey: "status",
 				header: "Status",
 				cell: (info) => {
 					const status = info.getValue<string>();
-					const colorMap: Record<string, string> = {
-						CREATED: "bg-blue-900/50 text-blue-200 border-blue-700",
-						CONFIRMED: "bg-purple-900/50 text-purple-200 border-purple-700",
-						PAID: "bg-green-900/50 text-green-200 border-green-700",
-						CANCELLED: "bg-red-900/50 text-red-200 border-red-700",
-					};
-					const color = colorMap[status] ?? "bg-slate-700 text-slate-300 border-slate-600";
-					return <span className={`px-2 py-1 text-xs font-semibold rounded border ${color}`}>{status}</span>;
+					const colors = statusColors[status] ?? { bg: "bg-slate-100", text: "text-slate-800", label: status };
+					return (
+						<span
+							className={`px-2 py-1 text-xs font-semibold rounded ${colors.bg} ${colors.text}`}
+						>
+							{colors.label}
+						</span>
+					);
 				},
 			},
 			{
 				accessorKey: "quantity",
 				header: "Quantity",
-				cell: (info) => <span className="text-slate-200 tabular-nums">{info.getValue<number>().toLocaleString()}</span>,
+				cell: (info) => (
+					<span className="text-slate-600 dark:text-slate-300 tabular-nums">
+						{info.getValue<number>().toLocaleString()}
+					</span>
+				),
 			},
 			{
 				accessorKey: "createdAt",
 				header: "Created At",
 				cell: (info) => (
-					<span className="text-slate-400 text-sm">{new Date(info.getValue<string>()).toLocaleString()}</span>
+					<span className="text-slate-500 dark:text-slate-400 text-sm">
+						{new Date(info.getValue<string>()).toLocaleString()}
+					</span>
 				),
 			},
 		],
@@ -91,15 +112,15 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 
 	if (isLoading) {
 		return (
-			<div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+			<div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
 				<table className="w-full">
-					<thead className="bg-slate-900/50 sticky top-0 z-10">
+					<thead className="bg-slate-50 dark:bg-slate-900/50">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<tr key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
 									<th
 										key={header.id}
-										className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-700"
+										className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700"
 									>
 										{flexRender(header.column.columnDef.header, header.getContext())}
 									</th>
@@ -121,16 +142,16 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 	return (
 		<div
 			ref={parentRef}
-			className="bg-slate-800 rounded-lg border border-slate-700 overflow-auto h-[600px] custom-scrollbar"
+			className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 overflow-auto h-[600px] custom-scrollbar"
 		>
 			<table className="w-full">
-				<thead className="bg-slate-900/80 backdrop-blur sticky top-0 z-10">
+				<thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
 					{table.getHeaderGroups().map((headerGroup) => (
 						<tr key={headerGroup.id}>
 							{headerGroup.headers.map((header) => (
 								<th
 									key={header.id}
-									className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-700"
+									className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700"
 								>
 									{flexRender(header.column.columnDef.header, header.getContext())}
 								</th>
@@ -151,8 +172,8 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 							<tr
 								key={row.id}
 								className={`${
-									isEven ? "bg-slate-800" : "bg-slate-800/50"
-								} hover:bg-slate-700/50 transition-colors border-b border-slate-700/50`}
+									isEven ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-800/50"
+								} hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-200 dark:border-slate-700`}
 							>
 								{row.getVisibleCells().map((cell) => (
 									<td key={cell.id} className="px-6 py-4 whitespace-nowrap">
