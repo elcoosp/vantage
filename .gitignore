@@ -55,3 +55,4 @@ Thumbs.db
 .dispatch_prompt_*.txt
 wr.sh
 dump.txt
+logs
