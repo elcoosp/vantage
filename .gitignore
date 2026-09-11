@@ -54,3 +54,4 @@ Thumbs.db
 # Dispatch Script Temp Files
 .dispatch_prompt_*.txt
 wr.sh
+dump.txt
