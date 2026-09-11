@@ -16,6 +16,16 @@
 
 ---
 
+## Demo
+
+https://github.com/user-attachments/assets/a94a091a-66a5-4997-b160-e6adbaa47d9d
+
+<div align="center">
+<p><em>Full walkthrough: login → dashboard → order search → low-stock fix → new product → AI demand forecast → developer portal.</em></p>
+</div>
+
+---
+
 ## Why Vantage?
 
 Vantage is a full‑stack demonstration of senior‑level engineering, designed to solve real‑world distributed systems problems:
