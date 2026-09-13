@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button, Input } from "../../components/ui";
 
 interface Props {
 	currentQuantity: number;
@@ -16,29 +17,22 @@ export function InventoryEditForm({ currentQuantity, onSubmit, onCancel, isPendi
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="flex items-center gap-2">
-			<input
+		<form onSubmit={handleSubmit} className="inline-flex items-center justify-end gap-2">
+			<Input
 				type="number"
 				value={quantity}
+				min={0}
 				onChange={(e) => setQuantity(Number(e.target.value))}
-				className="w-20 px-2 py-1 border border-gray-300 rounded"
+				className="h-7 w-20 text-right"
 				disabled={isPending}
+				aria-label="New on-hand quantity"
 			/>
-			<button
-				type="submit"
-				disabled={isPending}
-				className="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-			>
+			<Button type="submit" size="sm" disabled={isPending}>
 				Save
-			</button>
-			<button
-				type="button"
-				onClick={onCancel}
-				disabled={isPending}
-				className="px-2 py-1 text-sm bg-gray-300 rounded hover:bg-gray-400"
-			>
+			</Button>
+			<Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={isPending}>
 				Cancel
-			</button>
+			</Button>
 		</form>
 	);
 }
