@@ -6,6 +6,7 @@ import type {
 	ReactNode,
 	SelectHTMLAttributes,
 } from "react";
+import { createPortal } from "react-dom";
 
 /* ------------------------------------------------------------------ */
 /* cx — tiny class combiner                                            */
@@ -251,7 +252,7 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, description, children, className }: ModalProps) {
 	if (!open) return null;
-	return (
+	return createPortal(
 		<div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop is aria-hidden, keyboard users escape via Esc */}
 			<div
@@ -272,7 +273,8 @@ export function Modal({ open, onClose, title, description, children, className }
 				{description && <p className="mt-1 text-sm text-ink3-light dark:text-ink3-dark">{description}</p>}
 				<div className={title ? "mt-5" : undefined}>{children}</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
 
