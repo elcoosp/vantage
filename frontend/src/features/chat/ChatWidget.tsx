@@ -1,3 +1,4 @@
+import { Menu, Send, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { useChatStream } from "./useChatStream";
 
@@ -15,97 +16,88 @@ export function ChatWidget() {
 	const toggleOpen = () => setIsOpen((prev) => !prev);
 
 	return (
-		<div className="fixed bottom-4 right-4 z-50">
-			{!isOpen ? (
-				<button
-					type="button"
-					onClick={toggleOpen}
-					className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
-					aria-label="Open chat"
-				>
-					<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" role="img" aria-hidden="true">
-						<title>Chat icon</title>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-						/>
-					</svg>
-				</button>
-			) : (
-				<div className="w-96 h-[600px] bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 flex flex-col overflow-hidden">
-					<div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
-						<h3 className="text-white font-semibold">Support Assistant</h3>
+		<div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
+			{isOpen && (
+				<div className="flex h-[560px] w-[380px] flex-col overflow-hidden rounded-2xl border border-line-light bg-card-light shadow-float animate-scale-in dark:border-line-dark dark:bg-card-dark">
+					<div className="flex items-center justify-between border-b border-line-light bg-card2-light/70 px-4 py-3 dark:border-line-dark dark:bg-card2-dark/70">
+						<div className="flex items-center gap-2.5">
+							<span className="flex size-8 items-center justify-center rounded-lg bg-brand-500/15 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300">
+								<Sparkles className="size-4" />
+							</span>
+							<div>
+								<h3 className="text-[13px] font-semibold text-ink-light dark:text-ink-dark">Support Assistant</h3>
+								<p className="text-[11px] text-ink3-light dark:text-ink3-dark">Vantage AI · operational Q&amp;A</p>
+							</div>
+						</div>
 						<button
 							type="button"
 							onClick={toggleOpen}
-							className="text-gray-400 hover:text-white transition-colors"
+							className="rounded-md p-1.5 text-ink3-light transition-colors hover:bg-card2-light hover:text-ink-light dark:text-ink3-dark dark:hover:bg-card2-dark dark:hover:text-ink-dark"
 							aria-label="Close chat"
 						>
-							<svg
-								className="w-5 h-5"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								role="img"
-								aria-hidden="true"
-							>
-								<title>Close icon</title>
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-							</svg>
+							<X className="size-4" />
 						</button>
 					</div>
 
-					<div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+					<div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
 						{messages.map((msg) => (
 							<div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
 								<div
-									className={`max-w-[80%] px-4 py-2 rounded-lg ${
+									className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed ${
 										msg.role === "user"
-											? "bg-blue-600 text-white rounded-br-none"
-											: "bg-gray-700 text-gray-100 rounded-bl-none"
+											? "rounded-br-md bg-brand-600 text-white"
+											: "rounded-bl-md border border-line-light bg-card2-light text-ink-light dark:border-line-dark dark:bg-card2-dark dark:text-ink-dark"
 									}`}
 								>
 									{msg.content}
 									{isStreaming && msg.role === "assistant" && msg.id === messages[messages.length - 1]?.id && (
-										<span className="inline-block w-2 h-4 ml-1 bg-white animate-pulse" />
+										<span className="ml-1 inline-block h-3 w-[2px] animate-pulse bg-brand-500 align-middle" />
 									)}
 								</div>
 							</div>
 						))}
 						{isStreaming && messages.length === 0 && (
 							<div className="flex justify-start">
-								<div className="bg-gray-700 text-gray-100 px-4 py-2 rounded-lg rounded-bl-none">
-									<span className="inline-block w-2 h-4 bg-white animate-pulse" />
+								<div className="rounded-2xl rounded-bl-md border border-line-light bg-card2-light px-3.5 py-2 dark:border-line-dark dark:bg-card2-dark">
+									<span className="inline-block h-3 w-[2px] animate-pulse bg-brand-500" />
 								</div>
 							</div>
 						)}
 					</div>
 
-					<div className="p-4 border-t border-gray-700 bg-gray-800">
+					<div className="border-t border-line-light bg-card2-light/50 p-3 dark:border-line-dark dark:bg-card2-dark/50">
 						<div className="flex gap-2">
 							<input
 								type="text"
 								value={input}
 								onChange={(e) => setInput(e.target.value)}
 								onKeyDown={(e) => e.key === "Enter" && handleSend()}
-								placeholder="Ask a question..."
+								placeholder="Ask a question…"
 								disabled={isStreaming}
-								className="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+								className="h-9 flex-1 rounded-lg border border-line-light bg-card-light px-3 text-[13px] text-ink-light outline-none transition-shadow placeholder:text-ink3-light focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 disabled:opacity-50 dark:border-line-dark dark:bg-card-dark dark:text-ink-dark dark:placeholder:text-ink3-dark"
 							/>
 							<button
 								type="button"
 								onClick={handleSend}
 								disabled={!input.trim() || isStreaming}
-								className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+								className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
+								aria-label="Send message"
 							>
-								Send
+								<Send className="size-4" />
 							</button>
 						</div>
 					</div>
 				</div>
 			)}
+
+			<button
+				type="button"
+				onClick={toggleOpen}
+				className="flex size-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-pop transition-all hover:-translate-y-0.5 hover:bg-brand-700"
+				aria-label={isOpen ? "Close chat" : "Open chat"}
+			>
+				{isOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+			</button>
 		</div>
 	);
 }
