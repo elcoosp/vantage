@@ -70,7 +70,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Platform Dashboard",
+			"target": "h1:has-text(\"Overview\")",
 			"state": "visible",
 			"timeout": 60000
 		},
@@ -84,7 +84,7 @@
 		{
 			"action": "zoom",
 			"level": 1.15,
-			"origin": "text:Platform Dashboard"
+			"origin": "h1:has-text(\"Overview\")"
 		},
 		{
 			"action": "wait",
@@ -110,7 +110,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Order Search",
+			"target": "h1:has-text(\"Orders\")",
 			"state": "visible",
 			"timeout": 30000
 		},
@@ -120,7 +120,7 @@
 		{
 			"action": "zoom",
 			"level": 1.2,
-			"origin": "text:Order Search"
+			"origin": "h1:has-text(\"Orders\")"
 		},
 		{
 			"action": "wait",
@@ -150,7 +150,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:below low-stock threshold",
+			"target": "text:at or below the reorder point",
 			"state": "visible",
 			"timeout": 30000
 		},
@@ -160,7 +160,7 @@
 		{
 			"action": "zoom",
 			"level": 1.25,
-			"origin": "text:below low-stock threshold"
+			"origin": "text:at or below the reorder point"
 		},
 		{
 			"action": "wait",
@@ -171,7 +171,7 @@
 		},
 		{
 			"action": "hover",
-			"target": "tbody tr:has(span.text-amber-600) button"
+			"target": "tbody tr:has(span.bg-status-warning-soft-light) button"
 		},
 		{
 			"action": "pause"
@@ -181,11 +181,11 @@
 		},
 		{
 			"action": "click",
-			"target": "tbody tr:has(span.text-amber-600) button"
+			"target": "tbody tr:has(span.bg-status-warning-soft-light) button"
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Save",
+			"target": "button:has-text(\"Save\")",
 			"state": "visible",
 			"timeout": 10000
 		},
@@ -204,15 +204,15 @@
 		},
 		{
 			"action": "hover",
-			"target": "text:Save"
+			"target": "button:has-text(\"Save\")"
 		},
 		{
 			"action": "click",
-			"target": "text:Save"
+			"target": "button:has-text(\"Save\")"
 		},
 		{
 			"action": "waitFor",
-			"target": "text:below low-stock threshold",
+			"target": "text:at or below the reorder point",
 			"state": "hidden",
 			"timeout": 20000
 		},
@@ -245,7 +245,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Add Product",
+			"target": "button:has-text(\"Add product\")",
 			"state": "visible",
 			"timeout": 30000
 		},
@@ -255,7 +255,7 @@
 		{
 			"action": "zoom",
 			"level": 1.2,
-			"origin": "text:Add Product"
+			"origin": "button:has-text(\"Add product\")"
 		},
 		{
 			"action": "wait",
@@ -266,18 +266,18 @@
 		},
 		{
 			"action": "click",
-			"target": "text:Add Product"
+			"target": "button:has-text(\"Add product\")"
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Add New Product",
+			"target": "text:A new item in your catalog.",
 			"state": "visible",
 			"timeout": 15000
 		},
 		{
 			"action": "zoom",
 			"level": 1.2,
-			"origin": "text:Add New Product"
+			"origin": "text:A new item in your catalog."
 		},
 		{
 			"action": "wait",
@@ -307,18 +307,18 @@
 		},
 		{
 			"action": "hover",
-			"target": "text:Create"
+			"target": "button:has-text(\"Create product\")"
 		},
 		{
 			"action": "pause"
 		},
 		{
 			"action": "click",
-			"target": "text:Create"
+			"target": "button:has-text(\"Create product\")"
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Product created successfully",
+			"target": "text:Product created",
 			"state": "visible",
 			"timeout": 15000
 		},
@@ -328,7 +328,7 @@
 		{
 			"action": "zoom",
 			"level": 1.3,
-			"origin": "text:Product created successfully"
+			"origin": "text:Product created"
 		},
 		{
 			"action": "wait",
@@ -360,7 +360,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:AI Demand Forecast",
+			"target": "h1:has-text(\"Demand forecast\")",
 			"state": "visible",
 			"timeout": 30000
 		},
@@ -370,7 +370,7 @@
 		{
 			"action": "zoom",
 			"level": 1.2,
-			"origin": "text:AI Demand Forecast"
+			"origin": "h1:has-text(\"Demand forecast\")"
 		},
 		{
 			"action": "wait",
@@ -407,7 +407,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Developer Portal",
+			"target": "h1:has-text(\"Developer\")",
 			"state": "visible",
 			"timeout": 30000
 		},
@@ -417,7 +417,7 @@
 		{
 			"action": "zoom",
 			"level": 1.2,
-			"origin": "text:Developer Portal"
+			"origin": "h1:has-text(\"Developer\")"
 		},
 		{
 			"action": "wait",
@@ -443,7 +443,7 @@
 		},
 		{
 			"action": "waitFor",
-			"target": "text:Platform Dashboard",
+			"target": "h1:has-text(\"Overview\")",
 			"state": "visible",
 			"timeout": 30000
 		},
