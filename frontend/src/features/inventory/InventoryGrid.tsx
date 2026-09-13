@@ -136,11 +136,10 @@ export function InventoryGrid() {
 			<Card>
 				<Table tableClassName="table-fixed">
 					<THead>
-						<Th className="w-auto">Product</Th>
-						<Th className="w-24">ID</Th>
+						<Th>Product</Th>
 						<Th className="w-32 text-right">On hand</Th>
 						<Th className="w-20 text-right">Version</Th>
-						<Th className="w-12 text-right">Edit</Th>
+						<Th className="w-14 text-right">Edit</Th>
 					</THead>
 					<tbody>
 						{inventory.map((item) => {
@@ -152,9 +151,6 @@ export function InventoryGrid() {
 								<Tr key={item.productId}>
 									<Td className="truncate font-medium text-ink-light dark:text-ink-dark" title={name}>
 										{name}
-									</Td>
-									<Td className="font-mono text-[12px] text-ink3-light dark:text-ink3-dark">
-										{item.productId.slice(0, 8)}
 									</Td>
 									<Td className="text-right">
 										{isEditing ? (
@@ -189,7 +185,7 @@ export function InventoryGrid() {
 									<Td className="text-right font-mono text-[12px] text-ink3-light dark:text-ink3-dark">
 										v{item.version}
 									</Td>
-									<Td className="text-right">
+									<Td className="!px-3 text-right">
 										{!isEditing && (
 											<Button
 												variant="ghost"
@@ -197,9 +193,9 @@ export function InventoryGrid() {
 												onClick={() => beginEdit(item.productId)}
 												aria-label={`Edit ${name}`}
 												title="Edit quantity"
-												className="!h-7 !w-7 !px-0"
+												className="!h-8 !w-8 !px-0"
 											>
-												<Pencil className="size-3.5" />
+												<Pencil className="size-4" />
 											</Button>
 										)}
 									</Td>
