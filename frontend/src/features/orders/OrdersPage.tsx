@@ -34,6 +34,7 @@ export function OrdersPage() {
 				<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink3-light dark:text-ink3-dark" />
 				<Input
 					type="text"
+					id="order-search"
 					placeholder="Search by product, status, or order ID…"
 					value={searchTerm}
 					onChange={(e) => setSearchTerm(e.target.value)}
