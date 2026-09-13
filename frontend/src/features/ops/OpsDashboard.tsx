@@ -6,7 +6,7 @@ export function OpsDashboard() {
 	const { pins, isConnected } = useOpsMapSocket();
 
 	return (
-		<div className="relative h-[calc(100vh-140px)] overflow-hidden rounded-2xl border border-line-light shadow-card dark:border-line-dark">
+		<div className="relative isolate h-[calc(100vh-140px)] overflow-hidden rounded-2xl border border-line-light shadow-card dark:border-line-dark">
 			<MapView pins={pins} />
 
 			<div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-lg border border-line-light/60 bg-card-light/80 px-3 py-2 font-mono text-[12px] text-ink-light shadow-pop backdrop-blur-md dark:border-line-dark/60 dark:bg-card-dark/80 dark:text-ink-dark">

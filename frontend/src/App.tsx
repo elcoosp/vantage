@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ForecastDashboard } from "./features/analytics/ForecastDashboard";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RegisterPage } from "./features/auth/RegisterPage";
+import { AdminDashboard } from "./features/admin/AdminDashboard";
 import { DeveloperPortal } from "./features/developer/DeveloperPortal";
 import { InventoryGrid } from "./features/inventory/InventoryGrid";
 import { OpsDashboard } from "./features/ops/OpsDashboard";
@@ -43,6 +44,7 @@ function App() {
 					<Route path="orders" element={<OrdersPage />} />
 					<Route path="forecast" element={<ForecastDashboard />} />
 					<Route path="developer" element={<DeveloperPortal />} />
+					<Route path="admin" element={<AdminDashboard />} />
 				</Route>
 			</Routes>
 		</>

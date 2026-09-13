@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUIStore } from "../store/uiStore";
+import { createPortal } from "react-dom";
 import { Kbd } from "./ui";
 
 interface CommandItem {
@@ -30,7 +30,6 @@ export function CommandPalette() {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const navigate = useNavigate();
-	const { openAddProductModal, openUpdateStockModal } = useUIStore();
 
 	useEffect(() => {
 		const down = (e: KeyboardEvent) => {
@@ -77,9 +76,8 @@ export function CommandPalette() {
 		{ id: "ops", label: "Operations command", icon: AppWindow, action: () => go("/ops") },
 		{ id: "map", label: "Live order map", icon: MapIcon, action: () => go("/ops") },
 		{ id: "admin", label: "Admin dashboard", icon: Settings, action: () => go("/admin") },
-		{ id: "team", label: "Team & permissions", icon: Users, action: () => go("/team") },
-		{ id: "add-product", label: "Add product", icon: Store, action: openAddProductModal },
-		{ id: "update-stock", label: "Update stock", icon: Boxes, action: openUpdateStockModal },
+		{ id: "add-product", label: "Add product", icon: Store, action: () => go("/products") },
+		{ id: "update-stock", label: "Update stock", icon: Boxes, action: () => go("/inventory") },
 	];
 
 	const q = query.trim().toLowerCase();
@@ -89,9 +87,9 @@ export function CommandPalette() {
 			)
 		: items;
 
-	return (
+	return createPortal(
 		<div
-			className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-[12vh] backdrop-blur-sm"
+			className="fixed inset-0 z-[1000] flex items-start justify-center bg-black/40 p-4 pt-[12vh] backdrop-blur-sm"
 			onMouseDown={(e) => {
 				if (e.target === e.currentTarget) setOpen(false);
 			}}
@@ -146,6 +144,7 @@ export function CommandPalette() {
 					})}
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
