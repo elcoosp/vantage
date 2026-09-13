@@ -6,29 +6,49 @@ interface Props {
 
 interface State {
 	hasError: boolean;
-	error?: Error;
+	error: Error | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-	constructor(props: Props) {
-		super(props);
-		this.state = { hasError: false };
-	}
+	state: State = { hasError: false, error: null };
 
-	static getDerivedStateFromError(error: Error) {
+	static getDerivedStateFromError(error: Error): State {
 		return { hasError: true, error };
 	}
 
-	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-		console.error("DeveloperPortal Error:", error, errorInfo);
-	}
+	handleReset = () => {
+		this.setState({ hasError: false, error: null });
+	};
 
 	render() {
 		if (this.state.hasError) {
 			return (
-				<div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-					<h2 className="text-red-800 font-semibold">Something went wrong</h2>
-					<p className="text-red-600 text-sm">Please refresh the page or try again later.</p>
+				<div className="mx-auto mt-6 max-w-md rounded-xl border border-line-light bg-card-light p-6 text-center shadow-card dark:border-line-dark dark:bg-card-dark">
+					<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-status-danger-soft-light text-status-danger-ink-light dark:bg-[#E5484D]/15 dark:text-[#FF9A9D]">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							className="size-5"
+							role="img"
+							aria-label="Error"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<path d="M12 8v4M12 16h.01" strokeLinecap="round" />
+						</svg>
+					</div>
+					<h2 className="text-[15px] font-semibold text-ink-light dark:text-ink-dark">Something went wrong</h2>
+					<p className="mt-1.5 break-words text-[13px] text-ink3-light dark:text-ink3-dark">
+						{this.state.error?.message ?? "An unexpected error occurred."}
+					</p>
+					<button
+						type="button"
+						onClick={this.handleReset}
+						className="mt-5 inline-flex h-9 items-center justify-center rounded-lg bg-brand-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-card-light dark:focus-visible:ring-offset-card-dark"
+					>
+						Try again
+					</button>
 				</div>
 			);
 		}
