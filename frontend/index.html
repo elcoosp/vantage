@@ -2,11 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vantage</title>
+    <meta name="theme-color" content="#F7F8FA" />
+    <title>Vantage — Operations Platform</title>
+    <script>
+      (function () {
+        var m = window.matchMedia("(prefers-color-scheme: dark)");
+        var apply = function (dark) {
+          document.documentElement.classList.toggle("dark", dark);
+        };
+        apply(m.matches);
+        m.addEventListener("change", function (e) {
+          apply(e.matches);
+        });
+      })();
+    </script>
   </head>
   <body>
+    <!--
+      VANTAGE-SURFACE-CONTRACT
+      THESIS: A calm operations surface that refuses the default busy admin — one violet-indigo accent, hairline borders, paired light/dark neutral tokens, and hierarchy earned by type and space, not panels and effects.
+      OWN-WORLD: neutral canvas (#F7F8FA / #0B0C10), white cards, 1px line borders; a single brand-600 violet-indigo action hue; status semantics as soft+ink+dot; Inter Variable with 400/500/600; shadows card→lift→pop→float; 8px interactions, 12px containers.
+      STORY: The merchant scans the surface, sees what needs attention (low stock, pending orders, forecast risk), and acts in-place; the product reads as deliberate as its concurrency guarantees.
+      FIRST VIEWPORT: Fixed icon-rail + label sidebar, top bar with search/theme/user, page header + metric band, then the working table or grid; primary action top-right of the header.
+      FORM: Operate-mode app shell, a full rework of the incumbent look rather than a polish.
+      FINISH: "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md"
+    -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
