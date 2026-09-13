@@ -72,7 +72,7 @@
 		{ "action": "clear", "target": "input[aria-label='Edit on-hand quantity']" },
 		{ "action": "type", "target": "input[aria-label='Edit on-hand quantity']", "text": "25" },
 		{ "action": "wait", "ms": 400 },
-		{ "action": "press", "target": "input[aria-label='Edit on-hand quantity']", "key": "Enter" },
+		{ "action": "key", "key": "Enter" },
 		{ "action": "waitFor", "target": "text:at or below the reorder point", "state": "hidden", "timeout": 20000 },
 		{ "action": "zoom", "level": 1.3, "origin": "table" },
 		{ "action": "wait", "ms": 2000 },
