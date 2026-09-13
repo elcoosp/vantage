@@ -76,7 +76,7 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     testImplementation("org.testcontainers:rabbitmq")
 
-    testImplementation("com.squareup.okhttp3:mockwebserver:5.4.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.5.0")
     testImplementation("org.springframework.graphql:spring-graphql-test")
     testImplementation("net.jqwik:jqwik:1.8.2")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.0")
@@ -88,7 +88,7 @@ dependencies {
     "integrationTestImplementation"("org.testcontainers:junit-jupiter")
     "integrationTestImplementation"("org.testcontainers:postgresql")
     "integrationTestImplementation"("org.testcontainers:rabbitmq")
-    "integrationTestImplementation"("com.squareup.okhttp3:mockwebserver:5.4.0")
+    "integrationTestImplementation"("com.squareup.okhttp3:mockwebserver:5.5.0")
     "integrationTestImplementation"("org.springframework.graphql:spring-graphql-test")
     "integrationTestImplementation"(files(project.layout.buildDirectory.dir("classes/java/main")))
     "integrationTestImplementation"(files(project.layout.buildDirectory.dir("classes/java/test")))
