@@ -1,6 +1,7 @@
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef } from "react";
+import { StatusBadge, THead, Table, Td, Th, Tr, orderTone, statusLabel } from "../../components/ui";
 import type { Order } from "./useOrders";
 
 interface OrdersTableProps {
@@ -10,25 +11,19 @@ interface OrdersTableProps {
 
 function SkeletonRow() {
 	return (
-		<tr className="border-b border-slate-200">
+		<Tr>
 			{Array.from({ length: 5 }).map((_, i) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton cells
-				<td key={i} className="px-6 py-4">
-					<div className="h-4 bg-slate-200 rounded animate-pulse w-full" />
-				</td>
+				<Td key={i} className="px-5 py-4">
+					<div
+						className="h-3.5 animate-pulse rounded bg-card2-light dark:bg-card2-dark"
+						style={{ width: `${40 + i * 12}%` }}
+					/>
+				</Td>
 			))}
-		</tr>
+		</Tr>
 	);
 }
-
-const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-	CREATED: { bg: "bg-blue-100", text: "text-blue-800", label: "Created" },
-	CONFIRMED: { bg: "bg-indigo-100", text: "text-indigo-800", label: "Confirmed" },
-	PAID: { bg: "bg-green-100", text: "text-green-800", label: "Paid" },
-	CANCELLED: { bg: "bg-red-100", text: "text-red-800", label: "Cancelled" },
-	SHIPPED: { bg: "bg-amber-100", text: "text-amber-800", label: "Shipped" },
-	DELIVERED: { bg: "bg-emerald-100", text: "text-emerald-800", label: "Delivered" },
-};
 
 export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 	const columns = useMemo<ColumnDef<Order>[]>(
@@ -37,18 +32,16 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 				accessorKey: "orderId",
 				header: "Order ID",
 				cell: (info) => (
-					<span className="font-mono text-xs text-slate-600 dark:text-slate-300">
-						{info.getValue<string>().slice(0, 8)}...
+					<span className="font-mono text-[12px] text-ink3-light dark:text-ink3-dark">
+						{info.getValue<string>().slice(0, 8)}
 					</span>
 				),
 			},
 			{
 				accessorKey: "productName",
-				header: "Product Name",
+				header: "Product",
 				cell: (info) => (
-					<span className="text-slate-900 dark:text-slate-100 font-medium">
-						{info.getValue<string>()}
-					</span>
+					<span className="font-medium text-ink-light dark:text-ink-dark">{info.getValue<string>()}</span>
 				),
 			},
 			{
@@ -56,30 +49,23 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 				header: "Status",
 				cell: (info) => {
 					const status = info.getValue<string>();
-					const colors = statusColors[status] ?? { bg: "bg-slate-100", text: "text-slate-800", label: status };
-					return (
-						<span
-							className={`px-2 py-1 text-xs font-semibold rounded ${colors.bg} ${colors.text}`}
-						>
-							{colors.label}
-						</span>
-					);
+					return <StatusBadge tone={orderTone(status)}>{statusLabel[status] ?? status}</StatusBadge>;
 				},
 			},
 			{
 				accessorKey: "quantity",
-				header: "Quantity",
+				header: "Qty",
 				cell: (info) => (
-					<span className="text-slate-600 dark:text-slate-300 tabular-nums">
+					<span className="tabular-nums text-ink2-light dark:text-ink2-dark">
 						{info.getValue<number>().toLocaleString()}
 					</span>
 				),
 			},
 			{
 				accessorKey: "createdAt",
-				header: "Created At",
+				header: "Created",
 				cell: (info) => (
-					<span className="text-slate-500 dark:text-slate-400 text-sm">
+					<span className="text-[13px] text-ink3-light dark:text-ink3-dark">
 						{new Date(info.getValue<string>()).toLocaleString()}
 					</span>
 				),
@@ -100,7 +86,7 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 	const rowVirtualizer = useVirtualizer({
 		count: rows.length,
 		getScrollElement: () => parentRef.current,
-		estimateSize: () => 56,
+		estimateSize: () => 52,
 		overscan: 10,
 	});
 
@@ -112,29 +98,20 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 
 	if (isLoading) {
 		return (
-			<div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
-				<table className="w-full">
-					<thead className="bg-slate-50 dark:bg-slate-900/50">
-						{table.getHeaderGroups().map((headerGroup) => (
-							<tr key={headerGroup.id}>
-								{headerGroup.headers.map((header) => (
-									<th
-										key={header.id}
-										className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700"
-									>
-										{flexRender(header.column.columnDef.header, header.getContext())}
-									</th>
-								))}
-							</tr>
+			<div className="overflow-hidden rounded-xl border border-line-light bg-card-light shadow-card dark:border-line-dark dark:bg-card-dark">
+				<Table>
+					<THead>
+						{columns.map((column) => (
+							<Th key={String(column.header)}>{column.header as string}</Th>
 						))}
-					</thead>
+					</THead>
 					<tbody>
-						{Array.from({ length: 10 }).map((_, i) => (
+						{Array.from({ length: 8 }).map((_, i) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton rows
 							<SkeletonRow key={i} />
 						))}
 					</tbody>
-				</table>
+				</Table>
 			</div>
 		);
 	}
@@ -142,22 +119,26 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 	return (
 		<div
 			ref={parentRef}
-			className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 overflow-auto h-[600px] custom-scrollbar"
+			className="h-[560px] overflow-auto rounded-xl border border-line-light bg-card-light shadow-card custom-scrollbar dark:border-line-dark dark:bg-card-dark"
 		>
-			<table className="w-full">
-				<thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
-					{table.getHeaderGroups().map((headerGroup) => (
-						<tr key={headerGroup.id}>
-							{headerGroup.headers.map((header) => (
-								<th
-									key={header.id}
-									className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700"
-								>
-									{flexRender(header.column.columnDef.header, header.getContext())}
-								</th>
-							))}
-						</tr>
-					))}
+			<table className="w-full border-collapse text-left">
+				<thead className="sticky top-0 z-10">
+					<tr className="border-b border-line-light bg-card2-light/90 backdrop-blur dark:border-line-dark dark:bg-card2-dark/90">
+						{table.getHeaderGroups().map((headerGroup) => (
+							<th key={headerGroup.id} colSpan={headerGroup.headers.length} className="p-0">
+								<div className="flex">
+									{headerGroup.headers.map((header) => (
+										<div
+											key={header.id}
+											className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink3-light dark:text-ink3-dark"
+										>
+											{flexRender(header.column.columnDef.header, header.getContext())}
+										</div>
+									))}
+								</div>
+							</th>
+						))}
+					</tr>
 				</thead>
 				<tbody>
 					{paddingTop > 0 && (
@@ -167,16 +148,13 @@ export function OrdersTable({ data, isLoading }: OrdersTableProps) {
 					)}
 					{virtualRows.map((virtualRow) => {
 						const row = rows[virtualRow.index];
-						const isEven = virtualRow.index % 2 === 0;
 						return (
 							<tr
 								key={row.id}
-								className={`${
-									isEven ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-800/50"
-								} hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-200 dark:border-slate-700`}
+								className="border-b border-line-light transition-colors last:border-0 hover:bg-card2-light/60 dark:border-line-dark dark:hover:bg-card2-dark/50"
 							>
 								{row.getVisibleCells().map((cell) => (
-									<td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+									<td key={cell.id} className="whitespace-nowrap px-5 py-3 text-sm text-ink2-light dark:text-ink2-dark">
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</td>
 								))}
