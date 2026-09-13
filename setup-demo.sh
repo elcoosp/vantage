@@ -10,6 +10,10 @@
 #      ./setup-demo.sh status         # is everything up?
 #      ./setup-demo.sh logs [backend|frontend]
 #
+#  Ctrl+C during "start" cleanly tears down whatever this run started
+#  (backend, frontend, and Docker services if we were the ones who brought
+#  them up). It will NOT touch servers/services that were already running.
+#
 #  What "start" does, in order:
 #    1. Preflight checks      docker daemon, compose cmd, repo layout, Java 21, npm, curl
 #    2. (--reset only)        docker compose down -v  -> fresh DB volumes
@@ -50,6 +54,14 @@ FRONTEND_LOG="${LOG_DIR}/frontend.log"
 BACKEND_PID_FILE="${LOG_DIR}/backend.pid"
 FRONTEND_PID_FILE="${LOG_DIR}/frontend.pid"
 
+# ----- interrupt / cleanup bookkeeping --------------------------------------
+# Reset at the top of do_start(). The Ctrl+C handler uses these to decide
+# *only* what this specific run created, so we never kill a server that was
+# already running before the user launched this script.
+STARTED_DOCKER=0
+STARTED_BACKEND=0
+STARTED_FRONTEND=0
+
 # ----- pretty output --------------------------------------------------------
 if [ -t 1 ]; then
   C_G=$'\033[32m'; C_R=$'\033[31m'; C_Y=$'\033[33m'; C_B=$'\033[36m'; C_N=$'\033[0m'
@@ -69,7 +81,9 @@ port_open() {
 
 # HTTP status code of a URL, "000" when unreachable
 http_code() {
-  curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$1" 2>/dev/null || echo 000
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$1" 2>/dev/null)" || true
+  echo "${code:-000}"
 }
 
 kill_tree() {
@@ -78,6 +92,82 @@ kill_tree() {
   kids="$(pgrep -P "$pid" 2>/dev/null || true)"
   for kid in $kids; do kill_tree "$kid"; done
   kill "$pid" 2>/dev/null || true
+}
+
+# POST the demo credentials; succeed only on HTTP 200 + a JWT in the body.
+# This is our "is this actually a healthy Vantage backend?" probe.
+try_demo_login() {
+  local payload="{\"email\":\"${DEMO_EMAIL}\",\"password\":\"${DEMO_PASSWORD}\"}"
+  local code
+  code="$(curl -s -o "${LOG_DIR}/login-check.json" -w '%{http_code}' --max-time 5 \
+    -X POST "$LOGIN_URL" -H 'Content-Type: application/json' -d "${payload}" 2>/dev/null || echo 000)"
+  [ "${code}" = "200" ] && grep -q '"token"' "${LOG_DIR}/login-check.json" 2>/dev/null
+}
+
+# Kill whatever is listening on a TCP port (macOS + Linux via lsof).
+# Returns 0 if the port is free afterwards.
+kill_listeners_on_port() {
+  local port="$1" pids pid
+  command -v lsof >/dev/null 2>&1 || { warn "lsof not found — cannot clear :${port} automatically"; return 1; }
+  pids="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
+  if [ -n "$pids" ]; then
+    for pid in $pids; do
+      log "Sending TERM to pid ${pid} holding :${port}"
+      kill_tree "$pid" || true
+    done
+    sleep 2
+  fi
+  pids="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
+  for pid in $pids; do
+    warn "pid ${pid} still on :${port} — sending KILL"
+    kill -9 "$pid" 2>/dev/null || true
+  done
+  [ -n "$pids" ] && sleep 1
+  ! port_open "$port"
+}
+
+# ============================================================================
+#  Ctrl+C / SIGTERM / SIGHUP handler
+#  Only tears down things THIS run started, then exits with 130 (128+SIGINT).
+#  Installed only inside do_start(), so it never interferes with
+#  `logs`, `status`, or `stop`.
+# ============================================================================
+cleanup_on_interrupt() {
+  # avoid recursive traps (e.g. Ctrl+C while already cleaning up)
+  trap - INT TERM HUP
+  echo ""
+  warn "Interrupted — shutting down processes started by this run..."
+
+  local pid
+
+  # --- frontend ---
+  if [ "${STARTED_FRONTEND}" = "1" ] && [ -f "${FRONTEND_PID_FILE}" ]; then
+    pid="$(cat "${FRONTEND_PID_FILE}" 2>/dev/null || true)"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      log "Killing frontend process tree (pid ${pid})"
+      kill_tree "$pid" || true
+    fi
+    rm -f "${FRONTEND_PID_FILE}"
+  fi
+
+  # --- backend ---
+  if [ "${STARTED_BACKEND}" = "1" ] && [ -f "${BACKEND_PID_FILE}" ]; then
+    pid="$(cat "${BACKEND_PID_FILE}" 2>/dev/null || true)"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      log "Killing backend process tree (pid ${pid})"
+      kill_tree "$pid" || true
+    fi
+    rm -f "${BACKEND_PID_FILE}"
+  fi
+
+  # --- docker services we brought up (do NOT touch pre-existing ones) ---
+  if [ "${STARTED_DOCKER}" = "1" ]; then
+    log "Stopping docker compose services we started (volumes kept)..."
+    "${COMPOSE[@]}" stop >/dev/null 2>&1 || true
+  fi
+
+  ok "Cleanup complete."
+  exit 130
 }
 
 wait_for_postgres() {
@@ -175,27 +265,48 @@ preflight() {
 
 # ----- port guards (idempotent re-runs) --------------------------------------
 check_port_backend() {
-  if port_open "$BACKEND_PORT"; then
-    if [ "$(http_code "$LOGIN_URL")" != "000" ]; then
-      BACKEND_ALREADY_UP=1
-      warn "port ${BACKEND_PORT} busy but something answers — assuming an existing backend, will reuse."
-    else
-      fail "port ${BACKEND_PORT} is in use by another process (not a Vantage backend). Free the port, then re-run."
-      exit 1
-    fi
+  port_open "$BACKEND_PORT" || return 0
+
+  # A *working* Vantage backend answers the demo login with 200 + JWT.
+  # Anything else (404, 500, a stranger's app) is a stale/broken leftover
+  # from a previous run and must not be reused.
+  if try_demo_login; then
+    BACKEND_ALREADY_UP=1
+    ok "existing Vantage backend on :${BACKEND_PORT} verified (login OK) — reusing it."
+    return 0
   fi
+
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$LOGIN_URL" 2>/dev/null || echo 000)"
+  warn "port ${BACKEND_PORT} busy (HTTP ${code}) but Vantage login failed — treating as stale."
+  warn "Killing stale listener(s) on :${BACKEND_PORT} and starting a fresh backend..."
+  if ! kill_listeners_on_port "$BACKEND_PORT"; then
+    fail "Could not free :${BACKEND_PORT}. Run:  lsof -i :${BACKEND_PORT}   then kill manually."
+    exit 1
+  fi
+  ok "port ${BACKEND_PORT} freed"
+  BACKEND_ALREADY_UP=0
 }
 
 check_port_frontend() {
-  if port_open "$FRONTEND_PORT"; then
-    if [ "$(http_code "$FRONTEND_URL")" != "000" ]; then
-      FRONTEND_ALREADY_UP=1
-      warn "port ${FRONTEND_PORT} busy but something answers — assuming an existing frontend, will reuse."
-    else
-      fail "port ${FRONTEND_PORT} is in use by another process (not a Vite server). Free the port, then re-run."
-      exit 1
-    fi
+  port_open "$FRONTEND_PORT" || return 0
+
+  # Fingerprint the Vite dev server: root mount + /@vite/client script tag.
+  local body
+  body="$(curl -s --max-time 3 "$FRONTEND_URL" 2>/dev/null || true)"
+  if echo "${body}" | grep -q 'id="root"' && echo "${body}" | grep -q '/@vite/client'; then
+    FRONTEND_ALREADY_UP=1
+    ok "existing Vite frontend on :${FRONTEND_PORT} verified — reusing it."
+    return 0
   fi
+
+  warn "port ${FRONTEND_PORT} busy but not a Vite dev server — treating as stale."
+  if ! kill_listeners_on_port "$FRONTEND_PORT"; then
+    fail "Could not free :${FRONTEND_PORT}. Run:  lsof -i :${FRONTEND_PORT}   then kill manually."
+    exit 1
+  fi
+  ok "port ${FRONTEND_PORT} freed"
+  FRONTEND_ALREADY_UP=0
 }
 
 # ----- app lifecycle ----------------------------------------------------------
@@ -211,6 +322,9 @@ start_backend() {
   BACKEND_PID=$!
   echo "${BACKEND_PID}" > "${BACKEND_PID_FILE}"
   cd "${ROOT}"
+
+  # We own this backend now — mark it so Ctrl+C tears it down.
+  STARTED_BACKEND=1
 
   local i code
   log "Waiting for backend to accept requests..."
@@ -292,6 +406,9 @@ start_frontend() {
   echo "${FRONTEND_PID}" > "${FRONTEND_PID_FILE}"
   cd "${ROOT}"
 
+  # We own this frontend now — mark it so Ctrl+C tears it down.
+  STARTED_FRONTEND=1
+
   local i body
   log "Waiting for frontend..."
   for ((i = 1; i <= FRONTEND_WAIT_ATTEMPTS; i++)); do
@@ -360,8 +477,10 @@ do_status() {
   else
     echo "${C_R}  ✘ ${C_N}docker     daemon not running"; rc=1
   fi
-  if [ "$(http_code "$LOGIN_URL")" != "000" ]; then
-    ok "backend    responding (:${BACKEND_PORT})"
+  if try_demo_login; then
+    ok "backend    responding (:${BACKEND_PORT}, login OK)"
+  elif [ "$(http_code "$LOGIN_URL")" != "000" ]; then
+    echo "${C_R}  ✘ ${C_N}backend    answering but login fails (stale?) (:${BACKEND_PORT})"; rc=1
   else echo "${C_R}  ✘ ${C_N}backend    down"; rc=1; fi
   if [ "$(http_code "$FRONTEND_URL")" != "000" ]; then
     ok "frontend   responding (:${FRONTEND_PORT})"
@@ -373,6 +492,13 @@ do_start() {
   : "${COMPOSE[0]:-}" # set -u guard
   BACKEND_ALREADY_UP=0
   FRONTEND_ALREADY_UP=0
+  # Fresh run: nothing has been started by us yet.
+  STARTED_DOCKER=0
+  STARTED_BACKEND=0
+  STARTED_FRONTEND=0
+
+  # Ctrl+C / SIGTERM / SIGHUP now trigger cleanup of only what we start below.
+  trap cleanup_on_interrupt INT TERM HUP
 
   preflight
   check_port_backend
@@ -393,8 +519,16 @@ do_start() {
     ok "volumes wiped — Flyway will re-seed demo data on backend boot"
   fi
 
+  # Were the docker services already running before this run? If yes, we must
+  # NOT stop them on Ctrl+C — the user brought them up themselves.
+  local docker_was_up=0
+  if [ -n "$("${COMPOSE[@]}" ps -q postgres 2>/dev/null || true)" ]; then docker_was_up=1; fi
+  if [ -n "$("${COMPOSE[@]}" ps -q rabbitmq 2>/dev/null || true)" ]; then docker_was_up=1; fi
+
   log "Starting docker infra (postgres + rabbitmq)..."
   "${COMPOSE[@]}" up -d postgres rabbitmq
+  [ "${docker_was_up}" = "0" ] && STARTED_DOCKER=1
+
   local pg_container rmq_container
   pg_container="$("${COMPOSE[@]}" ps -q postgres)"
   rmq_container="$("${COMPOSE[@]}" ps -q rabbitmq)"
@@ -406,6 +540,10 @@ do_start() {
   start_backend
   verify_seed_and_login "$pg_container"
   start_frontend
+
+  # We made it — normal exit. Clear the trap so a stray signal after the
+  # script returns doesn't try to kill the (intentionally detached) servers.
+  trap - INT TERM HUP
 
   echo ""
   echo "${C_B}════════════════════════════════════════════════════════════${C_N}"
@@ -447,7 +585,7 @@ do_logs() {
 }
 
 usage() {
-  sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,34p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 # ----- main -------------------------------------------------------------------
