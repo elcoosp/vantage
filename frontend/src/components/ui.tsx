@@ -390,10 +390,18 @@ export function TableCard({ children, className }: { children: ReactNode; classN
 	return <Card className={cx("overflow-hidden", className)}>{children}</Card>;
 }
 
-export function Table({ children, className }: { children: ReactNode; className?: string }) {
+export function Table({
+	children,
+	className,
+	tableClassName,
+}: {
+	children: ReactNode;
+	className?: string;
+	tableClassName?: string;
+}) {
 	return (
 		<div className={cx("overflow-x-auto", className)}>
-			<table className="w-full border-collapse text-left">{children}</table>
+			<table className={cx("w-full border-collapse text-left", tableClassName)}>{children}</table>
 		</div>
 	);
 }

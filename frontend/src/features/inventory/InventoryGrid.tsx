@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Package } from "lucide-react";
+import { AlertTriangle, Package, Pencil } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button, Card, EmptyState, PageHeader, THead, Table, Td, Th, Tr } from "../../components/ui";
@@ -73,6 +73,9 @@ export function InventoryGrid() {
 	const lowStock = (inventory ?? []).filter((i) => i.quantity <= 10);
 	const safeQty = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0);
 
+	const beginEdit = (productId: string) => setEditingId(productId);
+	const endEdit = () => setEditingId(null);
+
 	if (isLoading) {
 		return (
 			<div className="space-y-4">
@@ -116,7 +119,7 @@ export function InventoryGrid() {
 		<div className="space-y-5 animate-fade-up">
 			<PageHeader
 				title="Inventory"
-				description="Stock levels per product. Changes carry a version check, so concurrent edits surface as conflicts."
+				description="Stock levels per product. Click a quantity to edit — Enter saves, Escape cancels."
 			/>
 
 			{lowStock.length > 0 && (
@@ -131,13 +134,13 @@ export function InventoryGrid() {
 			)}
 
 			<Card>
-				<Table>
+				<Table tableClassName="table-fixed">
 					<THead>
-						<Th>Product</Th>
-						<Th>ID</Th>
-						<Th className="text-right">On hand</Th>
-						<Th className="text-right">Version</Th>
-						<Th className="text-right">Action</Th>
+						<Th className="w-auto">Product</Th>
+						<Th className="w-24">ID</Th>
+						<Th className="w-32 text-right">On hand</Th>
+						<Th className="w-20 text-right">Version</Th>
+						<Th className="w-12 text-right">Edit</Th>
 					</THead>
 					<tbody>
 						{inventory.map((item) => {
@@ -147,23 +150,11 @@ export function InventoryGrid() {
 							const isEditing = editingId === item.productId;
 							return (
 								<Tr key={item.productId}>
-									<Td className="font-medium text-ink-light dark:text-ink-dark">{name}</Td>
+									<Td className="truncate font-medium text-ink-light dark:text-ink-dark" title={name}>
+										{name}
+									</Td>
 									<Td className="font-mono text-[12px] text-ink3-light dark:text-ink3-dark">
 										{item.productId.slice(0, 8)}
-									</Td>
-									<Td className="text-right">
-										<span
-											className={
-												isLow
-													? "inline-flex items-center justify-end rounded-md bg-status-warning-soft-light px-2 py-0.5 text-[13px] font-semibold tabular-nums text-status-warning-ink-light dark:bg-[#D3932B]/15 dark:text-[#F0C468]"
-													: "tabular-nums font-medium text-ink-light dark:text-ink-dark"
-											}
-										>
-											{item.quantity}
-										</span>
-									</Td>
-									<Td className="text-right font-mono text-[12px] text-ink3-light dark:text-ink3-dark">
-										v{item.version}
 									</Td>
 									<Td className="text-right">
 										{isEditing ? (
@@ -175,14 +166,40 @@ export function InventoryGrid() {
 														quantity: safeQty(qty),
 														version: item.version,
 													});
-													setEditingId(null);
+													endEdit();
 												}}
-												onCancel={() => setEditingId(null)}
+												onCancel={endEdit}
 												isPending={mutation.isPending}
 											/>
 										) : (
-											<Button variant="secondary" size="sm" onClick={() => setEditingId(item.productId)}>
-												Edit quantity
+											<button
+												type="button"
+												onClick={() => beginEdit(item.productId)}
+												aria-label={`Edit quantity for ${name} (currently ${item.quantity})`}
+												className={
+													isLow
+														? "inline-flex h-7 min-w-[3.5rem] items-center justify-end rounded-md bg-status-warning-soft-light px-2 text-[13px] font-semibold tabular-nums text-status-warning-ink-light transition-colors hover:bg-status-warning-soft-light/70 dark:bg-[#D3932B]/15 dark:text-[#F0C468] dark:hover:bg-[#D3932B]/25"
+														: "inline-flex h-7 min-w-[3.5rem] items-center justify-end rounded-md px-2 text-[13px] font-medium tabular-nums text-ink-light transition-colors hover:bg-card2-light dark:text-ink-dark dark:hover:bg-card2-dark"
+												}
+											>
+												{item.quantity}
+											</button>
+										)}
+									</Td>
+									<Td className="text-right font-mono text-[12px] text-ink3-light dark:text-ink3-dark">
+										v{item.version}
+									</Td>
+									<Td className="text-right">
+										{!isEditing && (
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => beginEdit(item.productId)}
+												aria-label={`Edit ${name}`}
+												title="Edit quantity"
+												className="!h-7 !w-7 !px-0"
+											>
+												<Pencil className="size-3.5" />
 											</Button>
 										)}
 									</Td>

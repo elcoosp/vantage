@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Button, Input } from "../../components/ui";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
 	currentQuantity: number;
@@ -10,29 +9,53 @@ interface Props {
 
 export function InventoryEditForm({ currentQuantity, onSubmit, onCancel, isPending }: Props) {
 	const [quantity, setQuantity] = useState(currentQuantity);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const committedRef = useRef(false);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		onSubmit(quantity);
+	useEffect(() => {
+		const input = inputRef.current;
+		if (!input) return;
+		input.focus();
+		input.select();
+	}, []);
+
+	const commit = () => {
+		if (committedRef.current) return;
+		committedRef.current = true;
+		const next = Number.isFinite(quantity) ? Math.max(0, Math.round(quantity)) : currentQuantity;
+		if (next === currentQuantity) {
+			onCancel();
+			return;
+		}
+		onSubmit(next);
+	};
+
+	const cancel = () => {
+		committedRef.current = true;
+		onCancel();
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="inline-flex items-center justify-end gap-2">
-			<Input
-				type="number"
-				value={quantity}
-				min={0}
-				onChange={(e) => setQuantity(Number(e.target.value))}
-				className="h-7 w-20 text-right"
-				disabled={isPending}
-				aria-label="New on-hand quantity"
-			/>
-			<Button type="submit" size="sm" disabled={isPending}>
-				Save
-			</Button>
-			<Button type="button" variant="secondary" size="sm" onClick={onCancel} disabled={isPending}>
-				Cancel
-			</Button>
-		</form>
+		<input
+			ref={inputRef}
+			type="number"
+			min={0}
+			inputMode="numeric"
+			value={quantity}
+			disabled={isPending}
+			onChange={(e) => setQuantity(Number(e.target.value))}
+			onKeyDown={(e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					commit();
+				} else if (e.key === "Escape") {
+					e.preventDefault();
+					cancel();
+				}
+			}}
+			onBlur={commit}
+			aria-label="Edit on-hand quantity"
+			className="h-7 w-full rounded-md border border-brand-500 bg-card-light px-2 text-right text-[13px] font-semibold tabular-nums text-ink-light outline-none ring-2 ring-brand-500/20 dark:border-brand-400 dark:bg-card-dark dark:text-ink-dark"
+		/>
 	);
 }
