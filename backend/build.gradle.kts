@@ -78,7 +78,7 @@ dependencies {
 
     testImplementation("com.squareup.okhttp3:mockwebserver:5.4.0")
     testImplementation("org.springframework.graphql:spring-graphql-test")
-    testImplementation("net.jqwik:jqwik:1.8.2")
+    testImplementation("net.jqwik:jqwik:1.10.1")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.0")
 
     // Integration tests use Testcontainers (Docker) and live in src/integrationTest.
