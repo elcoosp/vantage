@@ -1,7 +1,8 @@
-import { Plus, Tag } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Tag } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Button, Card, EmptyState, Field, Input, Modal, PageHeader } from "../../components/ui";
 import apiClient from "../../lib/api";
 
 interface Product {
@@ -31,6 +32,8 @@ export function Products() {
 	const queryClient = useQueryClient();
 	const [showCreate, setShowCreate] = useState(false);
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+	const [createError, setCreateError] = useState<string | null>(null);
+	const [updateError, setUpdateError] = useState<string | null>(null);
 
 	const updateMutation = useMutation({
 		mutationFn: (data: { id: string; product: ProductRequest }) =>
@@ -39,15 +42,16 @@ export function Products() {
 			queryClient.invalidateQueries({ queryKey: ["products"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
 			setEditingProduct(null);
-			toast.success("Product updated successfully");
+			toast.success("Product updated");
 		},
 		onError: () => {
-			toast.error("Failed to update product");
+			setUpdateError("Could not update the product. Please try again.");
 		},
 	});
 
 	const handleEdit = (product: Product) => {
 		setEditingProduct(product);
+		setUpdateError(null);
 	};
 
 	const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
@@ -57,12 +61,16 @@ export function Products() {
 		const data: ProductRequest = {
 			name: (form.elements.namedItem("name") as HTMLInputElement).value,
 			description: (form.elements.namedItem("description") as HTMLInputElement).value,
-			price: parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
+			price: Number.parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
 		};
 		updateMutation.mutate({ id: editingProduct.id, product: data });
 	};
 
-	const { data: products, isLoading, error } = useQuery({
+	const {
+		data: products,
+		isLoading,
+		error,
+	} = useQuery({
 		queryKey: ["products"],
 		queryFn: fetchProducts,
 		retry: false,
@@ -74,10 +82,10 @@ export function Products() {
 			queryClient.invalidateQueries({ queryKey: ["products"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
 			setShowCreate(false);
-			toast.success("Product created successfully");
+			toast.success("Product created");
 		},
 		onError: () => {
-			toast.error("Failed to create product");
+			setCreateError("Could not create the product. Please try again.");
 		},
 	});
 
@@ -87,196 +95,152 @@ export function Products() {
 		const data: ProductRequest = {
 			name: (form.elements.namedItem("name") as HTMLInputElement).value,
 			description: (form.elements.namedItem("description") as HTMLInputElement).value,
-			price: parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
+			price: Number.parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
 		};
 		createMutation.mutate(data);
 	};
 
-	if (isLoading) return <div className="p-4">Loading products...</div>;
-	if (error) return <div className="p-4 text-red-600">Failed to load products</div>;
+	if (isLoading) {
+		return (
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				{Array.from({ length: 6 }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton cards
+					<div key={i} className="h-40 animate-pulse rounded-xl bg-card-light dark:bg-card-dark" />
+				))}
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="rounded-lg border border-status-danger-soft-light bg-status-danger-soft-light px-4 py-3 text-sm text-status-danger-ink-light dark:border-[#E5484D]/25 dark:bg-[#E5484D]/10 dark:text-[#FF9A9D]">
+				Failed to load products.
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-6">
-			<div className="flex justify-between items-center">
-				<h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Products</h1>
-				<button
-					type="button"
-					onClick={() => setShowCreate(true)}
-					className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-				>
-					<Plus className="h-4 w-4" />
-					Add Product
-				</button>
-			</div>
-
-			{showCreate && (
-				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-					<div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full mx-4 p-6">
-						<h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-							Add New Product
-						</h2>
-						<form onSubmit={handleSubmit} className="space-y-4">
-							<div>
-								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-									Name
-								</label>
-								<input
-									name="name"
-									type="text"
-									required
-									className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-									Description
-								</label>
-								<input
-									name="description"
-									type="text"
-									className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-									Price
-								</label>
-								<input
-									name="price"
-									type="number"
-									step="0.01"
-									required
-									min="0"
-									className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900"
-								/>
-							</div>
-							<div className="flex gap-3 pt-2">
-								<button
-									type="submit"
-									disabled={createMutation.isPending}
-									className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-								>
-									{createMutation.isPending ? "Creating..." : "Create"}
-								</button>
-								<button
-									type="button"
-									onClick={() => setShowCreate(false)}
-									className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-								>
-									Cancel
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
-
-			{editingProduct && (
-				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-					<div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full mx-4 p-6">
-						<h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-							Edit Product
-						</h2>
-						<form onSubmit={handleUpdate} className="space-y-4">
-							<div>
-								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-									Name
-								</label>
-								<input
-									name="name"
-									type="text"
-									required
-									defaultValue={editingProduct.name}
-									className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-									Description
-								</label>
-								<input
-									name="description"
-									type="text"
-									defaultValue={editingProduct.description ?? ""}
-									className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-									Price
-								</label>
-								<input
-									name="price"
-									type="number"
-									step="0.01"
-									required
-									min="0"
-									defaultValue={editingProduct.price}
-									className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-slate-900"
-								/>
-							</div>
-							<div className="flex gap-3 pt-2">
-								<button
-									type="submit"
-									disabled={updateMutation.isPending}
-									className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-								>
-									{updateMutation.isPending ? "Updating..." : "Update"}
-								</button>
-								<button
-									type="button"
-									onClick={() => setEditingProduct(null)}
-									className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-								>
-									Cancel
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+		<div className="space-y-6 animate-fade-up">
+			<PageHeader
+				title="Products"
+				description="Your product catalog — pricing, descriptions, and identifiers."
+				actions={
+					<Button onClick={() => setShowCreate(true)}>
+						<Plus className="size-4" />
+						Add product
+					</Button>
+				}
+			/>
 
 			{products?.length === 0 ? (
-				<div className="text-center py-12 text-slate-500 dark:text-slate-400">
-					<div className="mb-2 w-fit mx-auto">
-						<Tag className="h-8 w-8 text-slate-400" />
-					</div>
-					<p>No products yet. Click "Add Product" to get started.</p>
-				</div>
+				<Card>
+					<EmptyState
+						icon={<Tag className="size-5" />}
+						title="No products yet"
+						description="Add your first product and it will appear in the catalog, ready to sell."
+						action={
+							<Button onClick={() => setShowCreate(true)}>
+								<Plus className="size-4" />
+								Add product
+							</Button>
+						}
+					/>
+				</Card>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{products?.map((product) => (
-						<div
-							key={product.id}
-							className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-5"
-						>
-							<div className="flex justify-between items-start mb-3">
-								<h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+						<Card key={product.id} hover className="flex flex-col p-5">
+							<div className="flex items-start justify-between gap-3">
+								<h3 className="truncate text-[15px] font-semibold tracking-tight text-ink-light dark:text-ink-dark">
 									{product.name}
 								</h3>
-								<span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+								<span className="shrink-0 rounded-md bg-card2-light px-1.5 py-0.5 font-mono text-[11px] text-ink3-light dark:bg-card2-dark dark:text-ink3-dark">
 									{product.id.slice(0, 8)}
 								</span>
 							</div>
 							{product.description && (
-								<p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+								<p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-ink3-light dark:text-ink3-dark">
 									{product.description}
 								</p>
 							)}
-							<div className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-3">
-								${product.price.toFixed(2)}
+							<div className="mt-4 flex items-end justify-between gap-3 border-t border-line-light pt-4 dark:border-line-dark">
+								<span className="text-xl font-semibold tabular-nums tracking-tight text-ink-light dark:text-ink-dark">
+									{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+								</span>
+								<Button variant="secondary" size="sm" onClick={() => handleEdit(product)}>
+									Edit
+								</Button>
 							</div>
-							<button
-								type="button"
-								onClick={() => handleEdit(product)}
-								className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600"
-							>
-								Edit
-							</button>
-						</div>
+						</Card>
 					))}
 				</div>
 			)}
+
+			{/* Create modal */}
+			<Modal
+				open={showCreate}
+				onClose={() => setShowCreate(false)}
+				title="Add product"
+				description="A new item in your catalog."
+			>
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<Field label="Name">
+						<Input name="name" type="text" required placeholder="e.g. Organic coffee beans" />
+					</Field>
+					<Field label="Description">
+						<Input name="description" type="text" placeholder="Short, customer-facing summary" />
+					</Field>
+					<Field label="Price">
+						<Input name="price" type="number" step="0.01" required min="0" placeholder="0.00" />
+					</Field>
+					{createError && (
+						<p className="rounded-lg bg-status-danger-soft-light px-3 py-2 text-sm text-status-danger-ink-light dark:bg-[#E5484D]/15 dark:text-[#FF9A9D]">
+							{createError}
+						</p>
+					)}
+					<div className="flex gap-3 pt-1">
+						<Button type="submit" disabled={createMutation.isPending} className="flex-1">
+							{createMutation.isPending ? "Creating…" : "Create product"}
+						</Button>
+						<Button type="button" variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">
+							Cancel
+						</Button>
+					</div>
+				</form>
+			</Modal>
+
+			{/* Edit modal */}
+			<Modal
+				open={editingProduct != null}
+				onClose={() => setEditingProduct(null)}
+				title="Edit product"
+				description="Update details for this item."
+			>
+				<form onSubmit={handleUpdate} className="space-y-4">
+					<Field label="Name">
+						<Input name="name" type="text" required defaultValue={editingProduct?.name} />
+					</Field>
+					<Field label="Description">
+						<Input name="description" type="text" defaultValue={editingProduct?.description ?? ""} />
+					</Field>
+					<Field label="Price">
+						<Input name="price" type="number" step="0.01" required min="0" defaultValue={editingProduct?.price} />
+					</Field>
+					{updateError && (
+						<p className="rounded-lg bg-status-danger-soft-light px-3 py-2 text-sm text-status-danger-ink-light dark:bg-[#E5484D]/15 dark:text-[#FF9A9D]">
+							{updateError}
+						</p>
+					)}
+					<div className="flex gap-3 pt-1">
+						<Button type="submit" disabled={updateMutation.isPending} className="flex-1">
+							{updateMutation.isPending ? "Saving…" : "Save changes"}
+						</Button>
+						<Button type="button" variant="secondary" onClick={() => setEditingProduct(null)} className="flex-1">
+							Cancel
+						</Button>
+					</div>
+				</form>
+			</Modal>
 		</div>
 	);
 }
