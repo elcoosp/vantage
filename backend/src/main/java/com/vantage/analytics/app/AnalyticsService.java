@@ -1,6 +1,5 @@
 package com.vantage.analytics.app;
 
-import com.vantage.analytics.app.HoltWintersForecastCalculator.ForecastResult;
 import com.vantage.analytics.ui.dto.ForecastDataPoint;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
@@ -14,20 +13,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
 public class AnalyticsService {
 
     private final EntityManager entityManager;
-    private final HoltWintersForecastCalculator forecastCalculator;
+    private final List<ForecastModel> models;
+    private final ForecastRunRepository forecastRunRepository;
 
-    public AnalyticsService(EntityManager entityManager, HoltWintersForecastCalculator forecastCalculator) {
+    public AnalyticsService(
+            EntityManager entityManager,
+            List<ForecastModel> models,
+            ForecastRunRepository forecastRunRepository) {
         this.entityManager = entityManager;
-        this.forecastCalculator = forecastCalculator;
+        this.models = models;
+        this.forecastRunRepository = forecastRunRepository;
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +60,6 @@ public class AnalyticsService {
         List<Object[]> results = query.getResultList();
 
         double[] history = new double[days];
-        // Fill with zeros
         for (int i = 0; i < days; i++) {
             history[i] = 0.0;
         }
@@ -75,25 +76,59 @@ public class AnalyticsService {
             }
         }
         log.debug("Retrieved {} historical data points for product {}", days, productId);
-
         return history;
     }
 
     @Cacheable(value = "forecastCache", key = "#productId")
     public ForecastResponse getForecast(UUID productId) {
-        System.out.println("Computing forecast for product: " + productId);
         log.debug("Computing forecast for product {}", productId);
         double[] history = getHistoricalData(productId, 30);
-        ForecastResult result = forecastCalculator.forecast(history, 7);
+
+        ForecastModel.ForecastInput input = new ForecastModel.ForecastInput(
+            history, Collections.emptyList());
+
+        // Pick the best model by backtest MAPE
+        ForecastModel bestModel = models.get(0);
+        double bestMape = Double.MAX_VALUE;
+        for (ForecastModel model : models) {
+            try {
+                ForecastModel.ForecastMetrics metrics = model.backtest(input, 14);
+                log.debug("Model {} backtest MAPE: {}", model.name(), metrics.mape());
+                if (metrics.mape() < bestMape && metrics.mape() > 0.0) {
+                    bestMape = metrics.mape();
+                    bestModel = model;
+                }
+            } catch (Exception e) {
+                log.warn("Backtest failed for model {}: {}", model.name(), e.getMessage());
+            }
+        }
+
+        ForecastModel.ForecastOutput output = bestModel.forecast(input, 7);
+        ForecastModel.ForecastMetrics metrics = bestModel.backtest(input, 14);
+
+        // Persist run for accuracy tracking / model versioning
+        Map<String, Object> forecastPayload = Map.of(
+            "forecast", output.forecast(),
+            "lower", output.lower(),
+            "upper", output.upper()
+        );
+        try {
+            forecastRunRepository.saveRun(productId, bestModel.name(), bestModel.version(),
+                7, metrics, forecastPayload);
+        } catch (Exception e) {
+            log.warn("Failed to persist forecast run: {}", e.getMessage());
+        }
+
         List<ForecastDataPoint> points = new ArrayList<>();
         LocalDate start = LocalDate.now().plusDays(1);
         for (int i = 0; i < 7; i++) {
             LocalDate date = start.plusDays(i);
-            int predicted = (int) Math.round(result.forecast()[i]);
-            int lower = (int) Math.round(result.lower()[i]);
-            int upper = (int) Math.round(result.upper()[i]);
+            int predicted = (int) Math.round(output.forecast()[i]);
+            int lower = (int) Math.round(output.lower()[i]);
+            int upper = (int) Math.round(output.upper()[i]);
             points.add(new ForecastDataPoint(date, predicted, lower, upper));
         }
+
         return new ForecastResponse(points);
     }
 }
