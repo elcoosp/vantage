@@ -1,7 +1,7 @@
 package com.vantage.analytics;
 
-import com.vantage.analytics.app.HoltWintersForecastCalculator;
-import com.vantage.analytics.app.HoltWintersForecastCalculator.ForecastResult;
+import com.vantage.analytics.app.HoltWintersModel;
+import com.vantage.analytics.app.HoltWintersModel.ForecastResult;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
@@ -11,7 +11,7 @@ import net.jqwik.api.GenerationMode;
 
 public class ForecastPropertyTest {
 
-    private final HoltWintersForecastCalculator calculator = new HoltWintersForecastCalculator();
+    private final HoltWintersModel calculator = new HoltWintersModel();
 
     @Provide
     Arbitrary<double[]> history30Days() {
