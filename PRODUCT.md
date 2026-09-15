@@ -27,7 +27,7 @@ The merchant runs a single-tenant dashboard on desktop at work. It is an operati
 - Multi-tenant SaaS: each merchant authenticates into their own tenant via JWT.
 - Products and inventory management with optimistic concurrency (If-Match version headers).
 - Distributed order orchestration with status lifecycle and payment circuit breaker.
-- AI demand forecasting (Holt-Winters) with confidence intervals.
+- Statistical demand forecasting (Holt-Winters) with confidence intervals.
 - Developer portal: API keys, webhooks, and API log stream.
 - Live operations map streamed over STOMP/WebSocket.
 - Command palette (Cmd+K), chat support widget, audit timeline.

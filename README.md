@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/logo.png" alt="Vantage Logo" width="200"/>
   <p>
-    <strong>Vantage</strong> — A production‑grade, multi‑tenant SaaS platform for independent merchants – with distributed order orchestration, optimistic concurrency control, and AI‑driven demand forecasting.
+    Vantage — A production‑grade, multi‑tenant SaaS platform for independent merchants – with distributed order orchestration, optimistic concurrency control, and statistical demand forecasting.
   </p>
   <p>
     <a href="https://adoptium.net/"><img src="https://img.shields.io/badge/Java-21-blue?style=flat-square&logo=openjdk" alt="Java 21"/></a>
@@ -35,7 +35,7 @@ Vantage is a full‑stack demonstration of senior‑level engineering, designed 
 - Distributed Saga + Outbox – At‑least‑once delivery with compensating transactions (Chaos Monkey).
 - Resilience4j – Circuit breakers, retries, bulkheads, and rate limiters for graceful degradation.
 - End‑to‑end tracing – OpenTelemetry and Grafana Tempo stitch together every request and event.
-- Pure‑Java AI forecasting – Holt‑Winters exponential smoothing with confidence intervals.
+- Statistical demand forecasting – Holt-Winters exponential smoothing with confidence intervals.
 
 ---
 
