@@ -1,15 +1,25 @@
-# TASK-010: Implement Pure-Java AI Demand Forecasting
+# TASK-010: Implement Pure-Java Demand Forecasting
+
+## Status: COMPLETE — Phase 2+4 done (RAG chat + forecast model abstraction + backtesting + run persistence)
 
 ## Product Context
-- Read: `docs/00-product/02-features-and-business-rules.md` (Section: AI Demand Forecasting)
-- User Story: `docs/00-product/03-epics-and-user-stories.md` (Story 5.1: Pure-Java Sales Forecasting)
+- Read: `docs/00-product/02-features-and-business-rules.md` (Section: Statistical Demand Forecasting)
+- User Story: `docs/00-product/03-epics-and-user-stories.md` (Story 5.1: Statistical Sales Forecasting)
 
 ## Objective
-Implement the analytics module to generate a 7-day demand forecast for a specific product. The system must query the last 30 days of order history for the tenant and apply a pure-Java implementation of the Holt-Winters Exponential Smoothing algorithm to calculate trend and seasonality, returning predicted quantities and a confidence interval.
+Implement the analytics module to generate a 7-day demand forecast for a specific product.
+The system queries the last 30 days of order history for the tenant and applies a pure-Java
+implementation of the Holt-Winters Exponential Smoothing algorithm to calculate trend and
+seasonality, returning predicted quantities and a confidence interval.
+
+> NOTE: The old task doc called this "AI demand forecasting." The statistical algorithm
+> (Holt-Winters) is a baseline, not AI/ML. This has been corrected to "statistical demand
+> forecasting" in PRODUCT.md and README.md.
 
 ## Execution Boundaries
-- You may ONLY create or modify files inside `backend/src/main/java/com/vantage/analytics/` and its corresponding test directory.
-- DO NOT modify `application.yml`, `build.gradle.kts`, or any files in `frontend/` or other modules.
+- You may ONLY create or modify files inside `backend/src/main/java/com/vantage/analytics/`
+  and its corresponding test directory.
+- DO NOT modify `application.yml`, `build.gradle.kts`, or other domain modules.
 
 ## Context Files to Inject
 - `docs/03-meta/agent-protocol.md`
@@ -27,7 +37,7 @@ Implement the analytics module to generate a 7-day demand forecast for a specifi
 4. Return the data as a `double[]` array representing the 30-day historical time series.
 
 ### 2. Holt-Winters Exponential Smoothing Algorithm
-1. Create `HoltWintersForecastCalculator` in `com.vantage.analytics.app`.
+1. Create `HoltWintersModel` (formerly `HoltWintersForecastCalculator`) in `com.vantage.analytics.app`.
 2. Implement the Triple Exponential Smoothing algorithm in pure Java.
    - Parameters: `alpha` (level), `beta` (trend), `gamma` (seasonality). Use sensible defaults (e.g., 0.3, 0.1, 0.3) or simple grid search optimization based on historical error.
    - Assume a seasonality period of 7 days (weekly).
@@ -51,6 +61,12 @@ Implement the analytics module to generate a 7-day demand forecast for a specifi
 7. Verify the `predictedQuantity` falls within the `[lowerBound, upperBound]` range.
 8. Verify the `lowerBound` is never negative.
 
+### 5. Forecast Run Persistence (Phase 4 — DONE)
+- [x] Create `ForecastRunRepository` in `backend/src/main/java/com/vantage/analytics/app/`
+- [x] Store forecast results in `forecast_runs` table (migration V14)
+- [x] Track: model_version, trained_at, mape, smape, mase, coverage, forecast_payload
+- [x] Model selection: backtest all models, pick best by MAPE
+
 ## Target File Paths
 - `backend/src/main/java/com/vantage/analytics/app/AnalyticsService.java`
 - `backend/src/main/java/com/vantage/analytics/app/HoltWintersForecastCalculator.java`
@@ -58,3 +74,6 @@ Implement the analytics module to generate a 7-day demand forecast for a specifi
 - `backend/src/main/java/com/vantage/analytics/ui/dto/ForecastResponse.java`
 - `backend/src/main/java/com/vantage/analytics/ui/dto/ForecastDataPoint.java`
 - `backend/src/test/java/com/vantage/analytics/ForecastAnalyticsIT.java`
+- `backend/src/main/java/com/vantage/analytics/infra/ForecastRunRepository.java` (NEW)
+- `backend/src/main/java/com/vantage/analytics/infra/ForecastRun.java` (NEW entity)
+- `backend/src/main/resources/db/migration/V14__create_forecast_runs.sql` (NEW)
