@@ -32,7 +32,12 @@ public class TenantFilterActivator extends OncePerRequestFilter {
             "tenantFilter_IdempotencyKey",
             "tenantFilter_Product",
             "tenantFilter_Inventory",
-            "tenantFilter_Vendor");
+            "tenantFilter_Vendor",
+            "tenantFilter_AiConversation",
+            "tenantFilter_AiMessage",
+            "tenantFilter_AiToolCall",
+            "tenantFilter_AiUsage",
+            "tenantFilter_AiDocument");
 
     private final EntityManager entityManager;
 

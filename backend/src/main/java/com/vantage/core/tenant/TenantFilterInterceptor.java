@@ -41,7 +41,12 @@ public class TenantFilterInterceptor extends EmptyInterceptor {
             "tenantFilter_IdempotencyKey",
             "tenantFilter_Product",
             "tenantFilter_Inventory",
-            "tenantFilter_Vendor");
+            "tenantFilter_Vendor",
+            "tenantFilter_AiConversation",
+            "tenantFilter_AiMessage",
+            "tenantFilter_AiToolCall",
+            "tenantFilter_AiUsage",
+            "tenantFilter_AiDocument");
 
     private static final Field TRANSACTION_SESSION_FIELD;
 

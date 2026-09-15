@@ -1,59 +1,68 @@
 package com.vantage.core.chat.ui;
 
-import com.vantage.core.chat.app.ChatService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import com.vantage.core.chat.app.ChatOrchestrator;
+import com.vantage.core.chat.app.LlmStreamEvent;
+import com.vantage.core.tenant.TenantContext;
+import com.vantage.core.tenant.MissingTenantContextException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.util.List;
+import java.util.UUID;
 
+/**
+ * REST controller for the streaming AI support chat.
+ *
+ * <p>Replaces the old canned SSE endpoint with a real orchestrated LLM stream.
+ * The endpoint accepts a POST body with the user's message and an optional
+ * conversation ID (to continue a thread). It streams {@code text/event-stream}
+ * SSE lines, each a JSON-serialized {@link LlmStreamEvent}.
+ *
+ * <p>Tenant is resolved from the JWT token or X-Tenant-ID header by
+ * {@link com.vantage.core.tenant.TenantFilter} — no cross-tenant leakage is
+ * possible.
+ */
 @RestController
 @RequestMapping("/api/v1/chat")
+@Slf4j
 public class ChatController {
 
-    private final ChatService chatService;
+    private final ChatOrchestrator chatOrchestrator;
+    private final ObjectMapper objectMapper;
 
-    public ChatController(ChatService chatService) {
-        this.chatService = chatService;
+    public ChatController(ChatOrchestrator chatOrchestrator, ObjectMapper objectMapper) {
+        this.chatOrchestrator = chatOrchestrator;
+        this.objectMapper = objectMapper;
     }
 
-    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
+    /**
+     * @param request Body with the user query and optional conversation ID.
+     * @return SSE stream of JSON event lines.
+     */
+    @PostMapping(value = "/stream", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.reactivestreams.Publisher<String> stream(@RequestBody ChatRequest request) {
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new MissingTenantContextException("Tenant context required for chat stream");
+        }
+        log.info("Chat stream started for tenant {} (conversation: {})",
+            tenantId, request.conversationId());
 
-    @GetMapping("/stream")
-    public SseEmitter stream(@RequestParam String query) {
-        log.info("Chat stream started for query: {}", query);
-        SseEmitter emitter = new SseEmitter(300000L);
-
-        emitter.onCompletion(() -> log.info("Chat stream completed for query: {}", query));
-        emitter.onTimeout(() -> {
-            log.warn("Chat stream timed out for query: {}", query);
-            emitter.complete();
-        });
-
-        Thread.startVirtualThread(() -> {
-            try {
-                List<String> words = chatService.getResponseWords(query);
-                for (String word : words) {
-                    emitter.send(SseEmitter.event().data(word));
-                    Thread.sleep(50);
+        return reactor.core.publisher.Flux.fromIterable(
+                chatOrchestrator.stream(request.query(), request.conversationId()))
+            .map(event -> {
+                try {
+                    return "data: " + objectMapper.writeValueAsString(event) + "\n\n";
+                } catch (JsonProcessingException e) {
+                    log.error("Failed to serialize SSE event", e);
+                    return "data: {\"type\":\"error\",\"message\":\"Serialization failed\"}\n\n";
                 }
-                emitter.complete();
-                log.info("Chat stream finished successfully for query: {}", query);
-            } catch (IOException e) {
-                log.error("IO error during chat stream", e);
-                emitter.completeWithError(e);
-            } catch (InterruptedException e) {
-                log.warn("Chat stream interrupted for query: {}", query);
-                Thread.currentThread().interrupt();
-                emitter.completeWithError(e);
-            }
-        });
-
-        return emitter;
+            })
+            .doOnComplete(() -> log.info("Chat stream completed for tenant {}", TenantContext.getTenantId()))
+            .doOnError(e -> log.error("Chat stream error for tenant {}", TenantContext.getTenantId(), e));
     }
+
+    public record ChatRequest(String query, UUID conversationId) {}
 }
