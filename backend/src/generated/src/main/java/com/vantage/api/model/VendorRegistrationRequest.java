@@ -19,7 +19,7 @@ import jakarta.annotation.Generated;
  * VendorRegistrationRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-13T15:31:45.731566+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-15T15:34:02.689648+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
 public class VendorRegistrationRequest implements Serializable {
 
   private static final long serialVersionUID = 1L;
