@@ -5,7 +5,7 @@ import { useChatStream } from "./useChatStream";
 export function ChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [input, setInput] = useState("");
-	const { messages, isStreaming, sendMessage } = useChatStream();
+	const { messages, citations, isStreaming, sendMessage } = useChatStream();
 
 	const handleSend = () => {
 		if (!input.trim() || isStreaming) return;
@@ -26,7 +26,7 @@ export function ChatWidget() {
 							</span>
 							<div>
 								<h3 className="text-[13px] font-semibold text-ink-light dark:text-ink-dark">Support Assistant</h3>
-								<p className="text-[11px] text-ink3-light dark:text-ink3-dark">Vantage AI · operational Q&amp;A</p>
+								<p className="text-[11px] text-ink3-light dark:text-ink3-dark">Vantage support &middot; operational Q&amp;A</p>
 							</div>
 						</div>
 						<button
@@ -41,7 +41,10 @@ export function ChatWidget() {
 
 					<div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
 						{messages.map((msg) => (
-							<div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+							<div
+								key={msg.id}
+								className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+							>
 								<div
 									className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed ${
 										msg.role === "user"
@@ -50,9 +53,11 @@ export function ChatWidget() {
 									}`}
 								>
 									{msg.content}
-									{isStreaming && msg.role === "assistant" && msg.id === messages[messages.length - 1]?.id && (
-										<span className="ml-1 inline-block h-3 w-[2px] animate-pulse bg-brand-500 align-middle" />
-									)}
+									{isStreaming &&
+										msg.role === "assistant" &&
+										msg.id === messages[messages.length - 1]?.id && (
+											<span className="ml-1 inline-block h-3 w-[2px] animate-pulse bg-brand-500 align-middle" />
+										)}
 								</div>
 							</div>
 						))}
@@ -61,6 +66,23 @@ export function ChatWidget() {
 								<div className="rounded-2xl rounded-bl-md border border-line-light bg-card2-light px-3.5 py-2 dark:border-line-dark dark:bg-card2-dark">
 									<span className="inline-block h-3 w-[2px] animate-pulse bg-brand-500" />
 								</div>
+							</div>
+						)}
+						{citations.length > 0 && (
+							<div className="mt-2 space-y-1 border-t border-line-light pt-2 dark:border-line-dark">
+								{citations.map((citation, i) => (
+									<a
+										key={i}
+										href={citation.sourceUrl}
+										className="block text-[11px] text-ink3-light hover:underline"
+									>
+										<span className="font-medium text-ink-light dark:text-ink-dark">[{citation.documentTitle}]</span>
+										<span className="ml-1 truncate">
+											{citation.snippet.slice(0, 80)}
+											{citation.snippet.length > 80 ? "…" : ""}
+										</span>
+									</a>
+								))}
 							</div>
 						)}
 					</div>
@@ -72,7 +94,7 @@ export function ChatWidget() {
 								value={input}
 								onChange={(e) => setInput(e.target.value)}
 								onKeyDown={(e) => e.key === "Enter" && handleSend()}
-								placeholder="Ask a question…"
+								placeholder="Ask about orders, inventory, forecasts…"
 								disabled={isStreaming}
 								className="h-9 flex-1 rounded-lg border border-line-light bg-card-light px-3 text-[13px] text-ink-light outline-none transition-shadow placeholder:text-ink3-light focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 disabled:opacity-50 dark:border-line-dark dark:bg-card-dark dark:text-ink-dark dark:placeholder:text-ink3-dark"
 							/>
