@@ -54,10 +54,14 @@ public class ChatController {
                 chatOrchestrator.stream(request.query(), request.conversationId()))
             .map(event -> {
                 try {
-                    return "data: " + objectMapper.writeValueAsString(event) + "\n\n";
+                    // Return the bare JSON — Spring's SSE encoder adds the
+                    // "data:" framing itself. The previous "data: " prefix here
+                    // double-encoded every frame ("data:data: {json}"), which
+                    // no client could parse.
+                    return objectMapper.writeValueAsString(event);
                 } catch (JsonProcessingException e) {
                     log.error("Failed to serialize SSE event", e);
-                    return "data: {\"type\":\"error\",\"message\":\"Serialization failed\"}\n\n";
+                    return "{\"type\":\"error\",\"message\":\"Serialization failed\"}";
                 }
             })
             .doOnComplete(() -> log.info("Chat stream completed for tenant {}", TenantContext.getTenantId()))
