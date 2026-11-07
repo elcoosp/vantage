@@ -108,6 +108,55 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrderResponse"
 
+  /api/v1/orders/{orderId}/ship:
+    patch:
+      operationId: shipOrder
+      summary: Mark a paid order as shipped
+      description: |
+        Advances the order from PAID to SHIPPED and publishes an
+        OrderShippedEvent consumed by the search projection and the live ops map.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Order shipped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "404":
+          description: Order not found for the authenticated tenant
+        "409":
+          description: Order is not in PAID state
+
+  /api/v1/orders/{orderId}/deliver:
+    patch:
+      operationId: deliverOrder
+      summary: Mark a shipped order as delivered
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Order delivered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "404":
+          description: Order not found for the authenticated tenant
+        "409":
+          description: Order is not in SHIPPED state
+
   /api/v1/payments:
     post:
       summary: Process Payment (Idempotent)
@@ -157,6 +206,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/ForecastResponse"
 
+  /api/v1/webhooks:
+    get:
+      operationId: getWebhookConfig
+      summary: Get the current webhook configuration
+      description: |
+        Returns the webhook URL registered for the authenticated tenant and a
+        masked view of its signing secret (the plaintext secret is only
+        revealed once by the PUT response).
+      responses:
+        "200":
+          description: Current webhook configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookConfigResponse"
+
 components:
   securitySchemes:
     BearerAuth:
@@ -184,24 +249,32 @@ components:
           type: string
     VendorRegistrationRequest:
       type: object
-      required: [email, password, storeName, tenantSlug]
+      required: [email, password, name]
       properties:
         email:
           type: string
           format: email
         password:
           type: string
-        storeName:
+          minLength: 8
+        name:
           type: string
-        tenantSlug:
+          description: Company / store name shown in the dashboard.
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
           type: string
     AuthResponse:
       type: object
       properties:
-        accessToken:
+        token:
           type: string
-        refreshToken:
-          type: string
+          description: HS256 JWT (24h expiry) used as a Bearer token.
         tenantId:
           type: string
           format: uuid
@@ -245,6 +318,16 @@ components:
         version:
           type: integer
           description: The new version number to be used in future If-Match headers.
+    WebhookConfigResponse:
+      type: object
+      properties:
+        webhookUrl:
+          type: string
+          description: Registered webhook URL, empty string when unset.
+        secret:
+          type: string
+          nullable: true
+          description: Masked signing secret (e.g. abcd…wxyz), null when unset.
     OrderRequest:
       type: object
       required: [productId, quantity]
@@ -260,9 +343,20 @@ components:
         orderId:
           type: string
           format: uuid
+        productId:
+          type: string
+          format: uuid
+          description: Present on responses from the non-generated controller (202 flow).
+        quantity:
+          type: integer
+          description: Present on responses from the non-generated controller (202 flow).
         status:
           type: string
-          enum: [CREATED]
+          enum: [CREATED, CONFIRMED, PAID, SHIPPED, DELIVERED, CANCELLED]
+          description: |
+            CREATED orders are processed asynchronously by the RabbitMQ saga
+            (inventory reservation + payment) and typically reach PAID within
+            seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints.
     PaymentRequest:
       type: object
       required: [orderId, amount]

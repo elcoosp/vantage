@@ -19,7 +19,7 @@ import jakarta.annotation.Generated;
  * VendorRegistrationRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-15T15:34:02.689648+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-07T10:31:28.165799286Z[Etc/UTC]", comments = "Generator version: 7.5.0")
 public class VendorRegistrationRequest implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -28,9 +28,7 @@ public class VendorRegistrationRequest implements Serializable {
 
   private String password;
 
-  private String storeName;
-
-  private String tenantSlug;
+  private String name;
 
   public VendorRegistrationRequest() {
     super();
@@ -39,11 +37,10 @@ public class VendorRegistrationRequest implements Serializable {
   /**
    * Constructor with only required parameters
    */
-  public VendorRegistrationRequest(String email, String password, String storeName, String tenantSlug) {
+  public VendorRegistrationRequest(String email, String password, String name) {
     this.email = email;
     this.password = password;
-    this.storeName = storeName;
-    this.tenantSlug = tenantSlug;
+    this.name = name;
   }
 
   public VendorRegistrationRequest email(String email) {
@@ -75,7 +72,7 @@ public class VendorRegistrationRequest implements Serializable {
    * Get password
    * @return password
   */
-  @NotNull 
+  @NotNull @Size(min = 8) 
   @Schema(name = "password", requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty("password")
   public String getPassword() {
@@ -86,44 +83,24 @@ public class VendorRegistrationRequest implements Serializable {
     this.password = password;
   }
 
-  public VendorRegistrationRequest storeName(String storeName) {
-    this.storeName = storeName;
+  public VendorRegistrationRequest name(String name) {
+    this.name = name;
     return this;
   }
 
   /**
-   * Get storeName
-   * @return storeName
+   * Company / store name shown in the dashboard.
+   * @return name
   */
   @NotNull 
-  @Schema(name = "storeName", requiredMode = Schema.RequiredMode.REQUIRED)
-  @JsonProperty("storeName")
-  public String getStoreName() {
-    return storeName;
+  @Schema(name = "name", description = "Company / store name shown in the dashboard.", requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty("name")
+  public String getName() {
+    return name;
   }
 
-  public void setStoreName(String storeName) {
-    this.storeName = storeName;
-  }
-
-  public VendorRegistrationRequest tenantSlug(String tenantSlug) {
-    this.tenantSlug = tenantSlug;
-    return this;
-  }
-
-  /**
-   * Get tenantSlug
-   * @return tenantSlug
-  */
-  @NotNull 
-  @Schema(name = "tenantSlug", requiredMode = Schema.RequiredMode.REQUIRED)
-  @JsonProperty("tenantSlug")
-  public String getTenantSlug() {
-    return tenantSlug;
-  }
-
-  public void setTenantSlug(String tenantSlug) {
-    this.tenantSlug = tenantSlug;
+  public void setName(String name) {
+    this.name = name;
   }
 
   @Override
@@ -137,13 +114,12 @@ public class VendorRegistrationRequest implements Serializable {
     VendorRegistrationRequest vendorRegistrationRequest = (VendorRegistrationRequest) o;
     return Objects.equals(this.email, vendorRegistrationRequest.email) &&
         Objects.equals(this.password, vendorRegistrationRequest.password) &&
-        Objects.equals(this.storeName, vendorRegistrationRequest.storeName) &&
-        Objects.equals(this.tenantSlug, vendorRegistrationRequest.tenantSlug);
+        Objects.equals(this.name, vendorRegistrationRequest.name);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(email, password, storeName, tenantSlug);
+    return Objects.hash(email, password, name);
   }
 
   @Override
@@ -152,8 +128,7 @@ public class VendorRegistrationRequest implements Serializable {
     sb.append("class VendorRegistrationRequest {\n");
     sb.append("    email: ").append(toIndentedString(email)).append("\n");
     sb.append("    password: ").append(toIndentedString(password)).append("\n");
-    sb.append("    storeName: ").append(toIndentedString(storeName)).append("\n");
-    sb.append("    tenantSlug: ").append(toIndentedString(tenantSlug)).append("\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("}");
     return sb.toString();
   }

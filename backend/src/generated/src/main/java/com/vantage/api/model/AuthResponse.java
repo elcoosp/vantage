@@ -20,55 +20,33 @@ import jakarta.annotation.Generated;
  * AuthResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-15T15:34:02.689648+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-07T10:31:28.165799286Z[Etc/UTC]", comments = "Generator version: 7.5.0")
 public class AuthResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private String accessToken;
-
-  private String refreshToken;
+  private String token;
 
   private UUID tenantId;
 
-  public AuthResponse accessToken(String accessToken) {
-    this.accessToken = accessToken;
+  public AuthResponse token(String token) {
+    this.token = token;
     return this;
   }
 
   /**
-   * Get accessToken
-   * @return accessToken
+   * HS256 JWT (24h expiry) used as a Bearer token.
+   * @return token
   */
   
-  @Schema(name = "accessToken", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-  @JsonProperty("accessToken")
-  public String getAccessToken() {
-    return accessToken;
+  @Schema(name = "token", description = "HS256 JWT (24h expiry) used as a Bearer token.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("token")
+  public String getToken() {
+    return token;
   }
 
-  public void setAccessToken(String accessToken) {
-    this.accessToken = accessToken;
-  }
-
-  public AuthResponse refreshToken(String refreshToken) {
-    this.refreshToken = refreshToken;
-    return this;
-  }
-
-  /**
-   * Get refreshToken
-   * @return refreshToken
-  */
-  
-  @Schema(name = "refreshToken", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-  @JsonProperty("refreshToken")
-  public String getRefreshToken() {
-    return refreshToken;
-  }
-
-  public void setRefreshToken(String refreshToken) {
-    this.refreshToken = refreshToken;
+  public void setToken(String token) {
+    this.token = token;
   }
 
   public AuthResponse tenantId(UUID tenantId) {
@@ -100,22 +78,20 @@ public class AuthResponse implements Serializable {
       return false;
     }
     AuthResponse authResponse = (AuthResponse) o;
-    return Objects.equals(this.accessToken, authResponse.accessToken) &&
-        Objects.equals(this.refreshToken, authResponse.refreshToken) &&
+    return Objects.equals(this.token, authResponse.token) &&
         Objects.equals(this.tenantId, authResponse.tenantId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, refreshToken, tenantId);
+    return Objects.hash(token, tenantId);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class AuthResponse {\n");
-    sb.append("    accessToken: ").append(toIndentedString(accessToken)).append("\n");
-    sb.append("    refreshToken: ").append(toIndentedString(refreshToken)).append("\n");
+    sb.append("    token: ").append(toIndentedString(token)).append("\n");
     sb.append("    tenantId: ").append(toIndentedString(tenantId)).append("\n");
     sb.append("}");
     return sb.toString();

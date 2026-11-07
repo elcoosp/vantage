@@ -19,7 +19,7 @@ import jakarta.annotation.Generated;
  * InventoryUpdateRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-15T15:34:02.689648+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-07T10:31:28.165799286Z[Etc/UTC]", comments = "Generator version: 7.5.0")
 public class InventoryUpdateRequest implements Serializable {
 
   private static final long serialVersionUID = 1L;

@@ -18,6 +18,7 @@ import com.vantage.api.model.ProductRequest;
 import com.vantage.api.model.ProductResponse;
 import java.util.UUID;
 import com.vantage.api.model.VendorRegistrationRequest;
+import com.vantage.api.model.WebhookConfigResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,7 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import jakarta.annotation.Generated;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-15T15:34:02.689648+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-07T10:31:28.165799286Z[Etc/UTC]", comments = "Generator version: 7.5.0")
 @Validated
 @Tag(name = "api", description = "the api API")
 public interface ApiApi {
@@ -189,7 +190,7 @@ public interface ApiApi {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"orderId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"status\" : \"CREATED\" }";
+                    String exampleString = "{ \"quantity\" : 0, \"productId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"orderId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"status\" : \"CREATED\" }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }
@@ -322,7 +323,144 @@ public interface ApiApi {
         getRequest().ifPresent(request -> {
             for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
                 if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
-                    String exampleString = "{ \"tenantId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"accessToken\" : \"accessToken\", \"refreshToken\" : \"refreshToken\" }";
+                    String exampleString = "{ \"tenantId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"token\" : \"token\" }";
+                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
+                    break;
+                }
+            }
+        });
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+    }
+
+
+    /**
+     * PATCH /api/v1/orders/{orderId}/deliver : Mark a shipped order as delivered
+     *
+     * @param orderId  (required)
+     * @return Order delivered (status code 200)
+     *         or Order not found for the authenticated tenant (status code 404)
+     *         or Order is not in SHIPPED state (status code 409)
+     */
+    @Operation(
+        operationId = "deliverOrder",
+        summary = "Mark a shipped order as delivered",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Order delivered", content = {
+                @Content(mediaType = "application/json", schema = @Schema(implementation = OrderResponse.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Order not found for the authenticated tenant"),
+            @ApiResponse(responseCode = "409", description = "Order is not in SHIPPED state")
+        },
+        security = {
+            @SecurityRequirement(name = "ApiKeyAuth"),
+            @SecurityRequirement(name = "BearerAuth")
+        }
+    )
+    @RequestMapping(
+        method = RequestMethod.PATCH,
+        value = "/api/v1/orders/{orderId}/deliver",
+        produces = { "application/json" }
+    )
+    
+    default ResponseEntity<OrderResponse> deliverOrder(
+        @Parameter(name = "orderId", description = "", required = true, in = ParameterIn.PATH) @PathVariable("orderId") UUID orderId
+    ) {
+        getRequest().ifPresent(request -> {
+            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+                    String exampleString = "{ \"quantity\" : 0, \"productId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"orderId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"status\" : \"CREATED\" }";
+                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
+                    break;
+                }
+            }
+        });
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+    }
+
+
+    /**
+     * GET /api/v1/webhooks : Get the current webhook configuration
+     * Returns the webhook URL registered for the authenticated tenant and a masked view of its signing secret (the plaintext secret is only revealed once by the PUT response). 
+     *
+     * @return Current webhook configuration (status code 200)
+     */
+    @Operation(
+        operationId = "getWebhookConfig",
+        summary = "Get the current webhook configuration",
+        description = "Returns the webhook URL registered for the authenticated tenant and a masked view of its signing secret (the plaintext secret is only revealed once by the PUT response). ",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Current webhook configuration", content = {
+                @Content(mediaType = "application/json", schema = @Schema(implementation = WebhookConfigResponse.class))
+            })
+        },
+        security = {
+            @SecurityRequirement(name = "ApiKeyAuth"),
+            @SecurityRequirement(name = "BearerAuth")
+        }
+    )
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = "/api/v1/webhooks",
+        produces = { "application/json" }
+    )
+    
+    default ResponseEntity<WebhookConfigResponse> getWebhookConfig(
+        
+    ) {
+        getRequest().ifPresent(request -> {
+            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+                    String exampleString = "{ \"secret\" : \"secret\", \"webhookUrl\" : \"webhookUrl\" }";
+                    ApiUtil.setExampleResponse(request, "application/json", exampleString);
+                    break;
+                }
+            }
+        });
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+    }
+
+
+    /**
+     * PATCH /api/v1/orders/{orderId}/ship : Mark a paid order as shipped
+     * Advances the order from PAID to SHIPPED and publishes an OrderShippedEvent consumed by the search projection and the live ops map. 
+     *
+     * @param orderId  (required)
+     * @return Order shipped (status code 200)
+     *         or Order not found for the authenticated tenant (status code 404)
+     *         or Order is not in PAID state (status code 409)
+     */
+    @Operation(
+        operationId = "shipOrder",
+        summary = "Mark a paid order as shipped",
+        description = "Advances the order from PAID to SHIPPED and publishes an OrderShippedEvent consumed by the search projection and the live ops map. ",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Order shipped", content = {
+                @Content(mediaType = "application/json", schema = @Schema(implementation = OrderResponse.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Order not found for the authenticated tenant"),
+            @ApiResponse(responseCode = "409", description = "Order is not in PAID state")
+        },
+        security = {
+            @SecurityRequirement(name = "ApiKeyAuth"),
+            @SecurityRequirement(name = "BearerAuth")
+        }
+    )
+    @RequestMapping(
+        method = RequestMethod.PATCH,
+        value = "/api/v1/orders/{orderId}/ship",
+        produces = { "application/json" }
+    )
+    
+    default ResponseEntity<OrderResponse> shipOrder(
+        @Parameter(name = "orderId", description = "", required = true, in = ParameterIn.PATH) @PathVariable("orderId") UUID orderId
+    ) {
+        getRequest().ifPresent(request -> {
+            for (MediaType mediaType: MediaType.parseMediaTypes(request.getHeader("Accept"))) {
+                if (mediaType.isCompatibleWith(MediaType.valueOf("application/json"))) {
+                    String exampleString = "{ \"quantity\" : 0, \"productId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"orderId\" : \"046b6c7f-0b8a-43b9-b35d-6489e6daee91\", \"status\" : \"CREATED\" }";
                     ApiUtil.setExampleResponse(request, "application/json", exampleString);
                     break;
                 }

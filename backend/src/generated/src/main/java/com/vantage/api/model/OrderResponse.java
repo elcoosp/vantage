@@ -21,18 +21,32 @@ import jakarta.annotation.Generated;
  * OrderResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-09-15T15:34:02.689648+02:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-07T10:31:28.165799286Z[Etc/UTC]", comments = "Generator version: 7.5.0")
 public class OrderResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
   private UUID orderId;
 
+  private UUID productId;
+
+  private Integer quantity;
+
   /**
-   * Gets or Sets status
+   * CREATED orders are processed asynchronously by the RabbitMQ saga (inventory reservation + payment) and typically reach PAID within seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints. 
    */
   public enum StatusEnum {
-    CREATED("CREATED");
+    CREATED("CREATED"),
+    
+    CONFIRMED("CONFIRMED"),
+    
+    PAID("PAID"),
+    
+    SHIPPED("SHIPPED"),
+    
+    DELIVERED("DELIVERED"),
+    
+    CANCELLED("CANCELLED");
 
     private String value;
 
@@ -83,17 +97,57 @@ public class OrderResponse implements Serializable {
     this.orderId = orderId;
   }
 
+  public OrderResponse productId(UUID productId) {
+    this.productId = productId;
+    return this;
+  }
+
+  /**
+   * Present on responses from the non-generated controller (202 flow).
+   * @return productId
+  */
+  @Valid 
+  @Schema(name = "productId", description = "Present on responses from the non-generated controller (202 flow).", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("productId")
+  public UUID getProductId() {
+    return productId;
+  }
+
+  public void setProductId(UUID productId) {
+    this.productId = productId;
+  }
+
+  public OrderResponse quantity(Integer quantity) {
+    this.quantity = quantity;
+    return this;
+  }
+
+  /**
+   * Present on responses from the non-generated controller (202 flow).
+   * @return quantity
+  */
+  
+  @Schema(name = "quantity", description = "Present on responses from the non-generated controller (202 flow).", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @JsonProperty("quantity")
+  public Integer getQuantity() {
+    return quantity;
+  }
+
+  public void setQuantity(Integer quantity) {
+    this.quantity = quantity;
+  }
+
   public OrderResponse status(StatusEnum status) {
     this.status = status;
     return this;
   }
 
   /**
-   * Get status
+   * CREATED orders are processed asynchronously by the RabbitMQ saga (inventory reservation + payment) and typically reach PAID within seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints. 
    * @return status
   */
   
-  @Schema(name = "status", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+  @Schema(name = "status", description = "CREATED orders are processed asynchronously by the RabbitMQ saga (inventory reservation + payment) and typically reach PAID within seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints. ", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("status")
   public StatusEnum getStatus() {
     return status;
@@ -113,12 +167,14 @@ public class OrderResponse implements Serializable {
     }
     OrderResponse orderResponse = (OrderResponse) o;
     return Objects.equals(this.orderId, orderResponse.orderId) &&
+        Objects.equals(this.productId, orderResponse.productId) &&
+        Objects.equals(this.quantity, orderResponse.quantity) &&
         Objects.equals(this.status, orderResponse.status);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(orderId, status);
+    return Objects.hash(orderId, productId, quantity, status);
   }
 
   @Override
@@ -126,6 +182,8 @@ public class OrderResponse implements Serializable {
     StringBuilder sb = new StringBuilder();
     sb.append("class OrderResponse {\n");
     sb.append("    orderId: ").append(toIndentedString(orderId)).append("\n");
+    sb.append("    productId: ").append(toIndentedString(productId)).append("\n");
+    sb.append("    quantity: ").append(toIndentedString(quantity)).append("\n");
     sb.append("    status: ").append(toIndentedString(status)).append("\n");
     sb.append("}");
     return sb.toString();

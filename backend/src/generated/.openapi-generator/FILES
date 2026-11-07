@@ -8,6 +8,7 @@ src/main/java/com/vantage/api/model/ForecastResponse.java
 src/main/java/com/vantage/api/model/ForecastResponseForecastInner.java
 src/main/java/com/vantage/api/model/InventoryResponse.java
 src/main/java/com/vantage/api/model/InventoryUpdateRequest.java
+src/main/java/com/vantage/api/model/LoginRequest.java
 src/main/java/com/vantage/api/model/OrderRequest.java
 src/main/java/com/vantage/api/model/OrderResponse.java
 src/main/java/com/vantage/api/model/PaymentRequest.java
@@ -15,3 +16,4 @@ src/main/java/com/vantage/api/model/PaymentResponse.java
 src/main/java/com/vantage/api/model/ProductRequest.java
 src/main/java/com/vantage/api/model/ProductResponse.java
 src/main/java/com/vantage/api/model/VendorRegistrationRequest.java
+src/main/java/com/vantage/api/model/WebhookConfigResponse.java
