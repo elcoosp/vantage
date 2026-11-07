@@ -130,7 +130,35 @@ This document defines the exact execution sequence to build Vantage using up to 
 *Final wiring and verification.*
 
 - **Agent 1:**
-  - [ ] `TASK-027`: Final Polish, README, and Demo Script
-  - [ ] `TASK-042`: End-to-End (E2E) Testing with Playwright
-  - [ ] `TASK-050`: Final Integration & E2E Smoke Test
-  - [ ] Merge to `main`
+  - [x] `TASK-027`: Final Polish, README, and Demo Script
+  - [x] `TASK-042`: End-to-End (E2E) Testing with Playwright
+  - [x] `TASK-050`: Final Integration & E2E Smoke Test
+  - [x] Merge to `main`
+
+### Phase 5 completion note (unvaporware pass)
+
+Phase 5 was originally left unexecuted — the repo shipped without ever
+booting. This pass made every advertised behavior real and verified:
+
+- Fixed five controllers implementing the generated `ApiApi` interface while
+  declaring duplicate mappings — Spring MVC refused to start (ambiguous
+  mappings); the backend had literally never booted.
+- Added `V16__create_infrastructure_tables.sql` (outbox, processed-events,
+  audit trail, idempotency keys, storefront configs) and made the
+  `ai_documents` content-hash index UNIQUE — clean-database boot previously
+  failed on the very first order insert and on the V15 seed.
+- Enabled the checkout saga by default (`vantage.outbox/inventory/payment`
+  flags), so orders actually reach PAID; added the reservation-failure to
+  CANCELLED consumer, manual cancel (`POST /orders/{id}/cancel`), and the
+  fulfillment lifecycle (`PATCH /orders/{id}/ship|deliver`) with read-your-
+  writes search projection and stale-event guards.
+- Implemented the missing WebSocket backend (`/ws` STOMP with per-tenant
+  JWT-authenticated topics, `core/websocket` module) for the Live Ops Map.
+- Replaced the mocked developer-portal pieces with real ones: `GET /webhooks`,
+  live API log stream (SSE + snapshot), fixed chat auth token source and the
+  double-encoded SSE frames that made every chat reply unparseable.
+- Rewrote the E2E layer against reality: `frontend/e2e/app-journey.spec.ts`
+  (10 Playwright scenarios, all green), fixed `e2e-smoke-test.sh` field names
+  and flow, added the missing `qualityGate` Gradle task.
+- Verified green end to end: 44/44 unit tests, 35/35 API smoke checks,
+  10/10 Playwright scenarios, `npm run build` clean.
