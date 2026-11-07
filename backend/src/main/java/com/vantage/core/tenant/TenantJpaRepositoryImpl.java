@@ -3,7 +3,6 @@ package com.vantage.core.tenant;
 import com.vantage.core.tenant.TenantContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 
@@ -24,7 +23,7 @@ import java.util.UUID;
  * @param <T>  the entity type
  * @param <ID> the entity identifier type
  */
-public class TenantJpaRepositoryImpl<T, ID> extends SimpleJpaRepository<T, ID> implements JpaRepository<T, ID> {
+public class TenantJpaRepositoryImpl<T, ID> extends SimpleJpaRepository<T, ID> implements TenantRepositoryBase<T, ID> {
 
     private final EntityManager entityManager;
     private final Class<T> domainClass;
