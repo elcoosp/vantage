@@ -49,6 +49,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(pd);
     }
 
+    /**
+     * Invalid domain state transitions (e.g. shipping an order that has not
+     * been paid yet) are client-visible conflicts, not server faults.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalStateException(IllegalStateException ex, WebRequest request) {
+        log.warn("Illegal state: {}", ex.getMessage());
+        ProblemDetail pd = ProblemDetailFactory.createGeneric(ex, HttpStatus.CONFLICT, request);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(pd);
+    }
+
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<ProblemDetail> handleRateLimitExceededException(RateLimitExceededException ex, WebRequest request) {
         log.warn("Rate limit exceeded: {}", ex.getMessage());
@@ -70,6 +81,20 @@ public class GlobalExceptionHandler {
         log.warn("Domain exception: {}", ex.getMessage());
         ProblemDetail pd = ProblemDetailFactory.createVantageDomainException(ex, request);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(pd);
+    }
+
+    /**
+     * Preserves the status code of programmatic responses (e.g. the 403 from
+     * the admin guard) instead of letting them fall through as 500s.
+     */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ProblemDetail> handleResponseStatusException(
+            org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
+        log.warn("ResponseStatusException: {}", ex.getMessage());
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        HttpStatus effective = status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
+        ProblemDetail pd = ProblemDetailFactory.createGeneric(ex, effective, request);
+        return ResponseEntity.status(ex.getStatusCode()).body(pd);
     }
 
     @ExceptionHandler(Exception.class)
