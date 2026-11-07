@@ -14,7 +14,9 @@ CREATE TABLE IF NOT EXISTS ai_documents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ai_documents_tenant ON ai_documents(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_ai_documents_hash ON ai_documents(content_hash);
+-- UNIQUE so the seed migration (V15) can use ON CONFLICT (content_hash);
+-- the previous plain index made a clean boot impossible.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_documents_hash ON ai_documents(content_hash);
 
 -- Embeddings table: one row per document chunk with a 768-dim vector
 -- Requires the pgvector extension (enabled in V13).
