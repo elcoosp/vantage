@@ -38,6 +38,7 @@ configurations["integrationTestRuntimeOnly"].extendsFrom(configurations["runtime
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -159,6 +160,15 @@ tasks.jacocoTestReport {
         xml.required.set(true)
         html.required.set(true)
     }
+}
+
+// One-stop quality gate used by e2e-smoke-test.sh (and CI): unit tests plus
+// the JaCoCo report. The task the smoke script referenced previously did not
+// exist, which made the documented flow impossible to run.
+tasks.register("qualityGate") {
+    group = "verification"
+    description = "Runs the unit test suite and produces the coverage report."
+    dependsOn(tasks.test, tasks.jacocoTestReport)
 }
 
 sonar {
