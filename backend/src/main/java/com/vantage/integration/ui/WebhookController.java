@@ -5,6 +5,7 @@ import com.vantage.integration.ui.dto.WebhookUpdateRequest;
 import com.vantage.integration.ui.dto.WebhookUpdateResponse;
 import com.vantage.vendor.app.VendorService;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,19 @@ public class WebhookController {
 
     public WebhookController(VendorService vendorService) {
         this.vendorService = vendorService;
+    }
+
+    /**
+     * Returns the webhook URL and a masked signing secret for the current
+     * tenant, so the developer portal can display the saved configuration.
+     */
+    @GetMapping
+    public VendorService.WebhookConfig getWebhookConfig() {
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new IllegalStateException("Tenant context missing");
+        }
+        return vendorService.getWebhookConfig(tenantId);
     }
 
     @PutMapping
