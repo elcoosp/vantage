@@ -442,6 +442,10 @@ export function Tr({ children, className }: { children: ReactNode; className?: s
 	);
 }
 
-export function Td({ children, className }: { children: ReactNode; className?: string }) {
-	return <td className={cx("px-5 py-3 text-sm text-ink2-light dark:text-ink2-dark", className)}>{children}</td>;
+export function Td({ children, className, title }: { children: ReactNode; className?: string; title?: string }) {
+	return (
+		<td title={title} className={cx("px-5 py-3 text-sm text-ink2-light dark:text-ink2-dark", className)}>
+			{children}
+		</td>
+	);
 }

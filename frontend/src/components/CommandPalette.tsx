@@ -10,7 +10,6 @@ import {
 	Search,
 	Settings,
 	Store,
-	Users,
 	Webhook,
 } from "lucide-react";
 import { useEffect, useState } from "react";
