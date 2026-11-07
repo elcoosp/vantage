@@ -14,7 +14,18 @@ export function OpsDashboard() {
 				Live shipments: <span className="font-bold tabular-nums text-brand-600 dark:text-brand-400">{pins.length}</span>
 			</div>
 
-			{!isConnected && (
+			{isConnected ? (
+				<div
+					className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-lg border border-status-success-soft-light bg-status-success-soft-light/90 px-3 py-2 font-mono text-[12px] text-status-success-ink-light shadow-pop backdrop-blur-md dark:border-[#1EAD72]/30 dark:bg-[#1EAD72]/20 dark:text-[#6CD6AB]"
+					data-testid="ops-live-badge"
+				>
+					<span className="relative flex size-2 text-current">
+						<span className="absolute inline-flex size-full animate-ping rounded-full bg-current opacity-60" />
+						<span className="relative size-2 rounded-full bg-current" />
+					</span>
+					Live
+				</div>
+			) : (
 				<div className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-lg border border-status-danger-soft-light bg-status-danger-soft-light/90 px-3 py-2 font-mono text-[12px] text-status-danger-ink-light shadow-pop backdrop-blur-md animate-pulse dark:border-[#E5484D]/30 dark:bg-[#E5484D]/20 dark:text-[#FF9A9D]">
 					<Circle className="size-3 fill-current" />
 					Reconnecting…
