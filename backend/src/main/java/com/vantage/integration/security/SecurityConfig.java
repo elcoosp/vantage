@@ -26,6 +26,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/vendors/register").permitAll()
                 .requestMatchers("/api/v1/vendors/login").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // The WebSocket handshake is public at the HTTP layer;
+                // authentication is enforced per STOMP CONNECT frame by
+                // WsJwtAuthChannelInterceptor (the JWT travels as a STOMP
+                // header, not an HTTP header, and cannot pass this filter).
+                .requestMatchers("/ws/**", "/ws").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )

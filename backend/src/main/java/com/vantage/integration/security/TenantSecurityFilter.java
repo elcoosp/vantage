@@ -58,6 +58,15 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader(AUTHORIZATION_HEADER);
         boolean authenticated = false;
 
+        // Server-Sent Events consumers (EventSource) cannot set custom
+        // headers, so the developer log stream accepts the JWT via an
+        // access_token query parameter as a fallback.
+        if ((authHeader == null || !authHeader.startsWith(BEARER_PREFIX))
+                && request.getParameter("access_token") != null
+                && !request.getParameter("access_token").isBlank()) {
+            authHeader = BEARER_PREFIX + request.getParameter("access_token");
+        }
+
         if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
             String token = authHeader.substring(BEARER_PREFIX.length());
             try {
@@ -147,8 +156,11 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
 
     private boolean isPublicEndpoint(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/v1/vendors/register") 
+        return path.startsWith("/api/v1/vendors/register")
             || path.startsWith("/api/v1/vendors/login")
-            || path.startsWith("/actuator/health");
+            || path.startsWith("/actuator/health")
+            // STOMP-over-WebSocket handshake: the JWT is validated per
+            // CONNECT frame by WsJwtAuthChannelInterceptor instead.
+            || path.startsWith("/ws");
     }
 }
