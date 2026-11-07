@@ -131,8 +131,11 @@ wait_for_rabbitmq
 log "Starting Spring Boot backend"
 cd backend
 
-# Use --args to pass datasource properties directly to Spring Boot
-SPRING_PROFILES_ACTIVE=smoke-test ./gradlew bootRun --no-daemon -Dspring.datasource.primary.url=jdbc:postgresql://localhost:5432/vantage_primary -Dspring.datasource.primary.username=vantage -Dspring.datasource.primary.password=vantage_pw -Dspring.datasource.replica.url=jdbc:postgresql://localhost:5432/vantage_replica -Dspring.datasource.replica.username=vantage -Dspring.datasource.replica.password=vantage_pw > ../backend.log 2>&1 &
+# Use the smoke-test profile (re-pins datasources); saga flags are enabled
+# in the default application.yml. The old script passed -Dspring.datasource.*
+# JVM properties that bootRun never forwards and pointed at port 5432
+# (docker-compose publishes 15432) — both silently ignored/incorrect.
+SPRING_PROFILES_ACTIVE=smoke-test ./gradlew bootRun --no-daemon > ../backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..
 log "Backend PID: $BACKEND_PID"
@@ -164,27 +167,32 @@ wait_for_http "$FRONTEND_URL" "Frontend dev server"
 # ----- execute demo scenario -------------------------------------------
 log "Starting demo scenario"
 
-# Helper: POST JSON and extract field
+# Helper: POST JSON and extract field. All arguments after $2 are passed
+# through to curl (e.g. extra -H headers).
 post_json() {
   local url="$1"
   local data="$2"
-  local header="${3:-}"
-  local extra_args=()
-  if [ -n "$header" ]; then
-    extra_args=(-H "$header")
-  fi
-  curl -s -X POST "${extra_args[@]}" -H "Content-Type: application/json" -d "$data" "$url"
+  shift 2
+  curl -s -X POST -H "Content-Type: application/json" -d "$data" "$@" "$url"
+}
+
+# Helper: authenticated curl for tenant A.
+apig() {
+  local method="$1"; shift
+  curl -s -X "$method" -H "$AUTH_HEADER" -H "Content-Type: application/json" "$@"
 }
 
 # 1. Register Vendor A and Vendor B
+# NOTE: AuthResponse is {token, tenantId} — the old script read .accessToken,
+# which silently produced an empty token and failed every later call.
 log "Registering Vendor A"
 REG_A=$(post_json "${API_BASE}/vendors/register" '{"email":"venda@vantage.com","password":"securePassword123","name":"Vendor A"}')
-TOKEN_A=$(echo "$REG_A" | jq -r '.accessToken')
+TOKEN_A=$(echo "$REG_A" | jq -r '.token')
 TENANT_A=$(echo "$REG_A" | jq -r '.tenantId')
 
 log "Registering Vendor B"
 REG_B=$(post_json "${API_BASE}/vendors/register" '{"email":"vendb@vantage.com","password":"securePassword123","name":"Vendor B"}')
-TOKEN_B=$(echo "$REG_B" | jq -r '.accessToken')
+TOKEN_B=$(echo "$REG_B" | jq -r '.token')
 TENANT_B=$(echo "$REG_B" | jq -r '.tenantId')
 
 if [ -z "$TOKEN_A" ] || [ -z "$TENANT_A" ]; then
@@ -195,10 +203,21 @@ fi
 AUTH_HEADER="Authorization: Bearer $TOKEN_A"
 TENANT_HEADER="X-Tenant-ID: $TENANT_A"
 
+# Chaos endpoints are admin-guarded (any vendor used to be able to break the
+# payment gateway for the whole platform) — log in as the seeded admin.
+log "Logging in as seeded admin for chaos toggles"
+ADMIN_REG=$(post_json "${API_BASE}/vendors/login" '{"email":"admin@vantage.com","password":"password123"}')
+ADMIN_TOKEN=$(echo "$ADMIN_REG" | jq -r '.token')
+if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
+  log "ERROR: Admin login failed"
+  exit 1
+fi
+ADMIN_HEADER="Authorization: Bearer $ADMIN_TOKEN"
+
 # 3. Create a Product
 log "Creating product"
 PRODUCT_DATA='{"name":"Smoke Test Product","price":99.99,"description":"E2E test product"}'
-PRODUCT_RESP=$(post_json "${API_BASE}/products" "$PRODUCT_DATA" "$AUTH_HEADER" -H "$TENANT_HEADER")
+PRODUCT_RESP=$(post_json "${API_BASE}/products" "$PRODUCT_DATA" -H "$AUTH_HEADER")
 PRODUCT_ID=$(echo "$PRODUCT_RESP" | jq -r '.id')
 if [ -z "$PRODUCT_ID" ] || [ "$PRODUCT_ID" = "null" ]; then
   log "ERROR: Product creation failed"
@@ -208,28 +227,30 @@ fi
 # 4. Initialize Inventory to 1 (using If-Match: 0)
 log "Initializing inventory to 1"
 INV_DATA='{"quantity":1}'
-curl -s -X PUT -H "$AUTH_HEADER" -H "$TENANT_HEADER" -H "If-Match: 0" -H "Content-Type: application/json" -d "$INV_DATA" "${API_BASE}/inventory/${PRODUCT_ID}" > /dev/null
+curl -s -X PUT -H "$AUTH_HEADER" -H "If-Match: 0" -H "Content-Type: application/json" -d "$INV_DATA" "${API_BASE}/inventory/${PRODUCT_ID}" > /dev/null
 
-# 5. Enable Chaos Monkey (payment failure)
+# 5. Enable Chaos Monkey (payment failure) — admin only
 log "Enabling Chaos Monkey"
 CHAOS_DATA='{"enabled":true}'
-curl -s -X POST -H "$AUTH_HEADER" -H "$TENANT_HEADER" -H "Content-Type: application/json" -d "$CHAOS_DATA" "${API_BASE}/admin/chaos-monkey/payment-failure" > /dev/null
+curl -s -X POST -H "$ADMIN_HEADER" -H "Content-Type: application/json" -d "$CHAOS_DATA" "${API_BASE}/admin/chaos-monkey/payment-failure" > /dev/null
 
 # 6. Place an Order (first, will fail)
+# NOTE: the create-order response body is OrderResponse {id, ...} — the old
+# script read .orderId which does not exist on this shape.
 log "Placing first order (expecting cancellation)"
 ORDER_DATA="{\"productId\":\"$PRODUCT_ID\",\"quantity\":1,\"productName\":\"Smoke Test Product\"}"
-ORDER_RESP=$(post_json "${API_BASE}/orders" "$ORDER_DATA" "$AUTH_HEADER" -H "$TENANT_HEADER")
-ORDER_ID=$(echo "$ORDER_RESP" | jq -r '.orderId')
+ORDER_RESP=$(post_json "${API_BASE}/orders" "$ORDER_DATA" -H "$AUTH_HEADER")
+ORDER_ID=$(echo "$ORDER_RESP" | jq -r '.id')
 if [ -z "$ORDER_ID" ] || [ "$ORDER_ID" = "null" ]; then
   log "ERROR: Order creation failed"
   exit 1
 fi
 
-# 7. Poll order status until CANCELLED
+# 7. Poll order status until CANCELLED (compensation saga releases inventory)
 log "Polling order status until CANCELLED"
 status=""
 for ((i=1; i<=30; i++)); do
-  search_resp=$(curl -s -H "$AUTH_HEADER" -H "$TENANT_HEADER" "${API_BASE}/orders/search?size=100")
+  search_resp=$(curl -s -H "$AUTH_HEADER" "${API_BASE}/orders/search?size=100")
   status=$(echo "$search_resp" | jq -r --arg oid "$ORDER_ID" '.content[] | select(.orderId==$oid) | .status')
   if [ "$status" = "CANCELLED" ]; then
     log "Order $ORDER_ID is CANCELLED"
@@ -244,9 +265,9 @@ if [ "$status" != "CANCELLED" ]; then
   exit 1
 fi
 
-# 8. Verify inventory is back to 1
+# 8. Verify inventory is back to 1 (via the API, not direct DB access)
 log "Verifying inventory is restored to 1"
-INV_QUANT=$(docker exec "$(${DOCKER_COMPOSE_CMD} ps -q postgres)" psql -U vantage -d vantage_primary -t -c "SELECT quantity FROM inventory WHERE product_id = '$PRODUCT_ID';" | tr -d ' ')
+INV_QUANT=$(curl -s -H "$AUTH_HEADER" "${API_BASE}/inventory" | jq -r --arg pid "$PRODUCT_ID" '.[] | select(.productId==$pid) | .quantity')
 if [ "$INV_QUANT" != "1" ]; then
   log "ERROR: Inventory quantity is $INV_QUANT, expected 1"
   exit 1
@@ -256,12 +277,12 @@ log "Inventory is 1"
 # 9. Disable Chaos Monkey
 log "Disabling Chaos Monkey"
 CHAOS_DISABLE='{"enabled":false}'
-curl -s -X POST -H "$AUTH_HEADER" -H "$TENANT_HEADER" -H "Content-Type: application/json" -d "$CHAOS_DISABLE" "${API_BASE}/admin/chaos-monkey/payment-failure" > /dev/null
+curl -s -X POST -H "$ADMIN_HEADER" -H "Content-Type: application/json" -d "$CHAOS_DISABLE" "${API_BASE}/admin/chaos-monkey/payment-failure" > /dev/null
 
 # 10. Place second order (should succeed)
 log "Placing second order (expecting PAID)"
-ORDER_RESP2=$(post_json "${API_BASE}/orders" "$ORDER_DATA" "$AUTH_HEADER" -H "$TENANT_HEADER")
-ORDER_ID2=$(echo "$ORDER_RESP2" | jq -r '.orderId')
+ORDER_RESP2=$(post_json "${API_BASE}/orders" "$ORDER_DATA" -H "$AUTH_HEADER")
+ORDER_ID2=$(echo "$ORDER_RESP2" | jq -r '.id')
 if [ -z "$ORDER_ID2" ] || [ "$ORDER_ID2" = "null" ]; then
   log "ERROR: Second order creation failed"
   exit 1
@@ -270,7 +291,7 @@ fi
 log "Polling order status until PAID"
 status2=""
 for ((i=1; i<=30; i++)); do
-  search_resp2=$(curl -s -H "$AUTH_HEADER" -H "$TENANT_HEADER" "${API_BASE}/orders/search?size=100")
+  search_resp2=$(curl -s -H "$AUTH_HEADER" "${API_BASE}/orders/search?size=100")
   status2=$(echo "$search_resp2" | jq -r --arg oid "$ORDER_ID2" '.content[] | select(.orderId==$oid) | .status')
   if [ "$status2" = "PAID" ]; then
     log "Order $ORDER_ID2 is PAID"
@@ -282,6 +303,53 @@ done
 
 if [ "$status2" != "PAID" ]; then
   log "ERROR: Second order did not become PAID within timeout"
+  exit 1
+fi
+
+# 10b. Fulfillment lifecycle: SHIPPED then DELIVERED via the new endpoints
+log "Shipping order $ORDER_ID2"
+SHIP_RESP=$(apig PATCH "${API_BASE}/orders/${ORDER_ID2}/ship")
+SHIP_STATUS=$(echo "$SHIP_RESP" | jq -r '.status')
+if [ "$SHIP_STATUS" != "SHIPPED" ]; then
+  log "ERROR: Ship failed, got: $SHIP_RESP"
+  exit 1
+fi
+
+log "Delivering order $ORDER_ID2"
+DELIVER_RESP=$(apig PATCH "${API_BASE}/orders/${ORDER_ID2}/deliver")
+DELIVER_STATUS=$(echo "$DELIVER_RESP" | jq -r '.status')
+if [ "$DELIVER_STATUS" != "DELIVERED" ]; then
+  log "ERROR: Deliver failed, got: $DELIVER_RESP"
+  exit 1
+fi
+
+# 10c. Verify the CQRS search projection followed the lifecycle
+log "Verifying search projection reached DELIVERED"
+PROJ_STATUS=$(curl -s -H "$AUTH_HEADER" "${API_BASE}/orders/search?size=100" | jq -r --arg oid "$ORDER_ID2" '.content[] | select(.orderId==$oid) | .status')
+if [ "$PROJ_STATUS" != "DELIVERED" ]; then
+  log "ERROR: Search projection status is $PROJ_STATUS, expected DELIVERED"
+  exit 1
+fi
+
+# 10d. Verify the audit timeline recorded the journey
+log "Verifying audit timeline"
+AUDIT_TYPES=$(curl -s -H "$AUTH_HEADER" "${API_BASE}/audit/orders/${ORDER_ID2}" | jq -r '[.[].eventType] | join(",")')
+log "Audit events: $AUDIT_TYPES"
+if [[ "$AUDIT_TYPES" != *"ORDER_CREATED"* ]]; then
+  log "ERROR: Audit timeline missing ORDER_CREATED"
+  exit 1
+fi
+
+# 10e. Webhook configuration round-trip (GET was previously missing)
+log "Verifying webhook config round-trip"
+WH_SECRET=$(curl -s -X PUT -H "$AUTH_HEADER" -H "Content-Type: application/json" -d '{"webhookUrl":"https://example.com/hooks/smoke"}' "${API_BASE}/webhooks" | jq -r '.secret')
+if [ -z "$WH_SECRET" ] || [ "$WH_SECRET" = "null" ]; then
+  log "ERROR: Webhook secret not returned by PUT"
+  exit 1
+fi
+WH_URL=$(curl -s -H "$AUTH_HEADER" "${API_BASE}/webhooks" | jq -r '.webhookUrl')
+if [ "$WH_URL" != "https://example.com/hooks/smoke" ]; then
+  log "ERROR: GET /webhooks did not return the saved URL (got: $WH_URL)"
   exit 1
 fi
 
