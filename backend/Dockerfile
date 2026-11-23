@@ -9,6 +9,9 @@ WORKDIR /app
 COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradlew ./
 COPY backend/gradle/ gradle/
 COPY backend/src/ src/
+# generateOpenApiModels resolves $projectDir/../docs/02-contracts/02-rest-api-spec.yaml
+# (projectDir is the backend dir, i.e. /app here), so the contract lives at /docs.
+COPY docs/ /docs/
 
 # Make the wrapper executable and build the boot JAR (no tests: they need Docker).
 RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
