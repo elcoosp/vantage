@@ -20,7 +20,7 @@ import jakarta.annotation.Generated;
  * AuthResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-07T10:31:28.165799286Z[Etc/UTC]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
 public class AuthResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
