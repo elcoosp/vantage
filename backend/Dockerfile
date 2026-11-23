@@ -1,0 +1,29 @@
+# Stage 1: Build the Spring Boot application with Gradle + JDK 21.
+FROM gradle:8.7-jdk21 AS builder
+
+WORKDIR /app
+
+# Copy only the files needed to resolve dependencies first (layer caching).
+COPY build.gradle.kts settings.gradle.kts gradlew ./
+COPY gradle/ gradle/
+COPY src/ src/
+
+# Make the wrapper executable and build the boot JAR (no tests: they need Docker).
+RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
+
+# Stage 2: Minimal JRE runtime image.
+FROM eclipse-temurin:21-jre-alpine AS runner
+
+WORKDIR /app
+
+# Copy the fat JAR from the builder stage.
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+# Spring Boot runs on 8080; virtual threads keep the port busy with cheap work.
+EXPOSE 8080
+
+# Production defaults; override via environment variables (Render / Docker).
+ENV SPRING_PROFILES_ACTIVE=prod \
+    JAVA_OPTS="-Dspring.threads.virtual.enabled=true"
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
