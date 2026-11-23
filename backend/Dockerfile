@@ -4,9 +4,11 @@ FROM gradle:8.7-jdk21 AS builder
 WORKDIR /app
 
 # Copy only the files needed to resolve dependencies first (layer caching).
-COPY build.gradle.kts settings.gradle.kts gradlew ./
-COPY gradle/ gradle/
-COPY src/ src/
+# Paths are relative to the build context (the repo root), since the CD pipeline
+# runs `docker build -f backend/Dockerfile .`.
+COPY backend/build.gradle.kts backend/settings.gradle.kts backend/gradlew ./
+COPY backend/gradle/ gradle/
+COPY backend/src/ src/
 
 # Make the wrapper executable and build the boot JAR (no tests: they need Docker).
 RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
