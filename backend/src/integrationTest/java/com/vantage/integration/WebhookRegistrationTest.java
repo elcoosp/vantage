@@ -12,8 +12,6 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -29,6 +27,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.client.RestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 
@@ -64,18 +63,12 @@ public class WebhookRegistrationTest extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
-    @SuppressWarnings("removal")
-    @MockBean
     private RabbitTemplate rabbitTemplate;
 
-    @SuppressWarnings("removal")
-    @MockBean
     private SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory;
 
-    @SuppressWarnings("removal")
-    @MockBean
     private RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
 
     @Test
@@ -89,8 +82,7 @@ public class WebhookRegistrationTest extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -104,11 +96,7 @@ public class WebhookRegistrationTest extends AbstractIntegrationTest {
         WebhookUpdateRequest request = new WebhookUpdateRequest("https://example.com/webhook");
         HttpEntity<WebhookUpdateRequest> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<WebhookUpdateResponse> response = restTemplate.exchange(
-            "/api/v1/webhooks",
-            HttpMethod.PUT,
-            entity,
-            WebhookUpdateResponse.class);
+        ResponseEntity<WebhookUpdateResponse> response = restClient.method(HttpMethod.PUT).uri("/api/v1/webhooks").body(entity).retrieve().toEntity(WebhookUpdateResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

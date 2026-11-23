@@ -1,15 +1,15 @@
 package com.vantage.storefront;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.vendor.ui.dto.AuthResponse;
 import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -59,7 +59,7 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -75,8 +75,7 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         AuthResponse body = vendorRes.getBody();
         return new VendorCredentials(body.token(), body.tenantId());
@@ -89,11 +88,7 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
         headers.setBearerAuth(creds.token);
         headers.set("X-Tenant-ID", creds.tenantId.toString());
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/v1/storefront",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                String.class);
+        ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/storefront").body(new HttpEntity<>(headers)).retrieve().toEntity(String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode json = objectMapper.readTree(response.getBody());
@@ -119,22 +114,14 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
         String payload = objectMapper.writeValueAsString(layout);
 
         HttpEntity<String> putEntity = new HttpEntity<>(payload, headers);
-        ResponseEntity<String> putResponse = restTemplate.exchange(
-                "/api/v1/storefront",
-                HttpMethod.PUT,
-                putEntity,
-                String.class);
+        ResponseEntity<String> putResponse = restClient.method(HttpMethod.PUT).uri("/api/v1/storefront").body(putEntity).retrieve().toEntity(String.class);
 
         assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         String putBody = putResponse.getBody();
         System.err.println("PUT response body: " + putBody);
 
         // GET to verify persistence
-        ResponseEntity<String> getResponse = restTemplate.exchange(
-                "/api/v1/storefront",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                String.class);
+        ResponseEntity<String> getResponse = restClient.method(HttpMethod.GET).uri("/api/v1/storefront").body(new HttpEntity<>(headers)).retrieve().toEntity(String.class);
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         String getBody = getResponse.getBody();
         System.err.println("GET response body: " + getBody);

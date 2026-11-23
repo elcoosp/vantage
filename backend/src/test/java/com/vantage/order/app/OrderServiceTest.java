@@ -1,6 +1,6 @@
 package com.vantage.order.app;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.events.OrderStatusChangedPayload;
 import com.vantage.core.exception.ResourceNotFoundException;
 import com.vantage.core.messaging.domain.OutboxEvent;

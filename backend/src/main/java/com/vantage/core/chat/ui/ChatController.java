@@ -4,8 +4,8 @@ import com.vantage.core.chat.app.ChatOrchestrator;
 import com.vantage.core.chat.app.LlmStreamEvent;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.tenant.MissingTenantContextException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -59,7 +59,7 @@ public class ChatController {
                     // double-encoded every frame ("data:data: {json}"), which
                     // no client could parse.
                     return objectMapper.writeValueAsString(event);
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     log.error("Failed to serialize SSE event", e);
                     return "{\"type\":\"error\",\"message\":\"Serialization failed\"}";
                 }

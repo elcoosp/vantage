@@ -1,7 +1,7 @@
 package com.vantage.inventory.messaging;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.ProcessedEvent;
 import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
@@ -53,7 +53,7 @@ public class InventoryCompensationConsumer {
         InventoryReleasedPayload eventPayload;
         try {
             eventPayload = objectMapper.readValue(payload, InventoryReleasedPayload.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to deserialize InventoryReleasedPayload", e);
             throw new IllegalStateException("Failed to deserialize payload", e);
         }

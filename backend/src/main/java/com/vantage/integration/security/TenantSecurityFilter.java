@@ -1,6 +1,6 @@
 package com.vantage.integration.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.security.JwtService;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.integration.domain.ApiKey;

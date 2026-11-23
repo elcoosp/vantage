@@ -1,7 +1,7 @@
 package com.vantage.integration;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.config.RabbitMQConfig;
 import com.vantage.core.events.PaymentSucceededPayload;
 import com.vantage.vendor.ui.dto.AuthResponse;
@@ -21,7 +21,7 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -111,7 +111,7 @@ public class WebhookDeliveryIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -136,8 +136,7 @@ public class WebhookDeliveryIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -158,8 +157,7 @@ public class WebhookDeliveryIT  extends AbstractIntegrationTest {
         HttpEntity<com.vantage.integration.ui.dto.WebhookUpdateRequest> updateEntity =
             new HttpEntity<>(updateRequest, headers);
         ResponseEntity<com.vantage.integration.ui.dto.WebhookUpdateResponse> updateRes =
-            restTemplate.exchange("/api/v1/webhooks", HttpMethod.PUT, updateEntity,
-                com.vantage.integration.ui.dto.WebhookUpdateResponse.class);
+            restClient.method(HttpMethod.PUT).uri("/api/v1/webhooks").body(updateEntity).retrieve().toEntity(com.vantage.integration.ui.dto.WebhookUpdateResponse.class);
         assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         String webhookSecret = updateRes.getBody().secret();
 
@@ -217,8 +215,7 @@ public class WebhookDeliveryIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -235,8 +232,7 @@ public class WebhookDeliveryIT  extends AbstractIntegrationTest {
         HttpEntity<com.vantage.integration.ui.dto.WebhookUpdateRequest> updateEntity =
             new HttpEntity<>(updateRequest, headers);
         ResponseEntity<com.vantage.integration.ui.dto.WebhookUpdateResponse> updateRes =
-            restTemplate.exchange("/api/v1/webhooks", HttpMethod.PUT, updateEntity,
-                com.vantage.integration.ui.dto.WebhookUpdateResponse.class);
+            restClient.method(HttpMethod.PUT).uri("/api/v1/webhooks").body(updateEntity).retrieve().toEntity(com.vantage.integration.ui.dto.WebhookUpdateResponse.class);
         assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Publish PaymentSucceededEvent

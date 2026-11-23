@@ -1,7 +1,7 @@
 package com.vantage.inventory.messaging;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
@@ -49,7 +49,7 @@ public class InventoryOrderConsumer {
 
     @RabbitListener(queues = "vantage.order.events")
     @Transactional
-    public void handleOrderCreatedEvent(@Payload String payloadJson, @Header("eventId") String eventIdHeader) throws JsonProcessingException {
+    public void handleOrderCreatedEvent(@Payload String payloadJson, @Header("eventId") String eventIdHeader) throws JacksonException {
         OrderCreatedPayload payload = objectMapper.readValue(payloadJson, OrderCreatedPayload.class);
         UUID eventId = UUID.fromString(eventIdHeader);
         TenantContext.setTenantId(payload.tenantId());
@@ -114,7 +114,7 @@ public class InventoryOrderConsumer {
             event.setPayload(jsonPayload);
             event.setStatus(OutboxStatus.PENDING);
             outboxRepository.save(event);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to serialize outbox payload", e);
         }
     }

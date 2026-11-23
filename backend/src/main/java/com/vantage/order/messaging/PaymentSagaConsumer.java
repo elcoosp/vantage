@@ -1,7 +1,7 @@
 package com.vantage.order.messaging;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
@@ -101,7 +101,7 @@ public class PaymentSagaConsumer {
             event.setPayload(jsonPayload);
             event.setStatus(OutboxStatus.PENDING);
             outboxRepository.save(event);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to serialize outbox payload", e);
         }
     }

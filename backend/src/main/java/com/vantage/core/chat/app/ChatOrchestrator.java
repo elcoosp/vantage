@@ -7,8 +7,8 @@ import com.vantage.core.chat.infra.DocumentRetriever;
 import com.vantage.core.chat.infra.RagContext;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.core.tenant.MissingTenantContextException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -192,7 +192,7 @@ public class ChatOrchestrator {
             @SuppressWarnings("unchecked")
             Map<String, Object> result = objectMapper.readValue(argsJson, Map.class);
             return result;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return Collections.emptyMap();
         }
     }

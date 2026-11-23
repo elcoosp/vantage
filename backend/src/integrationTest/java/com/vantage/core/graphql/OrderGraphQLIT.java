@@ -1,8 +1,8 @@
 package com.vantage.core.graphql;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.order.ui.dto.OrderRequest;
 import com.vantage.order.ui.dto.OrderResponse;
 import com.vantage.product.ui.dto.ProductRequest;
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -67,7 +67,7 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -83,8 +83,7 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -96,16 +95,14 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         authHeaders.set("X-Tenant-ID", tenantId.toString());
         ProductRequest productReq = new ProductRequest("GraphQL Product", "Description", new BigDecimal("99.99"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity(
-            "/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
         // 3. Place order
         OrderRequest orderReq = new OrderRequest(productId, 5, "GraphQL Product");
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, authHeaders);
-        ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity(
-            "/api/v1/orders", orderEntity, OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         UUID orderId = orderRes.getBody().id();
 
@@ -119,11 +116,7 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.set("X-Tenant-ID", tenantId.toString());
                 HttpEntity<Void> entity = new HttpEntity<>(headers);
-                ResponseEntity<String> searchRes = restTemplate.exchange(
-                    "/api/v1/orders/search",
-                    HttpMethod.GET,
-                    entity,
-                    String.class);
+                ResponseEntity<String> searchRes = restClient.method(HttpMethod.GET).uri("/api/v1/orders/search").body(entity).retrieve().toEntity(String.class);
                 assertThat(searchRes.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(searchRes.getBody()).contains(orderId.toString());
             });
@@ -141,11 +134,7 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         graphqlHeaders.set("X-Tenant-ID", tenantId.toString());
         HttpEntity<String> graphqlEntity = new HttpEntity<>(graphqlQuery, graphqlHeaders);
 
-        ResponseEntity<String> graphqlRes = restTemplate.exchange(
-            "/graphql",
-            HttpMethod.POST,
-            graphqlEntity,
-            String.class);
+        ResponseEntity<String> graphqlRes = restClient.method(HttpMethod.POST).uri("/graphql").body(graphqlEntity).retrieve().toEntity(String.class);
 
         assertThat(graphqlRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 

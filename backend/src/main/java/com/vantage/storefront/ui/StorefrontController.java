@@ -1,8 +1,8 @@
 package com.vantage.storefront.ui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.storefront.domain.StorefrontConfig;
 import com.vantage.storefront.domain.StorefrontRepository;
@@ -47,7 +47,7 @@ public class StorefrontController {
                                 new TypeReference<List<Map<String, Object>>>() {}
                         );
                         return ResponseEntity.ok(new StorefrontLayoutResponse(components));
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<StorefrontLayoutResponse>build();
                     }
                 })
@@ -75,7 +75,7 @@ public class StorefrontController {
             storefrontRepository.save(config);
 
             return ResponseEntity.ok(new StorefrontLayoutResponse(components));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

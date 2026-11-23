@@ -2,11 +2,11 @@ import java.util.concurrent.TimeUnit
 
 plugins {
     java
-    id("org.springframework.boot") version "3.4.0"
+    id("org.springframework.boot") version "4.2.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.sonarqube") version "7.3.1.8318"
     id("jacoco")
-    id("org.openapi.generator") version "7.5.0"
+    id("org.openapi.generator") version "7.26.0"
 }
 
 group = "com.vantage"
@@ -37,20 +37,24 @@ configurations["integrationTestImplementation"].extendsFrom(configurations["test
 configurations["integrationTestRuntimeOnly"].extendsFrom(configurations["runtimeOnly"])
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
-    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-amqp")
+implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.amqp:spring-rabbit:3.2.0")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-restclient")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.retry:spring-retry:1.3.4")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     runtimeOnly("org.postgresql:postgresql:42.7.3")
     implementation("io.github.resilience4j:resilience4j-spring-boot3")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
@@ -64,6 +68,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.swagger.core.v3:swagger-annotations:2.2.20")
+    implementation("org.springframework.boot:spring-boot-starter-jackson")
     implementation("org.openapitools:jackson-databind-nullable:0.2.11")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
@@ -74,9 +79,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.amqp:spring-rabbit-test")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.testcontainers:rabbitmq")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.5")
+    testImplementation("org.testcontainers:testcontainers-postgresql:2.0.5")
+    testImplementation("org.testcontainers:testcontainers-rabbitmq:2.0.5")
 
     testImplementation("com.squareup.okhttp3:mockwebserver:5.4.0")
     testImplementation("org.springframework.graphql:spring-graphql-test")
@@ -86,10 +91,11 @@ dependencies {
     // Integration tests use Testcontainers (Docker) and live in src/integrationTest.
     "integrationTestImplementation"(project)
     "integrationTestImplementation"("org.springframework.boot:spring-boot-starter-test")
+    "integrationTestImplementation"("org.springframework.boot:spring-boot-starter-webmvc")
     "integrationTestImplementation"("org.springframework.modulith:spring-modulith-starter-test")
-    "integrationTestImplementation"("org.testcontainers:junit-jupiter")
-    "integrationTestImplementation"("org.testcontainers:postgresql")
-    "integrationTestImplementation"("org.testcontainers:rabbitmq")
+    "integrationTestImplementation"("org.testcontainers:testcontainers-junit-jupiter:2.0.5")
+    "integrationTestImplementation"("org.testcontainers:testcontainers-postgresql:2.0.5")
+    "integrationTestImplementation"("org.testcontainers:testcontainers-rabbitmq:2.0.5")
     "integrationTestImplementation"("com.squareup.okhttp3:mockwebserver:5.4.0")
     "integrationTestImplementation"("org.springframework.graphql:spring-graphql-test")
     "integrationTestImplementation"(files(project.layout.buildDirectory.dir("classes/java/main")))
@@ -98,7 +104,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.modulith:spring-modulith-bom:1.4.0")
+        mavenBom("org.springframework.modulith:spring-modulith-bom:2.2.0")
         mavenBom("org.testcontainers:testcontainers-bom:2.0.5")
         mavenBom("io.github.resilience4j:resilience4j-bom:2.4.0")
     }
@@ -196,7 +202,8 @@ val generateOpenApiModels by tasks.registering(org.openapitools.generator.gradle
     modelPackage.set("com.vantage.api.model")
     configOptions.set(
         mapOf(
-            "useSpringBoot3" to "true",
+            "useSpringBoot4" to "true",
+            "useJackson3" to "true",
             "interfaceOnly" to "true",
             "useJakartaEe" to "true",
             "dateLibrary" to "java8",

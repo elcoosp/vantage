@@ -1,7 +1,7 @@
 package com.vantage.order.messaging;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.events.InventoryReservationFailedPayload;
 import com.vantage.core.events.OrderStatusChangedPayload;
 import com.vantage.core.messaging.domain.OutboxEvent;
@@ -87,7 +87,7 @@ public class ReservationFailureConsumer {
             outboxRepository.save(event);
 
             log.info("Order {} cancelled due to inventory reservation failure", order.getId());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to deserialize InventoryReservationFailedPayload", e);
         } finally {
             TenantContext.clear();

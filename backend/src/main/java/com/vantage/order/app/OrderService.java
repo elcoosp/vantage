@@ -1,8 +1,8 @@
 // backend/src/main/java/com/vantage/order/app/OrderService.java
 package com.vantage.order.app;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
@@ -62,7 +62,7 @@ public class OrderService {
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new OrderSerializationException("Failed to serialize OrderCreatedPayload for order " + order.getId());
         }
 
@@ -148,7 +148,7 @@ public class OrderService {
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new OrderSerializationException("Failed to serialize OrderCancelledEvent for order " + order.getId());
         }
 
@@ -195,7 +195,7 @@ public class OrderService {
         String jsonPayload;
         try {
             jsonPayload = objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new OrderSerializationException("Failed to serialize " + eventType + " for order " + order.getId());
         }
 

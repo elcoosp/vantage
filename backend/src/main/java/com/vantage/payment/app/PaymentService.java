@@ -1,8 +1,8 @@
 package com.vantage.payment.app;
 import com.vantage.core.exception.IdempotencyConflictException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.payment.domain.IdempotencyKey;
 import com.vantage.payment.domain.IdempotencyKeyRepository;
@@ -95,7 +95,7 @@ public class PaymentService {
             reservation.setResponseBody(responseJson);
             idempotencyKeyRepository.save(reservation);
             log.info("Stored idempotency key {} for tenant {}", idempotencyKeyHeader, tenantId);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize response for key {}", idempotencyKeyHeader, e);
             throw new IllegalStateException("Failed to serialize payment response", e);
         }
@@ -149,7 +149,7 @@ public class PaymentService {
                 hexString.append(String.format("%02x", b));
             }
             return hexString.toString();
-        } catch (JsonProcessingException | NoSuchAlgorithmException e) {
+        } catch (JacksonException | NoSuchAlgorithmException e) {
             throw new IllegalStateException("Failed to hash request", e);
         }
     }
@@ -157,7 +157,7 @@ public class PaymentService {
     private PaymentResponse deserializeResponse(String responseJson) {
         try {
             return objectMapper.readValue(responseJson, PaymentResponse.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to deserialize cached response", e);
         }
     }

@@ -1,7 +1,7 @@
 package com.vantage.core.tenant;
 
 import com.vantage.core.tenant.TenantContext;
-import org.hibernate.EmptyInterceptor;
+import org.hibernate.Interceptor;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.springframework.stereotype.Component;
@@ -15,12 +15,12 @@ import java.util.UUID;
  * session whenever a tenant context is present.
  *
  * <p>Unlike an AOP aspect (which cannot reliably advise Spring Data repository proxies), a
- * Hibernate {@link org.hibernate.Interceptor} is invoked by the persistence engine itself for
+ * Hibernate {@link Interceptor} is invoked by the persistence engine itself for
  * every transaction, so the filters are guaranteed to apply to every HQL/JPQL/Criteria query
  * (including {@code findAll()} and derived queries) within a tenant-scoped request.</p>
  *
  * <p>By-id lookups ({@code findById}/{@code getById}/{@code existsById}) are isolated via the
- * tenant-aware base repository {@link TenantJpaRepositoryImpl}, because Hibernate {@code @Filter}
+ * tenant-aware base repository {@link TenantJPARepositoryImpl}, because Hibernate {@code @Filter}
  * is not applied to {@code EntityManager.find()} root-entity loads.</p>
  *
  * <p>The current {@link Session} is obtained from the {@link Transaction} that Hibernate passes
@@ -30,7 +30,7 @@ import java.util.UUID;
  * startup).</p>
  */
 @Component
-public class TenantFilterInterceptor extends EmptyInterceptor {
+public class TenantFilterInterceptor implements Interceptor {
 
     private static final List<String> TENANT_FILTER_NAMES = List.of(
             "tenantFilter_Order",

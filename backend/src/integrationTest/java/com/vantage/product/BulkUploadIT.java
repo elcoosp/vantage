@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -60,7 +60,7 @@ public class BulkUploadIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -76,9 +76,7 @@ public class BulkUploadIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class
-        );
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -112,9 +110,7 @@ public class BulkUploadIT  extends AbstractIntegrationTest {
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
         long startTime = System.currentTimeMillis();
-        ResponseEntity<BulkUploadResponse> response = restTemplate.postForEntity(
-            "/api/v1/products/bulk-upload", requestEntity, BulkUploadResponse.class
-        );
+        ResponseEntity<BulkUploadResponse> response = restClient.post().uri("/api/v1/products/bulk-upload").body(requestEntity).retrieve().toEntity(BulkUploadResponse.class);
         long duration = System.currentTimeMillis() - startTime;
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

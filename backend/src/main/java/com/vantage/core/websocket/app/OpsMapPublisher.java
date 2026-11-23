@@ -1,6 +1,6 @@
 package com.vantage.core.websocket.app;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.events.OrderCreatedPayload;
 import com.vantage.core.events.OrderStatusChangedPayload;
 import com.vantage.core.events.PaymentFailedPayload;

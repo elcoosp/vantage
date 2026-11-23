@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -60,7 +60,7 @@ public class IdempotentPaymentIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     private HttpHeaders createAuthHeaders(String token, UUID tenantId) {
         HttpHeaders headers = new HttpHeaders();
@@ -79,8 +79,7 @@ public class IdempotentPaymentIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         return vendorRes.getBody();
     }
@@ -101,8 +100,7 @@ public class IdempotentPaymentIT  extends AbstractIntegrationTest {
         PaymentRequest request = new PaymentRequest(UUID.randomUUID(), new BigDecimal("500"), "USD");
         HttpEntity<PaymentRequest> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<PaymentResponse> response = restTemplate.postForEntity(
-            "/api/v1/payments", entity, PaymentResponse.class);
+        ResponseEntity<PaymentResponse> response = restClient.post().uri("/api/v1/payments").body(entity).retrieve().toEntity(PaymentResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -126,14 +124,12 @@ public class IdempotentPaymentIT  extends AbstractIntegrationTest {
         PaymentRequest request = new PaymentRequest(UUID.randomUUID(), new BigDecimal("500"), "USD");
         HttpEntity<PaymentRequest> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<PaymentResponse> response1 = restTemplate.postForEntity(
-            "/api/v1/payments", entity, PaymentResponse.class);
+        ResponseEntity<PaymentResponse> response1 = restClient.post().uri("/api/v1/payments").body(entity).retrieve().toEntity(PaymentResponse.class);
         assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.OK);
         PaymentResponse body1 = response1.getBody();
 
         // Duplicate
-        ResponseEntity<PaymentResponse> response2 = restTemplate.postForEntity(
-            "/api/v1/payments", entity, PaymentResponse.class);
+        ResponseEntity<PaymentResponse> response2 = restClient.post().uri("/api/v1/payments").body(entity).retrieve().toEntity(PaymentResponse.class);
         assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
         PaymentResponse body2 = response2.getBody();
 
@@ -158,16 +154,14 @@ public class IdempotentPaymentIT  extends AbstractIntegrationTest {
         PaymentRequest request1 = new PaymentRequest(UUID.randomUUID(), new BigDecimal("500"), "USD");
         HttpEntity<PaymentRequest> entity1 = new HttpEntity<>(request1, headers);
 
-        ResponseEntity<PaymentResponse> response1 = restTemplate.postForEntity(
-            "/api/v1/payments", entity1, PaymentResponse.class);
+        ResponseEntity<PaymentResponse> response1 = restClient.post().uri("/api/v1/payments").body(entity1).retrieve().toEntity(PaymentResponse.class);
         assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Different payload
         PaymentRequest request2 = new PaymentRequest(UUID.randomUUID(), new BigDecimal("600"), "USD");
         HttpEntity<PaymentRequest> entity2 = new HttpEntity<>(request2, headers);
 
-        ResponseEntity<String> response2 = restTemplate.exchange(
-            "/api/v1/payments", HttpMethod.POST, entity2, String.class);
+        ResponseEntity<String> response2 = restClient.method(HttpMethod.POST).uri("/api/v1/payments").body(entity2).retrieve().toEntity(String.class);
         assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response2.getBody()).contains("Payload tampering detected");
     }

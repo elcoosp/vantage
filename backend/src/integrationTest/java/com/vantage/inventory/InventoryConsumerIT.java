@@ -1,7 +1,7 @@
 package com.vantage.inventory;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.config.RabbitMQConfig;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;
 import com.vantage.core.tenant.TenantContext;
@@ -26,7 +26,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -76,7 +76,7 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -205,7 +205,7 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", dummyTenantId.toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
@@ -216,7 +216,7 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
 
         ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("100.0"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity("/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         UUID productId = productRes.getBody().id();
 
         HttpHeaders updateHeaders = new HttpHeaders();
@@ -225,7 +225,7 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
         updateHeaders.setIfMatch("0");
         InventoryUpdateRequest initReq = new InventoryUpdateRequest(initialQuantity);
         HttpEntity<InventoryUpdateRequest> initEntity = new HttpEntity<>(initReq, updateHeaders);
-        restTemplate.exchange("/api/v1/inventory/" + productId, HttpMethod.PUT, initEntity, InventoryResponse.class);
+        restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(initEntity).retrieve().toEntity(InventoryResponse.class);
 
         UUID orderId = UUID.randomUUID();
         return new TestSetup(tenantId, productId, orderId);

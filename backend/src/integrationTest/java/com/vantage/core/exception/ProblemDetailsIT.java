@@ -1,8 +1,8 @@
 package com.vantage.core.exception;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
 import com.vantage.product.ui.dto.ProductRequest;
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -62,7 +62,7 @@ public class ProblemDetailsIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -78,8 +78,7 @@ public class ProblemDetailsIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -92,8 +91,7 @@ public class ProblemDetailsIT  extends AbstractIntegrationTest {
 
         ProductRequest productReq = new ProductRequest("Problem Product", "Description", new BigDecimal("99.99"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity(
-                "/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
@@ -105,8 +103,7 @@ public class ProblemDetailsIT  extends AbstractIntegrationTest {
         updateHeaders.setIfMatch("0");
         InventoryUpdateRequest initReq = new InventoryUpdateRequest(10);
         HttpEntity<InventoryUpdateRequest> initEntity = new HttpEntity<>(initReq, updateHeaders);
-        ResponseEntity<InventoryResponse> initRes = restTemplate.exchange(
-                "/api/v1/inventory/" + productId, HttpMethod.PUT, initEntity, InventoryResponse.class);
+        ResponseEntity<InventoryResponse> initRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(initEntity).retrieve().toEntity(InventoryResponse.class);
         assertThat(initRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         Long currentVersion = initRes.getBody().version();
 
@@ -120,8 +117,7 @@ public class ProblemDetailsIT  extends AbstractIntegrationTest {
         InventoryUpdateRequest conflictReq = new InventoryUpdateRequest(20);
         HttpEntity<InventoryUpdateRequest> conflictEntity = new HttpEntity<>(conflictReq, conflictHeaders);
 
-        ResponseEntity<String> conflictResponse = restTemplate.exchange(
-                "/api/v1/inventory/" + productId, HttpMethod.PUT, conflictEntity, String.class);
+        ResponseEntity<String> conflictResponse = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(conflictEntity).retrieve().toEntity(String.class);
 
         assertThat(conflictResponse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(conflictResponse.getHeaders().getContentType()).isEqualTo(MediaType.valueOf("application/problem+json"));

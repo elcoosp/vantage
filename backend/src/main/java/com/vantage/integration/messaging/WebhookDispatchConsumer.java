@@ -1,6 +1,6 @@
 package com.vantage.integration.messaging;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.ProcessedEvent;
 import com.vantage.core.messaging.domain.ProcessedEventId;
 import com.vantage.core.messaging.domain.ProcessedEventRepository;

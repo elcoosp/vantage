@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.http.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -53,7 +53,7 @@ class InventoryConcurrencyIT extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -65,7 +65,7 @@ class InventoryConcurrencyIT extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", java.util.UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
@@ -75,7 +75,7 @@ class InventoryConcurrencyIT extends AbstractIntegrationTest {
 
         ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("100.0"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity("/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         UUID productId = productRes.getBody().id();
 
         HttpHeaders updateHeaders = new HttpHeaders();
@@ -84,7 +84,7 @@ class InventoryConcurrencyIT extends AbstractIntegrationTest {
         updateHeaders.setIfMatch("0");
         InventoryUpdateRequest initReq = new InventoryUpdateRequest(10);
         HttpEntity<InventoryUpdateRequest> initEntity = new HttpEntity<>(initReq, updateHeaders);
-        ResponseEntity<InventoryResponse> initRes = restTemplate.exchange("/api/v1/inventory/" + productId, HttpMethod.PUT, initEntity, InventoryResponse.class);
+        ResponseEntity<InventoryResponse> initRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(initEntity).retrieve().toEntity(InventoryResponse.class);
 
         assertThat(initRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         long currentVersion = initRes.getBody().version();
@@ -98,7 +98,7 @@ class InventoryConcurrencyIT extends AbstractIntegrationTest {
             headers.setIfMatch(String.valueOf(currentVersion));
             InventoryUpdateRequest req = new InventoryUpdateRequest(20);
             HttpEntity<InventoryUpdateRequest> entity = new HttpEntity<>(req, headers);
-            return restTemplate.exchange("/api/v1/inventory/" + productId, HttpMethod.PUT, entity, InventoryResponse.class);
+            return restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(entity).retrieve().toEntity(InventoryResponse.class);
         };
 
         Callable<ResponseEntity<InventoryResponse>> task2 = () -> {
@@ -108,7 +108,7 @@ class InventoryConcurrencyIT extends AbstractIntegrationTest {
             headers.setIfMatch(String.valueOf(currentVersion));
             InventoryUpdateRequest req = new InventoryUpdateRequest(30);
             HttpEntity<InventoryUpdateRequest> entity = new HttpEntity<>(req, headers);
-            return restTemplate.exchange("/api/v1/inventory/" + productId, HttpMethod.PUT, entity, InventoryResponse.class);
+            return restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(entity).retrieve().toEntity(InventoryResponse.class);
         };
 
         Future<ResponseEntity<InventoryResponse>> future1 = executor.submit(task1);

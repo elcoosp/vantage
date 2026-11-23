@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -55,7 +55,7 @@ public class RateLimitIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Test
     void should_rate_limit_requests_per_tenant_and_return_429_when_limit_exceeded() {
@@ -68,8 +68,7 @@ public class RateLimitIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-            "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -82,25 +81,17 @@ public class RateLimitIT  extends AbstractIntegrationTest {
         // Make 101 requests to the test endpoint
         for (int i = 1; i <= 100; i++) {
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-            ResponseEntity<String> response = restTemplate.exchange(
-                "/api/v1/ratelimit-test",
-                HttpMethod.GET,
-                entity,
-                String.class);
+            ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/ratelimit-test").body(entity).retrieve().toEntity(String.class);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isEqualTo("OK");
         }
 
         // 101st request should be rate limited
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(
-            "/api/v1/ratelimit-test",
-            HttpMethod.GET,
-            entity,
-            String.class);
+        ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/ratelimit-test").body(entity).retrieve().toEntity(String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-        assertThat(response.getHeaders().containsKey("Retry-After")).isTrue();
+        assertThat(response.getHeaders().containsHeader("Retry-After")).isTrue();
         // Retry-After should be present and positive
         String retryAfter = response.getHeaders().getFirst("Retry-After");
         assertThat(retryAfter).isNotNull();

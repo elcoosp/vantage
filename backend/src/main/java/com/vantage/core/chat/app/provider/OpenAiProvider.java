@@ -1,6 +1,6 @@
 package com.vantage.core.chat.app.provider;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.chat.app.LlmProvider;
 import com.vantage.core.chat.app.LlmStreamEvent;
 import lombok.extern.slf4j.Slf4j;

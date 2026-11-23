@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableScheduling
@@ -38,8 +38,8 @@ public class RabbitMQConfig {
      * is configured to trust the application packages so those payloads deserialize correctly.</p>
      */
     @Bean
-    public MessageConverter jackson2JsonMessageConverter(ObjectMapper objectMapper) {
-        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+    public MessageConverter jackson2JsonMessageConverter() {
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
         DefaultClassMapper classMapper = new DefaultClassMapper();
         classMapper.setTrustedPackages("com.vantage");
         converter.setClassMapper(classMapper);

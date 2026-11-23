@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -106,7 +106,7 @@ public class ReadReplicaRoutingIT {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     private String token;
     private UUID tenantId;
@@ -123,8 +123,7 @@ public class ReadReplicaRoutingIT {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         token = vendorRes.getBody().token();
         tenantId = vendorRes.getBody().tenantId();
@@ -145,8 +144,7 @@ public class ReadReplicaRoutingIT {
 
         ProductRequest productReq = new ProductRequest(name, description, price);
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity(
-                "/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         return productRes.getBody().id();
     }
@@ -159,8 +157,7 @@ public class ReadReplicaRoutingIT {
         invHeaders.setIfMatch(String.valueOf(version));
         InventoryUpdateRequest invReq = new InventoryUpdateRequest(quantity);
         HttpEntity<InventoryUpdateRequest> invEntity = new HttpEntity<>(invReq, invHeaders);
-        ResponseEntity<InventoryResponse> invRes = restTemplate.exchange(
-                "/api/v1/inventory/" + productId, HttpMethod.PUT, invEntity, InventoryResponse.class);
+        ResponseEntity<InventoryResponse> invRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(invEntity).retrieve().toEntity(InventoryResponse.class);
         assertThat(invRes.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -173,11 +170,7 @@ public class ReadReplicaRoutingIT {
         getHeaders.setBearerAuth(token);
         getHeaders.set("X-Tenant-ID", tenantId.toString());
 
-        ResponseEntity<ProductResponse> getRes = restTemplate.exchange(
-                "/api/v1/products/" + productId,
-                HttpMethod.GET,
-                new HttpEntity<>(getHeaders),
-                ProductResponse.class);
+        ResponseEntity<ProductResponse> getRes = restClient.method(HttpMethod.GET).uri("/api/v1/products/" + productId).body(new HttpEntity<>(getHeaders)).retrieve().toEntity(ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Verify the interceptor captured REPLICA
@@ -197,8 +190,7 @@ public class ReadReplicaRoutingIT {
 
         OrderRequest orderReq = new OrderRequest(productId, 2, "Write Test Product");
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, authHeaders);
-        ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity(
-                "/api/v1/orders", orderEntity, OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 

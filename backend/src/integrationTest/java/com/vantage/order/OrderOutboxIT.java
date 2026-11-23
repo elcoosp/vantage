@@ -2,7 +2,7 @@
 package com.vantage.order;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.messaging.domain.OutboxEvent;
 import com.vantage.core.messaging.domain.OutboxRepository;
 import com.vantage.core.messaging.domain.OutboxStatus;
@@ -23,7 +23,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
@@ -75,7 +75,7 @@ public class OrderOutboxIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private OutboxRepository outboxRepository;
@@ -97,7 +97,7 @@ public class OrderOutboxIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", dummyTenantId.toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity("/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).as("Vendor registration failed: %s", vendorRes).isEqualTo(HttpStatus.CREATED);
         assertThat(vendorRes.getBody()).isNotNull();
         String token = vendorRes.getBody().token();
@@ -110,14 +110,14 @@ public class OrderOutboxIT  extends AbstractIntegrationTest {
 
         ProductRequest productReq = new ProductRequest("Order Product", "Description", new BigDecimal("50.0"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity("/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).as("Product creation failed: %s", productRes).isEqualTo(HttpStatus.OK);
         assertThat(productRes.getBody()).isNotNull();
         UUID productId = productRes.getBody().id();
 
         OrderRequest orderReq = new OrderRequest(productId, 5, "Order Product");
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
-        ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity("/api/v1/orders", orderEntity, OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
 
         assertThat(orderRes.getStatusCode()).as("Order creation failed: %s", orderRes).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();

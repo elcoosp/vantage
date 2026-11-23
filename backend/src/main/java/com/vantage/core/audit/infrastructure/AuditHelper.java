@@ -1,7 +1,7 @@
 package com.vantage.core.audit.infrastructure;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.audit.domain.EntityEvent;
 import com.vantage.core.audit.domain.EntityEventRepository;
 import org.slf4j.Logger;
@@ -58,7 +58,7 @@ public class AuditHelper {
         }
         try {
             return objectMapper.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize object", e);
             return "{\"error\":\"serialization failed\"}";
         }

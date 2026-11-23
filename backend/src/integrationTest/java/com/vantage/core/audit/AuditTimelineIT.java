@@ -1,7 +1,7 @@
 package com.vantage.core.audit;
 import com.vantage.AbstractIntegrationTest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.vantage.core.audit.ui.dto.AuditEventResponse;
 
 import com.vantage.core.tenant.TenantContext;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 // import removed - using fully qualified @org.springframework.core.annotation.Order
@@ -73,7 +73,7 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -96,8 +96,7 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -110,16 +109,14 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
 
         ProductRequest productReq = new ProductRequest("Audit Product", "Description", new BigDecimal("99.99"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity(
-                "/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
         // 3. Place order
         OrderRequest orderReq = new OrderRequest(productId, 2);
         HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, authHeaders);
-        ResponseEntity<OrderResponse> orderRes = restTemplate.postForEntity(
-                "/api/v1/orders", orderEntity, OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         UUID orderId = orderRes.getBody().id();
 
@@ -145,11 +142,7 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
         auditHeaders.setBearerAuth(token);
         auditHeaders.set("X-Tenant-ID", tenantId.toString());
 
-        ResponseEntity<AuditEventResponse[]> auditRes = restTemplate.exchange(
-                "/api/v1/audit/orders/" + orderId,
-                HttpMethod.GET,
-                new HttpEntity<>(auditHeaders),
-                AuditEventResponse[].class);
+        ResponseEntity<AuditEventResponse[]> auditRes = restClient.method(HttpMethod.GET).uri("/api/v1/audit/orders/" + orderId).body(new HttpEntity<>(auditHeaders)).retrieve().toEntity(AuditEventResponse[].class);
         assertThat(auditRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<AuditEventResponse> events = List.of(auditRes.getBody());
         System.out.println("Audit events count: " + events.size());

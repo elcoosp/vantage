@@ -6,7 +6,7 @@ import com.vantage.vendor.ui.dto.VendorRegistrationRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,7 +28,7 @@ class VendorRegistrationIT extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Test
     void should_return_201_and_valid_jwt_when_register_vendor() {
@@ -44,11 +44,7 @@ class VendorRegistrationIT extends AbstractIntegrationTest {
 
         HttpEntity<VendorRegistrationRequest> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
-            "/api/v1/vendors/register",
-            entity,
-            AuthResponse.class
-        );
+        ResponseEntity<AuthResponse> response = restClient.post().uri("/api/v1/vendors/register").body(entity).retrieve().toEntity(AuthResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();

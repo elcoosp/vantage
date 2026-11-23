@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
@@ -68,7 +68,7 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
     }
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private RestClient restClient;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -84,8 +84,7 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
         HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restTemplate.postForEntity(
-                "/api/v1/vendors/register", vendorEntity, AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -98,8 +97,7 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
 
         ProductRequest productReq = new ProductRequest("Forecast Product", "Description", new BigDecimal("99.99"));
         HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restTemplate.postForEntity(
-                "/api/v1/products", productEntity, ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
@@ -136,11 +134,7 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
         headers.setBearerAuth(token);
         headers.set("X-Tenant-ID", tenantId.toString());
 
-        ResponseEntity<ForecastResponse> response = restTemplate.exchange(
-                "/api/v1/analytics/forecast/" + productId,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                ForecastResponse.class);
+        ResponseEntity<ForecastResponse> response = restClient.method(HttpMethod.GET).uri("/api/v1/analytics/forecast/" + productId).body(new HttpEntity<>(headers)).retrieve().toEntity(ForecastResponse.class);
 
         // 5. Assertions
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
