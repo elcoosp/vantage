@@ -57,9 +57,7 @@ implementation("org.springframework.boot:spring-boot-starter-amqp")
     runtimeOnly("org.postgresql:postgresql:42.7.12")
 
     // Force patched versions past Trivy-flagged CVEs (guava CVE-2026-102554, pgjdbc CVE-2026-42198).
-    constraints {
-        implementation("com.google.guava:guava:33.7.2-jre")
-    }
+    implementation("com.google.guava:guava:33.7.2-jre")
     implementation("io.github.resilience4j:resilience4j-spring-boot4:2.4.0")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("io.micrometer:micrometer-tracing")
