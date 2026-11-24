@@ -54,7 +54,7 @@ implementation("org.springframework.boot:spring-boot-starter-amqp")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
-    runtimeOnly("org.postgresql:postgresql:42.7.11")
+    runtimeOnly("org.postgresql:postgresql:42.7.12")
 
     // Force patched versions past Trivy-flagged CVEs (guava CVE-2026-102554, pgjdbc CVE-2026-42198).
     constraints {
