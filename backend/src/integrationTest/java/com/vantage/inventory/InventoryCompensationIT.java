@@ -1,4 +1,6 @@
 package com.vantage.inventory;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.ObjectMapper;
@@ -27,7 +29,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 
@@ -49,8 +51,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(InventoryCompensationIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({InventoryCompensationIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @org.springframework.test.context.TestPropertySource(properties = "vantage.inventory.compensation.enabled=true")
 class InventoryCompensationIT  extends AbstractIntegrationTest {
 
@@ -66,9 +68,6 @@ class InventoryCompensationIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -138,8 +137,12 @@ class InventoryCompensationIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", dummyTenantId.toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
 
@@ -149,8 +152,12 @@ class InventoryCompensationIT  extends AbstractIntegrationTest {
         headers.set("X-Tenant-ID", tenantId.toString());
 
         ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("100.0"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         UUID productId = productRes.getBody().id();
 
         HttpHeaders updateHeaders = new HttpHeaders();
@@ -159,8 +166,12 @@ class InventoryCompensationIT  extends AbstractIntegrationTest {
         updateHeaders.set("X-Tenant-ID", tenantId.toString());
         updateHeaders.setIfMatch("0");
         InventoryUpdateRequest initReq = new InventoryUpdateRequest(initialQuantity);
-        HttpEntity<InventoryUpdateRequest> initEntity = new HttpEntity<>(initReq, updateHeaders);
-        ResponseEntity<InventoryResponse> initRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(initEntity).retrieve().toEntity(InventoryResponse.class);
+        ResponseEntity<InventoryResponse> initRes = restClient.put()
+                .uri("/api/v1/inventory/" + productId)
+                .headers(h -> h.addAll(updateHeaders))
+                .body(initReq)
+                .retrieve()
+                .toEntity(InventoryResponse.class);
         assertThat(initRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(initRes.getBody()).isNotNull();
         assertThat(initRes.getBody().quantity()).isEqualTo(initialQuantity);

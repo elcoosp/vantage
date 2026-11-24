@@ -1,4 +1,6 @@
 package com.vantage.core.admin;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.ObjectMapper;
@@ -35,8 +37,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(AdminTenantManagementIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({AdminTenantManagementIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class AdminTenantManagementIT extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -51,8 +53,6 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -95,8 +95,12 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         vendorTenantId = vendorRes.getBody().tenantId();
     }
@@ -107,8 +111,11 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
         headers.setBearerAuth(adminToken);
         headers.set("X-Tenant-ID", adminTenantId.toString());
 
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<TenantResponse[]> response = restClient.method(HttpMethod.GET).uri("/api/v1/admin/tenants").body(entity).retrieve().toEntity(TenantResponse[].class);
+        ResponseEntity<TenantResponse[]> response = restClient.get()
+                .uri("/api/v1/admin/tenants")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(TenantResponse[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<TenantResponse> tenants = List.of(response.getBody());
@@ -127,8 +134,12 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
         headers.set("X-Tenant-ID", adminTenantId.toString());
 
         StatusUpdateRequest suspendRequest = new StatusUpdateRequest(VendorStatus.SUSPENDED);
-        HttpEntity<StatusUpdateRequest> suspendEntity = new HttpEntity<>(suspendRequest, headers);
-        ResponseEntity<Void> suspendRes = restClient.method(HttpMethod.PUT).uri("/api/v1/admin/tenants/" + vendorTenantId + "/status").body(suspendEntity).retrieve().toEntity(Void.class);
+        ResponseEntity<Void> suspendRes = restClient.put()
+                .uri("/api/v1/admin/tenants/" + vendorTenantId + "/status")
+                .headers(h -> h.addAll(headers))
+                .body(suspendRequest)
+                .retrieve()
+                .toEntity(Void.class);
         assertThat(suspendRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         // Verify status updated
@@ -137,8 +148,12 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
 
         // Reactivate
         StatusUpdateRequest reactivateRequest = new StatusUpdateRequest(VendorStatus.ACTIVE);
-        HttpEntity<StatusUpdateRequest> reactivateEntity = new HttpEntity<>(reactivateRequest, headers);
-        ResponseEntity<Void> reactivateRes = restClient.method(HttpMethod.PUT).uri("/api/v1/admin/tenants/" + vendorTenantId + "/status").body(reactivateEntity).retrieve().toEntity(Void.class);
+        ResponseEntity<Void> reactivateRes = restClient.put()
+                .uri("/api/v1/admin/tenants/" + vendorTenantId + "/status")
+                .headers(h -> h.addAll(headers))
+                .body(reactivateRequest)
+                .retrieve()
+                .toEntity(Void.class);
         assertThat(reactivateRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         vendor = vendorRepository.findByTenantId(vendorTenantId).orElseThrow();
@@ -155,8 +170,12 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String vendorToken = vendorRes.getBody().token();
         UUID vendorTenantId = vendorRes.getBody().tenantId();
@@ -167,18 +186,25 @@ public class AdminTenantManagementIT extends AbstractIntegrationTest {
         adminHeaders.setContentType(MediaType.APPLICATION_JSON);
         adminHeaders.set("X-Tenant-ID", adminTenantId.toString());
         StatusUpdateRequest suspendRequest = new StatusUpdateRequest(VendorStatus.SUSPENDED);
-        HttpEntity<StatusUpdateRequest> suspendEntity = new HttpEntity<>(suspendRequest, adminHeaders);
-        ResponseEntity<Void> suspendRes = restClient.method(HttpMethod.PUT).uri("/api/v1/admin/tenants/" + vendorTenantId + "/status").body(suspendEntity).retrieve().toEntity(Void.class);
+        ResponseEntity<Void> suspendRes = restClient.put()
+                .uri("/api/v1/admin/tenants/" + vendorTenantId + "/status")
+                .headers(h -> h.addAll(adminHeaders))
+                .body(suspendRequest)
+                .retrieve()
+                .toEntity(Void.class);
         assertThat(suspendRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
         // 3. Attempt to access a protected endpoint with vendor token
         HttpHeaders vendorAuthHeaders = new HttpHeaders();
         vendorAuthHeaders.setBearerAuth(vendorToken);
         vendorAuthHeaders.set("X-Tenant-ID", vendorTenantId.toString());
-        HttpEntity<Void> entity = new HttpEntity<>(vendorAuthHeaders);
 
         // Try to get products (or any protected endpoint)
-        ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/products").body(entity).retrieve().toEntity(String.class);
+        ResponseEntity<String> response = restClient.get()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(vendorAuthHeaders))
+                .retrieve()
+                .toEntity(String.class);
 
         // 4. Expect 403 Forbidden
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);

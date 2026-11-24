@@ -1,5 +1,7 @@
 // backend/src/test/java/com/vantage/product/BulkUploadIT.java
 package com.vantage.product;
+import com.vantage.VantageApplication;
+
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.product.ui.dto.BulkUploadResponse;
@@ -14,11 +16,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,8 +37,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(BulkUploadIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({BulkUploadIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class BulkUploadIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -51,8 +53,6 @@ public class BulkUploadIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

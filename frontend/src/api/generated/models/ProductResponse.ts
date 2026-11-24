@@ -3,8 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 export type ProductResponse = {
-	id?: string;
-	name?: string;
-	price?: number;
-	sku?: string;
+    id?: string;
+    name?: string;
+    price?: number;
+    sku?: string;
 };
+

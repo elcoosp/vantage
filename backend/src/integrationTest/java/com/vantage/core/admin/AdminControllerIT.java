@@ -1,4 +1,7 @@
 package com.vantage.core.admin;
+
+import com.vantage.VantageApplication;
+import org.springframework.context.annotation.Import;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.admin.ui.dto.ChaosMonkeyToggleRequest;
@@ -28,10 +31,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import(AbstractIntegrationTest.TestRestClientConfig.class)
 public class AdminControllerIT  extends AbstractIntegrationTest {
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -56,8 +58,12 @@ public class AdminControllerIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         adminToken = vendorRes.getBody().token();
         adminTenantId = vendorRes.getBody().tenantId();
@@ -72,13 +78,20 @@ public class AdminControllerIT  extends AbstractIntegrationTest {
 
         // Reset state: disable chaos monkey
         ChaosMonkeyToggleRequest disableRequest = new ChaosMonkeyToggleRequest(false);
-        HttpEntity<ChaosMonkeyToggleRequest> disableEntity = new HttpEntity<>(disableRequest, headers);
-        ResponseEntity<Void> disableReset = restClient.method(HttpMethod.POST).uri("/api/v1/admin/chaos-monkey/payment-failure").body(disableEntity).retrieve().toEntity(Void.class);
+        ResponseEntity<Void> disableReset = restClient.post()
+                .uri("/api/v1/admin/chaos-monkey/payment-failure")
+                .headers(h -> h.addAll(headers))
+                .body(disableRequest)
+                .retrieve()
+                .toEntity(Void.class);
         assertThat(disableReset.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // GET initial status
-        HttpEntity<Void> getEntity = new HttpEntity<>(headers);
-        ResponseEntity<String> getRaw = restClient.method(HttpMethod.GET).uri("/api/v1/admin/chaos-monkey/payment-failure").body(getEntity).retrieve().toEntity(String.class);
+        ResponseEntity<String> getRaw = restClient.get()
+                .uri("/api/v1/admin/chaos-monkey/payment-failure")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
         System.out.println("GET initial status: code=" + getRaw.getStatusCode() + ", body=" + getRaw.getBody());
         assertThat(getRaw.getStatusCode()).isEqualTo(HttpStatus.OK);
         Boolean initial = objectMapper.readValue(getRaw.getBody(), Boolean.class);
@@ -86,26 +99,42 @@ public class AdminControllerIT  extends AbstractIntegrationTest {
 
         // Enable chaos monkey
         ChaosMonkeyToggleRequest enableRequest = new ChaosMonkeyToggleRequest(true);
-        HttpEntity<ChaosMonkeyToggleRequest> enableEntity = new HttpEntity<>(enableRequest, headers);
-        ResponseEntity<Void> enableRaw = restClient.method(HttpMethod.POST).uri("/api/v1/admin/chaos-monkey/payment-failure").body(enableEntity).retrieve().toEntity(Void.class);
+        ResponseEntity<Void> enableRaw = restClient.post()
+                .uri("/api/v1/admin/chaos-monkey/payment-failure")
+                .headers(h -> h.addAll(headers))
+                .body(enableRequest)
+                .retrieve()
+                .toEntity(Void.class);
         System.out.println("Enable POST: code=" + enableRaw.getStatusCode());
         assertThat(enableRaw.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // GET status after enable
-        getRaw = restClient.method(HttpMethod.GET).uri("/api/v1/admin/chaos-monkey/payment-failure").body(getEntity).retrieve().toEntity(String.class);
+        getRaw = restClient.get()
+                .uri("/api/v1/admin/chaos-monkey/payment-failure")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
         System.out.println("GET after enable: code=" + getRaw.getStatusCode() + ", body=" + getRaw.getBody());
         assertThat(getRaw.getStatusCode()).isEqualTo(HttpStatus.OK);
         Boolean enabled = objectMapper.readValue(getRaw.getBody(), Boolean.class);
         assertThat(enabled).isTrue();
 
         // Disable chaos monkey
-        disableEntity = new HttpEntity<>(new ChaosMonkeyToggleRequest(false), headers);
-        ResponseEntity<Void> disableRaw = restClient.method(HttpMethod.POST).uri("/api/v1/admin/chaos-monkey/payment-failure").body(disableEntity).retrieve().toEntity(Void.class);
+        ResponseEntity<Void> disableRaw = restClient.post()
+                .uri("/api/v1/admin/chaos-monkey/payment-failure")
+                .headers(h -> h.addAll(headers))
+                .body(new ChaosMonkeyToggleRequest(false))
+                .retrieve()
+                .toEntity(Void.class);
         System.out.println("Disable POST: code=" + disableRaw.getStatusCode());
         assertThat(disableRaw.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // GET status after disable
-        getRaw = restClient.method(HttpMethod.GET).uri("/api/v1/admin/chaos-monkey/payment-failure").body(getEntity).retrieve().toEntity(String.class);
+        getRaw = restClient.get()
+                .uri("/api/v1/admin/chaos-monkey/payment-failure")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
         System.out.println("GET after disable: code=" + getRaw.getStatusCode() + ", body=" + getRaw.getBody());
         assertThat(getRaw.getStatusCode()).isEqualTo(HttpStatus.OK);
         Boolean disabled = objectMapper.readValue(getRaw.getBody(), Boolean.class);
@@ -121,8 +150,12 @@ public class AdminControllerIT  extends AbstractIntegrationTest {
 
         // Create a product
         ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("100.0"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
@@ -133,19 +166,30 @@ public class AdminControllerIT  extends AbstractIntegrationTest {
         invHeaders.set("X-Tenant-ID", adminTenantId.toString());
         invHeaders.setIfMatch("0");
         InventoryUpdateRequest invReq = new InventoryUpdateRequest(10);
-        HttpEntity<InventoryUpdateRequest> invEntity = new HttpEntity<>(invReq, invHeaders);
-        ResponseEntity<InventoryResponse> invRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(invEntity).retrieve().toEntity(InventoryResponse.class);
+        ResponseEntity<InventoryResponse> invRes = restClient.put()
+                .uri("/api/v1/inventory/" + productId)
+                .headers(h -> h.addAll(invHeaders))
+                .body(invReq)
+                .retrieve()
+                .toEntity(InventoryResponse.class);
         assertThat(invRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Create order
         OrderRequest orderReq = new OrderRequest(productId, 2, "Test Product");
-        HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
-        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post()
+                .uri("/api/v1/orders")
+                .headers(h -> h.addAll(headers))
+                .body(orderReq)
+                .retrieve()
+                .toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 
         // Get metrics
-        HttpEntity<Void> getEntity = new HttpEntity<>(headers);
-        ResponseEntity<String> metricsRaw = restClient.method(HttpMethod.GET).uri("/api/v1/admin/metrics").body(getEntity).retrieve().toEntity(String.class);
+        ResponseEntity<String> metricsRaw = restClient.get()
+                .uri("/api/v1/admin/metrics")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
         System.out.println("Metrics response: code=" + metricsRaw.getStatusCode() + ", body=" + metricsRaw.getBody());
         assertThat(metricsRaw.getStatusCode()).isEqualTo(HttpStatus.OK);
         SystemMetricsResponse metrics = objectMapper.readValue(metricsRaw.getBody(), SystemMetricsResponse.class);

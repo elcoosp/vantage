@@ -1,4 +1,6 @@
 package com.vantage.payment;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.payment.ui.dto.PaymentRequest;
@@ -15,12 +17,12 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
@@ -35,8 +37,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(IdempotentPaymentIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({IdempotentPaymentIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class IdempotentPaymentIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -51,8 +53,6 @@ public class IdempotentPaymentIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

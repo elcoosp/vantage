@@ -1,4 +1,6 @@
 package com.vantage.order.query;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.ObjectMapper;
@@ -26,7 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import com.vantage.order.query.ui.dto.OrderSearchPageResponse;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -48,8 +49,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(OrderSearchCqrsIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({OrderSearchCqrsIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @org.springframework.test.context.TestPropertySource(properties = {
     "vantage.inventory.consumer.enabled=true",
     "vantage.payment.enabled=true",
@@ -69,8 +70,6 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -97,9 +96,12 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
                 headers.setBearerAuth(setup.token());
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.set("X-Tenant-ID", setup.tenantId().toString());
-                HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-                ResponseEntity<OrderSearchPageResponse> response = restClient.method(HttpMethod.GET).uri("/api/v1/orders/search").body(entity).retrieve().toEntity(OrderSearchPageResponse.class);
+                ResponseEntity<OrderSearchPageResponse> response = restClient.get()
+                        .uri("/api/v1/orders/search")
+                        .headers(h -> h.addAll(headers))
+                        .retrieve()
+                        .toEntity(OrderSearchPageResponse.class);
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
@@ -127,9 +129,12 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
                 headers.setBearerAuth(setup.token());
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.set("X-Tenant-ID", setup.tenantId().toString());
-                HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-                ResponseEntity<OrderSearchPageResponse> response = restClient.method(HttpMethod.GET).uri("/api/v1/orders/search").body(entity).retrieve().toEntity(OrderSearchPageResponse.class);
+                ResponseEntity<OrderSearchPageResponse> response = restClient.get()
+                        .uri("/api/v1/orders/search")
+                        .headers(h -> h.addAll(headers))
+                        .retrieve()
+                        .toEntity(OrderSearchPageResponse.class);
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
@@ -155,9 +160,12 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
                 headers.setBearerAuth(setup.token());
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.set("X-Tenant-ID", setup.tenantId().toString());
-                HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-                ResponseEntity<OrderSearchPageResponse> response = restClient.method(HttpMethod.GET).uri("/api/v1/orders/search").body(entity).retrieve().toEntity(OrderSearchPageResponse.class);
+                ResponseEntity<OrderSearchPageResponse> response = restClient.get()
+                        .uri("/api/v1/orders/search")
+                        .headers(h -> h.addAll(headers))
+                        .retrieve()
+                        .toEntity(OrderSearchPageResponse.class);
 
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
@@ -178,8 +186,12 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", dummyTenantId.toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -190,8 +202,12 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
         headers.set("X-Tenant-ID", tenantId.toString());
 
         ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("100.0"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
@@ -204,8 +220,12 @@ class OrderSearchCqrsIT  extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", tenantId.toString());
         OrderRequest orderReq = new OrderRequest(productId, quantity, "Test Product");
-        HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
-        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post()
+                .uri("/api/v1/orders")
+                .headers(h -> h.addAll(headers))
+                .body(orderReq)
+                .retrieve()
+                .toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         return orderRes.getBody().id();
     }

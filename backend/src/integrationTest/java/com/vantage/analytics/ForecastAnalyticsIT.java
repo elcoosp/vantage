@@ -1,6 +1,6 @@
 package com.vantage.analytics;
 import com.vantage.AbstractIntegrationTest;
-
+import com.vantage.VantageApplication;
 import com.vantage.analytics.ui.dto.ForecastDataPoint;
 import com.vantage.analytics.ui.dto.ForecastResponse;
 import com.vantage.core.tenant.TenantContext;
@@ -43,8 +43,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(ForecastAnalyticsIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({ForecastAnalyticsIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -59,8 +59,6 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -83,8 +81,12 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -96,8 +98,12 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
         authHeaders.set("X-Tenant-ID", tenantId.toString());
 
         ProductRequest productReq = new ProductRequest("Forecast Product", "Description", new BigDecimal("99.99"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(authHeaders))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
@@ -134,7 +140,11 @@ public class ForecastAnalyticsIT  extends AbstractIntegrationTest {
         headers.setBearerAuth(token);
         headers.set("X-Tenant-ID", tenantId.toString());
 
-        ResponseEntity<ForecastResponse> response = restClient.method(HttpMethod.GET).uri("/api/v1/analytics/forecast/" + productId).body(new HttpEntity<>(headers)).retrieve().toEntity(ForecastResponse.class);
+        ResponseEntity<ForecastResponse> response = restClient.get()
+                .uri("/api/v1/analytics/forecast/" + productId)
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(ForecastResponse.class);
 
         // 5. Assertions
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

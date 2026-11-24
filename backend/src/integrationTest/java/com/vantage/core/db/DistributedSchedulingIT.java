@@ -1,5 +1,7 @@
 // backend/src/test/java/com/vantage/core/db/DistributedSchedulingIT.java
 package com.vantage.core.db;
+import com.vantage.VantageApplication;
+
 import com.vantage.AbstractIntegrationTest;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 public class DistributedSchedulingIT  extends AbstractIntegrationTest {
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -99,6 +99,4 @@ public class DistributedSchedulingIT  extends AbstractIntegrationTest {
         // Only one thread should have successfully acquired the lock and thus called the repository
         verify(outboxRepository, times(1)).findByStatus(com.vantage.core.messaging.domain.OutboxStatus.PENDING);
     }
-
-
 }

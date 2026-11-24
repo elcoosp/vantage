@@ -1,4 +1,5 @@
 package com.vantage.integration;
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.integration.ui.dto.WebhookUpdateRequest;
@@ -15,7 +16,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -36,9 +36,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 @TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
-@Import(WebhookRegistrationTest.TestSecurityConfig.class)
+@Import({WebhookRegistrationTest.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @SuppressWarnings("removal")
 public class WebhookRegistrationTest extends AbstractIntegrationTest {
 
@@ -54,7 +54,6 @@ public class WebhookRegistrationTest extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
 
 
     @DynamicPropertySource
@@ -81,8 +80,12 @@ public class WebhookRegistrationTest extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -94,9 +97,12 @@ public class WebhookRegistrationTest extends AbstractIntegrationTest {
         headers.set("X-Tenant-ID", tenantId.toString());
 
         WebhookUpdateRequest request = new WebhookUpdateRequest("https://example.com/webhook");
-        HttpEntity<WebhookUpdateRequest> entity = new HttpEntity<>(request, headers);
-
-        ResponseEntity<WebhookUpdateResponse> response = restClient.method(HttpMethod.PUT).uri("/api/v1/webhooks").body(entity).retrieve().toEntity(WebhookUpdateResponse.class);
+        ResponseEntity<WebhookUpdateResponse> response = restClient.put()
+                .uri("/api/v1/webhooks")
+                .headers(h -> h.addAll(headers))
+                .body(request)
+                .retrieve()
+                .toEntity(WebhookUpdateResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

@@ -1,4 +1,6 @@
 package com.vantage.core.search;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.inventory.ui.dto.InventoryResponse;
@@ -19,7 +21,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -43,8 +44,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(FullTextSearchIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({FullTextSearchIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class FullTextSearchIT  extends AbstractIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(FullTextSearchIT.class);
@@ -80,9 +81,6 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -102,8 +100,12 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -115,15 +117,23 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
 
         // Create product 1: Coffee Mug
         ProductRequest prod1 = new ProductRequest("Coffee Mug", "Ceramic coffee mug", new BigDecimal("15.99"));
-        HttpEntity<ProductRequest> prod1Entity = new HttpEntity<>(prod1, headers);
-        ResponseEntity<ProductResponse> prod1Res = restClient.post().uri("/api/v1/products").body(prod1Entity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> prod1Res = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(prod1)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(prod1Res.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID product1Id = prod1Res.getBody().id();
 
         // Create product 2: Coffee Beans
         ProductRequest prod2 = new ProductRequest("Coffee Beans", "Premium roasted beans", new BigDecimal("25.99"));
-        HttpEntity<ProductRequest> prod2Entity = new HttpEntity<>(prod2, headers);
-        ResponseEntity<ProductResponse> prod2Res = restClient.post().uri("/api/v1/products").body(prod2Entity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> prod2Res = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(prod2)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(prod2Res.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID product2Id = prod2Res.getBody().id();
 
@@ -134,14 +144,22 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         invHeaders.setContentType(MediaType.APPLICATION_JSON);
         invHeaders.set("X-Tenant-ID", tenantId.toString());
         invHeaders.setIfMatch("0");
-        HttpEntity<InventoryUpdateRequest> invEntity = new HttpEntity<>(invReq, invHeaders);
-        ResponseEntity<InventoryResponse> invRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + product1Id).body(invEntity).retrieve().toEntity(InventoryResponse.class);
+        ResponseEntity<InventoryResponse> invRes = restClient.put()
+                .uri("/api/v1/inventory/" + product1Id)
+                .headers(h -> h.addAll(invHeaders))
+                .body(invReq)
+                .retrieve()
+                .toEntity(InventoryResponse.class);
         assertThat(invRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Create order (with status CREATED)
         com.vantage.order.ui.dto.OrderRequest orderReq = new com.vantage.order.ui.dto.OrderRequest(product1Id, 2, "Coffee Mug");
-        HttpEntity<com.vantage.order.ui.dto.OrderRequest> orderEntity = new HttpEntity<>(orderReq, headers);
-        ResponseEntity<com.vantage.order.ui.dto.OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(com.vantage.order.ui.dto.OrderResponse.class);
+        ResponseEntity<com.vantage.order.ui.dto.OrderResponse> orderRes = restClient.post()
+                .uri("/api/v1/orders")
+                .headers(h -> h.addAll(headers))
+                .body(orderReq)
+                .retrieve()
+                .toEntity(com.vantage.order.ui.dto.OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         UUID orderId = orderRes.getBody().id();
 
@@ -157,7 +175,11 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         headers.set("X-Tenant-ID", ctx.tenantId.toString());
 
         // Search for "Coffee" should return both products
-        ResponseEntity<List> response = restClient.method(HttpMethod.GET).uri("/api/v1/search?q=Coffee").body(new HttpEntity<>(headers)).retrieve().toEntity(List.class);
+        ResponseEntity<List> response = restClient.get()
+                .uri("/api/v1/search?q=Coffee")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(List.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> results = response.getBody();
         assertThat(results).hasSize(2);
@@ -167,7 +189,11 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         assertThat(ids).containsExactlyInAnyOrder(ctx.product1Id, ctx.product2Id);
 
         // Search for "Mug" should return only Coffee Mug
-        response = restClient.method(HttpMethod.GET).uri("/api/v1/search?q=Mug").body(new HttpEntity<>(headers)).retrieve().toEntity(List.class);
+        response = restClient.get()
+                .uri("/api/v1/search?q=Mug")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(List.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         results = response.getBody();
         assertThat(results).hasSize(1);
@@ -175,7 +201,11 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         assertThat(results.get(0).get("entityType")).isEqualTo("PRODUCT");
 
         // Search for "CREATED" should return the order (status)
-        response = restClient.method(HttpMethod.GET).uri("/api/v1/search?q=CREATED").body(new HttpEntity<>(headers)).retrieve().toEntity(List.class);
+        response = restClient.get()
+                .uri("/api/v1/search?q=CREATED")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(List.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         results = response.getBody();
         assertThat(results).hasSize(1);
@@ -195,8 +225,12 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeadersB = new HttpHeaders();
         vendorHeadersB.setContentType(MediaType.APPLICATION_JSON);
         vendorHeadersB.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntityB = new HttpEntity<>(vendorReqB, vendorHeadersB);
-        ResponseEntity<AuthResponse> vendorResB = restClient.post().uri("/api/v1/vendors/register").body(vendorEntityB).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorResB = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeadersB))
+                .body(vendorReqB)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorResB.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String tokenB = vendorResB.getBody().token();
         UUID tenantIdB = vendorResB.getBody().tenantId();
@@ -208,8 +242,12 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
 
         // Create product for vendor B: "Tea Mug"
         ProductRequest prodB = new ProductRequest("Tea Mug", "Porcelain tea mug", new BigDecimal("12.99"));
-        HttpEntity<ProductRequest> prodBEntity = new HttpEntity<>(prodB, headersB);
-        ResponseEntity<ProductResponse> prodBRes = restClient.post().uri("/api/v1/products").body(prodBEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> prodBRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headersB))
+                .body(prodB)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(prodBRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productBId = prodBRes.getBody().id();
 
@@ -218,14 +256,22 @@ public class FullTextSearchIT  extends AbstractIntegrationTest {
         headersA.setBearerAuth(ctxA.token);
         headersA.set("X-Tenant-ID", ctxA.tenantId.toString());
 
-        ResponseEntity<List> responseA = restClient.method(HttpMethod.GET).uri("/api/v1/search?q=Mug").body(new HttpEntity<>(headersA)).retrieve().toEntity(List.class);
+        ResponseEntity<List> responseA = restClient.get()
+                .uri("/api/v1/search?q=Mug")
+                .headers(h -> h.addAll(headersA))
+                .retrieve()
+                .toEntity(List.class);
         assertThat(responseA.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> resultsA = responseA.getBody();
         assertThat(resultsA).hasSize(1);
         assertThat(resultsA.get(0).get("id")).isEqualTo(ctxA.product1Id.toString());
 
         // Search as vendor B for "Mug" should return only B's Tea Mug
-        ResponseEntity<List> responseB = restClient.method(HttpMethod.GET).uri("/api/v1/search?q=Mug").body(new HttpEntity<>(headersB)).retrieve().toEntity(List.class);
+        ResponseEntity<List> responseB = restClient.get()
+                .uri("/api/v1/search?q=Mug")
+                .headers(h -> h.addAll(headersB))
+                .retrieve()
+                .toEntity(List.class);
         assertThat(responseB.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<Map<String, Object>> resultsB = responseB.getBody();
         assertThat(resultsB).hasSize(1);

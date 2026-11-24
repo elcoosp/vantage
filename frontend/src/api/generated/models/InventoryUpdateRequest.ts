@@ -3,5 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type InventoryUpdateRequest = {
-	quantity: number;
+    quantity: number;
 };
+

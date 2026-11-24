@@ -1,4 +1,6 @@
 package com.vantage.core.audit;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.ObjectMapper;
@@ -22,7 +24,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 // import removed - using fully qualified @org.springframework.core.annotation.Order
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -47,11 +48,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(AuditTimelineIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({AuditTimelineIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class AuditTimelineIT  extends AbstractIntegrationTest {
-
-
     @TestConfiguration
     static class TestSecurityConfig {
         @Bean
@@ -64,9 +63,6 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -83,8 +79,6 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-
     @Test
     void should_capture_order_created_and_order_updated_events_and_return_timeline() throws Exception {
         // 1. Register vendor
@@ -95,8 +89,12 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -108,15 +106,23 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
         authHeaders.set("X-Tenant-ID", tenantId.toString());
 
         ProductRequest productReq = new ProductRequest("Audit Product", "Description", new BigDecimal("99.99"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(authHeaders))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
         // 3. Place order
         OrderRequest orderReq = new OrderRequest(productId, 2);
-        HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, authHeaders);
-        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post()
+                .uri("/api/v1/orders")
+                .headers(h -> h.addAll(authHeaders))
+                .body(orderReq)
+                .retrieve()
+                .toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         UUID orderId = orderRes.getBody().id();
 
@@ -142,7 +148,11 @@ public class AuditTimelineIT  extends AbstractIntegrationTest {
         auditHeaders.setBearerAuth(token);
         auditHeaders.set("X-Tenant-ID", tenantId.toString());
 
-        ResponseEntity<AuditEventResponse[]> auditRes = restClient.method(HttpMethod.GET).uri("/api/v1/audit/orders/" + orderId).body(new HttpEntity<>(auditHeaders)).retrieve().toEntity(AuditEventResponse[].class);
+        ResponseEntity<AuditEventResponse[]> auditRes = restClient.get()
+                .uri("/api/v1/audit/orders/" + orderId)
+                .headers(h -> h.addAll(auditHeaders))
+                .retrieve()
+                .toEntity(AuditEventResponse[].class);
         assertThat(auditRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         List<AuditEventResponse> events = List.of(auditRes.getBody());
         System.out.println("Audit events count: " + events.size());

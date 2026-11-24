@@ -3,11 +3,37 @@
 /* tslint:disable */
 /* eslint-disable */
 export type OrderResponse = {
-	orderId?: string;
-	status?: OrderResponse.status;
+    orderId?: string;
+    /**
+     * Present on responses from the non-generated controller (202 flow).
+     */
+    productId?: string;
+    /**
+     * Present on responses from the non-generated controller (202 flow).
+     */
+    quantity?: number;
+    /**
+     * CREATED orders are processed asynchronously by the RabbitMQ saga
+     * (inventory reservation + payment) and typically reach PAID within
+     * seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints.
+     *
+     */
+    status?: OrderResponse.status;
 };
 export namespace OrderResponse {
-	export enum status {
-		CREATED = "CREATED",
-	}
+    /**
+     * CREATED orders are processed asynchronously by the RabbitMQ saga
+     * (inventory reservation + payment) and typically reach PAID within
+     * seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints.
+     *
+     */
+    export enum status {
+        CREATED = 'CREATED',
+        CONFIRMED = 'CONFIRMED',
+        PAID = 'PAID',
+        SHIPPED = 'SHIPPED',
+        DELIVERED = 'DELIVERED',
+        CANCELLED = 'CANCELLED',
+    }
 }
+

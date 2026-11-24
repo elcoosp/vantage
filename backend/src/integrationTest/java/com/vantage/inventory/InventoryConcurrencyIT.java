@@ -1,4 +1,7 @@
 package com.vantage.inventory;
+
+import com.vantage.VantageApplication;
+import org.springframework.context.annotation.Import;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.core.tenant.TenantContext;
@@ -16,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -30,7 +34,8 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({InventoryConcurrencyIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 class InventoryConcurrencyIT extends AbstractIntegrationTest {
 
     @TestConfiguration

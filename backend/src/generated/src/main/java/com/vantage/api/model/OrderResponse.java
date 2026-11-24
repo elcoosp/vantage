@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -21,16 +22,16 @@ import jakarta.annotation.Generated;
  * OrderResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class OrderResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private UUID orderId;
+  private @Nullable UUID orderId;
 
-  private UUID productId;
+  private @Nullable UUID productId;
 
-  private Integer quantity;
+  private @Nullable Integer quantity;
 
   /**
    * CREATED orders are processed asynchronously by the RabbitMQ saga (inventory reservation + payment) and typically reach PAID within seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints. 
@@ -48,7 +49,7 @@ public class OrderResponse implements Serializable {
     
     CANCELLED("CANCELLED");
 
-    private String value;
+    private final String value;
 
     StatusEnum(String value) {
       this.value = value;
@@ -75,9 +76,9 @@ public class OrderResponse implements Serializable {
     }
   }
 
-  private StatusEnum status;
+  private @Nullable StatusEnum status;
 
-  public OrderResponse orderId(UUID orderId) {
+  public OrderResponse orderId(@Nullable UUID orderId) {
     this.orderId = orderId;
     return this;
   }
@@ -85,19 +86,20 @@ public class OrderResponse implements Serializable {
   /**
    * Get orderId
    * @return orderId
-  */
+   */
   @Valid 
   @Schema(name = "orderId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("orderId")
-  public UUID getOrderId() {
+  public @Nullable UUID getOrderId() {
     return orderId;
   }
 
-  public void setOrderId(UUID orderId) {
+  @JsonProperty("orderId")
+  public void setOrderId(@Nullable UUID orderId) {
     this.orderId = orderId;
   }
 
-  public OrderResponse productId(UUID productId) {
+  public OrderResponse productId(@Nullable UUID productId) {
     this.productId = productId;
     return this;
   }
@@ -105,19 +107,20 @@ public class OrderResponse implements Serializable {
   /**
    * Present on responses from the non-generated controller (202 flow).
    * @return productId
-  */
+   */
   @Valid 
   @Schema(name = "productId", description = "Present on responses from the non-generated controller (202 flow).", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("productId")
-  public UUID getProductId() {
+  public @Nullable UUID getProductId() {
     return productId;
   }
 
-  public void setProductId(UUID productId) {
+  @JsonProperty("productId")
+  public void setProductId(@Nullable UUID productId) {
     this.productId = productId;
   }
 
-  public OrderResponse quantity(Integer quantity) {
+  public OrderResponse quantity(@Nullable Integer quantity) {
     this.quantity = quantity;
     return this;
   }
@@ -125,19 +128,20 @@ public class OrderResponse implements Serializable {
   /**
    * Present on responses from the non-generated controller (202 flow).
    * @return quantity
-  */
+   */
   
   @Schema(name = "quantity", description = "Present on responses from the non-generated controller (202 flow).", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("quantity")
-  public Integer getQuantity() {
+  public @Nullable Integer getQuantity() {
     return quantity;
   }
 
-  public void setQuantity(Integer quantity) {
+  @JsonProperty("quantity")
+  public void setQuantity(@Nullable Integer quantity) {
     this.quantity = quantity;
   }
 
-  public OrderResponse status(StatusEnum status) {
+  public OrderResponse status(@Nullable StatusEnum status) {
     this.status = status;
     return this;
   }
@@ -145,15 +149,16 @@ public class OrderResponse implements Serializable {
   /**
    * CREATED orders are processed asynchronously by the RabbitMQ saga (inventory reservation + payment) and typically reach PAID within seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints. 
    * @return status
-  */
+   */
   
   @Schema(name = "status", description = "CREATED orders are processed asynchronously by the RabbitMQ saga (inventory reservation + payment) and typically reach PAID within seconds. SHIPPED/DELIVERED are set by the fulfillment endpoints. ", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("status")
-  public StatusEnum getStatus() {
+  public @Nullable StatusEnum getStatus() {
     return status;
   }
 
-  public void setStatus(StatusEnum status) {
+  @JsonProperty("status")
+  public void setStatus(@Nullable StatusEnum status) {
     this.status = status;
   }
 
@@ -193,11 +198,8 @@ public class OrderResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

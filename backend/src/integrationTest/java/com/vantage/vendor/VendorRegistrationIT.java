@@ -1,4 +1,7 @@
 package com.vantage.vendor;
+
+import com.vantage.VantageApplication;
+import org.springframework.context.annotation.Import;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.vendor.ui.dto.AuthResponse;
@@ -7,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.client.RestClient;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,10 +20,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import(AbstractIntegrationTest.TestRestClientConfig.class)
 class VendorRegistrationIT extends AbstractIntegrationTest {
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -42,9 +43,12 @@ class VendorRegistrationIT extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Tenant-ID", java.util.UUID.randomUUID().toString());
 
-        HttpEntity<VendorRegistrationRequest> entity = new HttpEntity<>(request, headers);
-
-        ResponseEntity<AuthResponse> response = restClient.post().uri("/api/v1/vendors/register").body(entity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> response = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(headers))
+                .body(request)
+                .retrieve()
+                .toEntity(AuthResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();

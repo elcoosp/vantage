@@ -1,6 +1,6 @@
 package com.vantage.core.chat;
-
 import com.vantage.AbstractIntegrationTest;
+import com.vantage.VantageApplication;
 import com.vantage.core.chat.app.ChatOrchestrator;
 import com.vantage.core.chat.app.LlmStreamEvent;
 import com.vantage.core.chat.infra.AiConversation;
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Verifies that conversation data is isolated per tenant:
  * tenant B cannot see tenant A's conversations.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 class ChatTenantIsolationIT extends AbstractIntegrationTest {
 
     @DynamicPropertySource

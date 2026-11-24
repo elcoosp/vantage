@@ -1,4 +1,6 @@
 package com.vantage.order;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.core.JacksonException;
@@ -35,6 +37,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -52,8 +55,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({PaymentSagaCompensationIT.TestSecurityConfig.class, PaymentSagaCompensationIT.CompensationTestConfig.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({PaymentSagaCompensationIT.TestSecurityConfig.class, PaymentSagaCompensationIT.CompensationTestConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @org.springframework.test.context.TestPropertySource(properties = {
     "vantage.inventory.consumer.enabled=true",
     "vantage.payment.enabled=true",
@@ -101,8 +104,6 @@ class PaymentSagaCompensationIT  extends AbstractIntegrationTest {
             }
         }
     }
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

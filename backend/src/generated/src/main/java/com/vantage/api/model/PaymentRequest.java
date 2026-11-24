@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.math.BigDecimal;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -21,7 +22,7 @@ import jakarta.annotation.Generated;
  * PaymentRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class PaymentRequest implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -30,7 +31,7 @@ public class PaymentRequest implements Serializable {
 
   private BigDecimal amount;
 
-  private String currency;
+  private @Nullable String currency;
 
   public PaymentRequest() {
     super();
@@ -52,7 +53,7 @@ public class PaymentRequest implements Serializable {
   /**
    * Get orderId
    * @return orderId
-  */
+   */
   @NotNull @Valid 
   @Schema(name = "orderId", requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty("orderId")
@@ -60,6 +61,7 @@ public class PaymentRequest implements Serializable {
     return orderId;
   }
 
+  @JsonProperty("orderId")
   public void setOrderId(UUID orderId) {
     this.orderId = orderId;
   }
@@ -72,7 +74,7 @@ public class PaymentRequest implements Serializable {
   /**
    * Get amount
    * @return amount
-  */
+   */
   @NotNull @Valid 
   @Schema(name = "amount", requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty("amount")
@@ -80,11 +82,12 @@ public class PaymentRequest implements Serializable {
     return amount;
   }
 
+  @JsonProperty("amount")
   public void setAmount(BigDecimal amount) {
     this.amount = amount;
   }
 
-  public PaymentRequest currency(String currency) {
+  public PaymentRequest currency(@Nullable String currency) {
     this.currency = currency;
     return this;
   }
@@ -92,15 +95,16 @@ public class PaymentRequest implements Serializable {
   /**
    * Get currency
    * @return currency
-  */
+   */
   
   @Schema(name = "currency", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("currency")
-  public String getCurrency() {
+  public @Nullable String getCurrency() {
     return currency;
   }
 
-  public void setCurrency(String currency) {
+  @JsonProperty("currency")
+  public void setCurrency(@Nullable String currency) {
     this.currency = currency;
   }
 
@@ -138,11 +142,8 @@ public class PaymentRequest implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

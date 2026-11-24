@@ -6,15 +6,15 @@ import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.retry.backoff.ExponentialBackOffPolicy;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import tools.jackson.databind.ObjectMapper;
 
@@ -44,6 +44,41 @@ public class RabbitMQConfig {
         classMapper.setTrustedPackages("com.vantage");
         converter.setClassMapper(classMapper);
         return converter;
+    }
+
+    /**
+     * {@link ConnectionFactory} bean. Spring Boot 4 no longer auto-configures one from
+     * {@code spring-boot-starter-amqp}, so it must be declared by hand.
+     */
+    @Bean
+    public ConnectionFactory connectionFactory(@org.springframework.beans.factory.annotation.Value("${spring.rabbitmq.host:localhost}") String host,
+                                               @org.springframework.beans.factory.annotation.Value("${spring.rabbitmq.port:5672}") int port,
+                                               @org.springframework.beans.factory.annotation.Value("${spring.rabbitmq.username:guest}") String username,
+                                               @org.springframework.beans.factory.annotation.Value("${spring.rabbitmq.password:guest}") String password) {
+        CachingConnectionFactory connectionFactory = new CachingConnectionFactory(host, port);
+        connectionFactory.setUsername(username);
+        connectionFactory.setPassword(password);
+        return connectionFactory;
+    }
+
+    /**
+     * Explicit {@link RabbitTemplate} bean. Spring Boot 4 no longer auto-configures one from
+     * {@code spring-boot-starter-amqp}, so it must be declared by hand.
+     */
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter messageConverter) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(messageConverter);
+        return rabbitTemplate;
+    }
+
+    /**
+     * {@link RabbitAdmin} is needed by {@code OutboxPoller} to declare queues/exchanges lazily
+     * after the connection is established.
+     */
+    @Bean
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        return new RabbitAdmin(connectionFactory);
     }
 
     // Webhook delivery exchange and queue with DLX
@@ -120,14 +155,6 @@ public class RabbitMQConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setDefaultRequeueRejected(false);
-
-        RetryTemplate retryTemplate = new RetryTemplate();
-        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-        backOffPolicy.setInitialInterval(1000);
-        backOffPolicy.setMultiplier(3.0);
-        backOffPolicy.setMaxInterval(60000);
-        retryTemplate.setBackOffPolicy(backOffPolicy);
-        factory.setRetryTemplate(retryTemplate);
         return factory;
     }
 }

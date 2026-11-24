@@ -1,4 +1,6 @@
 package com.vantage.integration;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.core.tenant.TenantFilter;
@@ -20,7 +22,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,9 +39,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 @TestPropertySource(properties = "spring.rabbitmq.listener.simple.auto-startup=false")
-@Import(ApiKeyAuthenticationIT.TestConfig.class)
+@Import({ApiKeyAuthenticationIT.TestConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -58,9 +59,6 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
             };
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -84,8 +82,12 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
                 "Vantage Inc.");
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         UUID tenantId = vendorRes.getBody().tenantId();
 
@@ -108,9 +110,12 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
         headers.set("X-API-Key", plainKey);
 
         ProductRequest productReq = new ProductRequest("Test Product", "Description", new BigDecimal("99.99"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, headers);
-
-        ResponseEntity<ProductResponse> response = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> response = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
 
         System.out.println("Product creation response status: " + response.getStatusCode());
         System.out.println("Product creation response body: " + response.getBody());
@@ -123,8 +128,12 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
     @Test
     void should_return_401_when_no_api_key_provided() {
         ProductRequest productReq = new ProductRequest("Unauth Product", "Should fail", new BigDecimal("10.00"));
-        HttpEntity<ProductRequest> entity = new HttpEntity<>(productReq, new HttpHeaders());
-        ResponseEntity<String> response = restClient.post().uri("/api/v1/products").body(entity).retrieve().toEntity(String.class);
+        ResponseEntity<String> response = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(new HttpHeaders()))
+                .body(productReq)
+                .retrieve()
+                .toEntity(String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
@@ -134,8 +143,12 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-API-Key", "invalid_key");
         ProductRequest productReq = new ProductRequest("Invalid Key", "Should fail", new BigDecimal("10.00"));
-        HttpEntity<ProductRequest> entity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<String> response = restClient.post().uri("/api/v1/products").body(entity).retrieve().toEntity(String.class);
+        ResponseEntity<String> response = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(productReq)
+                .retrieve()
+                .toEntity(String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
@@ -148,8 +161,12 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
                 "Vantage Inc.");
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         UUID tenantId = vendorRes.getBody().tenantId();
 
@@ -170,8 +187,12 @@ public class ApiKeyAuthenticationIT  extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-API-Key", plainKey);
         ProductRequest productReq = new ProductRequest("Revoked", "Should fail", new BigDecimal("10.00"));
-        HttpEntity<ProductRequest> entity = new HttpEntity<>(productReq, headers);
-        ResponseEntity<String> response = restClient.post().uri("/api/v1/products").body(entity).retrieve().toEntity(String.class);
+        ResponseEntity<String> response = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(headers))
+                .body(productReq)
+                .retrieve()
+                .toEntity(String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 }

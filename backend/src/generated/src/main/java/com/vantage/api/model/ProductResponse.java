@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.math.BigDecimal;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -21,20 +22,20 @@ import jakarta.annotation.Generated;
  * ProductResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class ProductResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private UUID id;
+  private @Nullable UUID id;
 
-  private String name;
+  private @Nullable String name;
 
-  private BigDecimal price;
+  private @Nullable BigDecimal price;
 
-  private String sku;
+  private @Nullable String sku;
 
-  public ProductResponse id(UUID id) {
+  public ProductResponse id(@Nullable UUID id) {
     this.id = id;
     return this;
   }
@@ -42,19 +43,20 @@ public class ProductResponse implements Serializable {
   /**
    * Get id
    * @return id
-  */
+   */
   @Valid 
   @Schema(name = "id", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("id")
-  public UUID getId() {
+  public @Nullable UUID getId() {
     return id;
   }
 
-  public void setId(UUID id) {
+  @JsonProperty("id")
+  public void setId(@Nullable UUID id) {
     this.id = id;
   }
 
-  public ProductResponse name(String name) {
+  public ProductResponse name(@Nullable String name) {
     this.name = name;
     return this;
   }
@@ -62,19 +64,20 @@ public class ProductResponse implements Serializable {
   /**
    * Get name
    * @return name
-  */
+   */
   
   @Schema(name = "name", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("name")
-  public String getName() {
+  public @Nullable String getName() {
     return name;
   }
 
-  public void setName(String name) {
+  @JsonProperty("name")
+  public void setName(@Nullable String name) {
     this.name = name;
   }
 
-  public ProductResponse price(BigDecimal price) {
+  public ProductResponse price(@Nullable BigDecimal price) {
     this.price = price;
     return this;
   }
@@ -82,19 +85,20 @@ public class ProductResponse implements Serializable {
   /**
    * Get price
    * @return price
-  */
+   */
   @Valid 
   @Schema(name = "price", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("price")
-  public BigDecimal getPrice() {
+  public @Nullable BigDecimal getPrice() {
     return price;
   }
 
-  public void setPrice(BigDecimal price) {
+  @JsonProperty("price")
+  public void setPrice(@Nullable BigDecimal price) {
     this.price = price;
   }
 
-  public ProductResponse sku(String sku) {
+  public ProductResponse sku(@Nullable String sku) {
     this.sku = sku;
     return this;
   }
@@ -102,15 +106,16 @@ public class ProductResponse implements Serializable {
   /**
    * Get sku
    * @return sku
-  */
+   */
   
   @Schema(name = "sku", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("sku")
-  public String getSku() {
+  public @Nullable String getSku() {
     return sku;
   }
 
-  public void setSku(String sku) {
+  @JsonProperty("sku")
+  public void setSku(@Nullable String sku) {
     this.sku = sku;
   }
 
@@ -150,11 +155,8 @@ public class ProductResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

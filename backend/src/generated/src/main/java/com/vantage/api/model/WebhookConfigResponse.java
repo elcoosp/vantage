@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -19,16 +20,16 @@ import jakarta.annotation.Generated;
  * WebhookConfigResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class WebhookConfigResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private String webhookUrl;
+  private @Nullable String webhookUrl;
 
-  private String secret;
+  private @Nullable String secret;
 
-  public WebhookConfigResponse webhookUrl(String webhookUrl) {
+  public WebhookConfigResponse webhookUrl(@Nullable String webhookUrl) {
     this.webhookUrl = webhookUrl;
     return this;
   }
@@ -36,19 +37,20 @@ public class WebhookConfigResponse implements Serializable {
   /**
    * Registered webhook URL, empty string when unset.
    * @return webhookUrl
-  */
+   */
   
   @Schema(name = "webhookUrl", description = "Registered webhook URL, empty string when unset.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("webhookUrl")
-  public String getWebhookUrl() {
+  public @Nullable String getWebhookUrl() {
     return webhookUrl;
   }
 
-  public void setWebhookUrl(String webhookUrl) {
+  @JsonProperty("webhookUrl")
+  public void setWebhookUrl(@Nullable String webhookUrl) {
     this.webhookUrl = webhookUrl;
   }
 
-  public WebhookConfigResponse secret(String secret) {
+  public WebhookConfigResponse secret(@Nullable String secret) {
     this.secret = secret;
     return this;
   }
@@ -56,15 +58,16 @@ public class WebhookConfigResponse implements Serializable {
   /**
    * Masked signing secret (e.g. abcd…wxyz), null when unset.
    * @return secret
-  */
+   */
   
   @Schema(name = "secret", description = "Masked signing secret (e.g. abcd…wxyz), null when unset.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("secret")
-  public String getSecret() {
+  public @Nullable String getSecret() {
     return secret;
   }
 
-  public void setSecret(String secret) {
+  @JsonProperty("secret")
+  public void setSecret(@Nullable String secret) {
     this.secret = secret;
   }
 
@@ -100,11 +103,8 @@ public class WebhookConfigResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

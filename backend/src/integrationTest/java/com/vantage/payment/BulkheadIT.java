@@ -1,4 +1,6 @@
 package com.vantage.payment;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.core.admin.ChaosMonkeyService;
@@ -30,7 +32,7 @@ import java.util.concurrent.Future;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 @Import(BulkheadIT.TestSecurityConfig.class)
 public class BulkheadIT  extends AbstractIntegrationTest {
 
@@ -46,8 +48,6 @@ public class BulkheadIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);

@@ -1,4 +1,6 @@
 package com.vantage.core.cache;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.analytics.app.AnalyticsService;
@@ -37,11 +39,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 @Import(CacheConfig.class)
 public class CacheInvalidationIT  extends AbstractIntegrationTest {
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -72,8 +72,6 @@ public class CacheInvalidationIT  extends AbstractIntegrationTest {
     @Test
     void should_evict_forecast_cache_when_order_created_event_received() {
         // Reset the listener flag
-
-
         // 1. Register vendor
         VendorRegistrationRequest vendorReq = new VendorRegistrationRequest(
                 "cache-" + UUID.randomUUID() + "@vantage.com",

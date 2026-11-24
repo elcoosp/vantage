@@ -67,8 +67,15 @@ public class AnalyticsService {
         LocalDate now = LocalDate.now(ZoneOffset.UTC);
         LocalDate startDate = now.minusDays(days);
         for (Object[] row : results) {
-            java.sql.Date sqlDate = (java.sql.Date) row[0];
-            LocalDate date = sqlDate.toLocalDate();
+            Object dayObj = row[0];
+            LocalDate date;
+            if (dayObj instanceof java.sql.Date) {
+                date = ((java.sql.Date) dayObj).toLocalDate();
+            } else if (dayObj instanceof LocalDate) {
+                date = (LocalDate) dayObj;
+            } else {
+                throw new IllegalStateException("Unexpected date type: " + dayObj.getClass());
+            }
             long offset = java.time.temporal.ChronoUnit.DAYS.between(startDate, date);
             if (offset >= 0 && offset < days) {
                 int idx = (int) offset;

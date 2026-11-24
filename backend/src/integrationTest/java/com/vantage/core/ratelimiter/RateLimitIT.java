@@ -1,4 +1,6 @@
 package com.vantage.core.ratelimiter;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.vendor.ui.dto.AuthResponse;
@@ -11,7 +13,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -30,8 +31,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(RateLimitIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({RateLimitIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class RateLimitIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -46,9 +47,6 @@ public class RateLimitIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -67,8 +65,12 @@ public class RateLimitIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -80,15 +82,21 @@ public class RateLimitIT  extends AbstractIntegrationTest {
 
         // Make 101 requests to the test endpoint
         for (int i = 1; i <= 100; i++) {
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-            ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/ratelimit-test").body(entity).retrieve().toEntity(String.class);
+            ResponseEntity<String> response = restClient.get()
+                    .uri("/api/v1/ratelimit-test")
+                    .headers(h -> h.addAll(headers))
+                    .retrieve()
+                    .toEntity(String.class);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isEqualTo("OK");
         }
 
         // 101st request should be rate limited
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/ratelimit-test").body(entity).retrieve().toEntity(String.class);
+        ResponseEntity<String> response = restClient.get()
+                .uri("/api/v1/ratelimit-test")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
         assertThat(response.getHeaders().containsHeader("Retry-After")).isTrue();

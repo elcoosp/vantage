@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -19,7 +20,7 @@ import jakarta.annotation.Generated;
  * ProductRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class ProductRequest implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -28,7 +29,7 @@ public class ProductRequest implements Serializable {
 
   private Double price;
 
-  private String sku;
+  private @Nullable String sku;
 
   public ProductRequest() {
     super();
@@ -50,7 +51,7 @@ public class ProductRequest implements Serializable {
   /**
    * Get name
    * @return name
-  */
+   */
   @NotNull 
   @Schema(name = "name", requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty("name")
@@ -58,6 +59,7 @@ public class ProductRequest implements Serializable {
     return name;
   }
 
+  @JsonProperty("name")
   public void setName(String name) {
     this.name = name;
   }
@@ -70,7 +72,7 @@ public class ProductRequest implements Serializable {
   /**
    * Get price
    * @return price
-  */
+   */
   @NotNull 
   @Schema(name = "price", requiredMode = Schema.RequiredMode.REQUIRED)
   @JsonProperty("price")
@@ -78,11 +80,12 @@ public class ProductRequest implements Serializable {
     return price;
   }
 
+  @JsonProperty("price")
   public void setPrice(Double price) {
     this.price = price;
   }
 
-  public ProductRequest sku(String sku) {
+  public ProductRequest sku(@Nullable String sku) {
     this.sku = sku;
     return this;
   }
@@ -90,15 +93,16 @@ public class ProductRequest implements Serializable {
   /**
    * Get sku
    * @return sku
-  */
+   */
   
   @Schema(name = "sku", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("sku")
-  public String getSku() {
+  public @Nullable String getSku() {
     return sku;
   }
 
-  public void setSku(String sku) {
+  @JsonProperty("sku")
+  public void setSku(@Nullable String sku) {
     this.sku = sku;
   }
 
@@ -136,11 +140,8 @@ public class ProductRequest implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

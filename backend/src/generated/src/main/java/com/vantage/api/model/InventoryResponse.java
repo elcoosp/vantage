@@ -5,6 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -20,18 +21,18 @@ import jakarta.annotation.Generated;
  * InventoryResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class InventoryResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private UUID productId;
+  private @Nullable UUID productId;
 
-  private Integer quantity;
+  private @Nullable Integer quantity;
 
-  private Integer version;
+  private @Nullable Integer version;
 
-  public InventoryResponse productId(UUID productId) {
+  public InventoryResponse productId(@Nullable UUID productId) {
     this.productId = productId;
     return this;
   }
@@ -39,19 +40,20 @@ public class InventoryResponse implements Serializable {
   /**
    * Get productId
    * @return productId
-  */
+   */
   @Valid 
   @Schema(name = "productId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("productId")
-  public UUID getProductId() {
+  public @Nullable UUID getProductId() {
     return productId;
   }
 
-  public void setProductId(UUID productId) {
+  @JsonProperty("productId")
+  public void setProductId(@Nullable UUID productId) {
     this.productId = productId;
   }
 
-  public InventoryResponse quantity(Integer quantity) {
+  public InventoryResponse quantity(@Nullable Integer quantity) {
     this.quantity = quantity;
     return this;
   }
@@ -59,19 +61,20 @@ public class InventoryResponse implements Serializable {
   /**
    * Get quantity
    * @return quantity
-  */
+   */
   
   @Schema(name = "quantity", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("quantity")
-  public Integer getQuantity() {
+  public @Nullable Integer getQuantity() {
     return quantity;
   }
 
-  public void setQuantity(Integer quantity) {
+  @JsonProperty("quantity")
+  public void setQuantity(@Nullable Integer quantity) {
     this.quantity = quantity;
   }
 
-  public InventoryResponse version(Integer version) {
+  public InventoryResponse version(@Nullable Integer version) {
     this.version = version;
     return this;
   }
@@ -79,15 +82,16 @@ public class InventoryResponse implements Serializable {
   /**
    * The new version number to be used in future If-Match headers.
    * @return version
-  */
+   */
   
   @Schema(name = "version", description = "The new version number to be used in future If-Match headers.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("version")
-  public Integer getVersion() {
+  public @Nullable Integer getVersion() {
     return version;
   }
 
-  public void setVersion(Integer version) {
+  @JsonProperty("version")
+  public void setVersion(@Nullable Integer version) {
     this.version = version;
   }
 
@@ -125,11 +129,8 @@ public class InventoryResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

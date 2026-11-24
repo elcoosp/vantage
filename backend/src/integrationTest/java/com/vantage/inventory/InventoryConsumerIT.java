@@ -1,4 +1,6 @@
 package com.vantage.inventory;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.ObjectMapper;
@@ -31,6 +33,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.annotation.DirtiesContext;
@@ -47,8 +50,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(InventoryConsumerIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({InventoryConsumerIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @org.springframework.test.context.TestPropertySource(properties = {
         "vantage.inventory.consumer.enabled=true",
         "vantage.outbox.enabled=true"
@@ -67,8 +70,6 @@ class InventoryConsumerIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

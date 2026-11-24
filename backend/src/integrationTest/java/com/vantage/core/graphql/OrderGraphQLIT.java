@@ -1,4 +1,6 @@
 package com.vantage.core.graphql;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.JsonNode;
@@ -18,7 +20,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -41,8 +42,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(OrderGraphQLIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({OrderGraphQLIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @TestPropertySource(properties = "vantage.outbox.enabled=true")
 public class OrderGraphQLIT  extends AbstractIntegrationTest {
 
@@ -58,9 +59,6 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -82,8 +80,12 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String token = vendorRes.getBody().token();
         UUID tenantId = vendorRes.getBody().tenantId();
@@ -94,15 +96,23 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         authHeaders.setContentType(MediaType.APPLICATION_JSON);
         authHeaders.set("X-Tenant-ID", tenantId.toString());
         ProductRequest productReq = new ProductRequest("GraphQL Product", "Description", new BigDecimal("99.99"));
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(authHeaders))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         UUID productId = productRes.getBody().id();
 
         // 3. Place order
         OrderRequest orderReq = new OrderRequest(productId, 5, "GraphQL Product");
-        HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, authHeaders);
-        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post()
+                .uri("/api/v1/orders")
+                .headers(h -> h.addAll(authHeaders))
+                .body(orderReq)
+                .retrieve()
+                .toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         UUID orderId = orderRes.getBody().id();
 
@@ -115,8 +125,11 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
                 headers.setBearerAuth(token);
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.set("X-Tenant-ID", tenantId.toString());
-                HttpEntity<Void> entity = new HttpEntity<>(headers);
-                ResponseEntity<String> searchRes = restClient.method(HttpMethod.GET).uri("/api/v1/orders/search").body(entity).retrieve().toEntity(String.class);
+                ResponseEntity<String> searchRes = restClient.get()
+                        .uri("/api/v1/orders/search")
+                        .headers(h -> h.addAll(headers))
+                        .retrieve()
+                        .toEntity(String.class);
                 assertThat(searchRes.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(searchRes.getBody()).contains(orderId.toString());
             });
@@ -132,9 +145,13 @@ public class OrderGraphQLIT  extends AbstractIntegrationTest {
         graphqlHeaders.setBearerAuth(token);
         graphqlHeaders.setContentType(MediaType.APPLICATION_JSON);
         graphqlHeaders.set("X-Tenant-ID", tenantId.toString());
-        HttpEntity<String> graphqlEntity = new HttpEntity<>(graphqlQuery, graphqlHeaders);
 
-        ResponseEntity<String> graphqlRes = restClient.method(HttpMethod.POST).uri("/graphql").body(graphqlEntity).retrieve().toEntity(String.class);
+        ResponseEntity<String> graphqlRes = restClient.post()
+                .uri("/graphql")
+                .headers(h -> h.addAll(graphqlHeaders))
+                .body(graphqlQuery)
+                .retrieve()
+                .toEntity(String.class);
 
         assertThat(graphqlRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 

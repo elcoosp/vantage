@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -23,21 +24,21 @@ import jakarta.annotation.Generated;
  */
 
 @JsonTypeName("ForecastResponse_forecast_inner")
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class ForecastResponseForecastInner implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-  private LocalDate date;
+  private @Nullable LocalDate date;
 
-  private Integer predictedQuantity;
+  private @Nullable Integer predictedQuantity;
 
-  private Integer lowerBound;
+  private @Nullable Integer lowerBound;
 
-  private Integer upperBound;
+  private @Nullable Integer upperBound;
 
-  public ForecastResponseForecastInner date(LocalDate date) {
+  public ForecastResponseForecastInner date(@Nullable LocalDate date) {
     this.date = date;
     return this;
   }
@@ -45,19 +46,20 @@ public class ForecastResponseForecastInner implements Serializable {
   /**
    * Get date
    * @return date
-  */
+   */
   @Valid 
   @Schema(name = "date", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("date")
-  public LocalDate getDate() {
+  public @Nullable LocalDate getDate() {
     return date;
   }
 
-  public void setDate(LocalDate date) {
+  @JsonProperty("date")
+  public void setDate(@Nullable LocalDate date) {
     this.date = date;
   }
 
-  public ForecastResponseForecastInner predictedQuantity(Integer predictedQuantity) {
+  public ForecastResponseForecastInner predictedQuantity(@Nullable Integer predictedQuantity) {
     this.predictedQuantity = predictedQuantity;
     return this;
   }
@@ -65,19 +67,20 @@ public class ForecastResponseForecastInner implements Serializable {
   /**
    * Get predictedQuantity
    * @return predictedQuantity
-  */
+   */
   
   @Schema(name = "predictedQuantity", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("predictedQuantity")
-  public Integer getPredictedQuantity() {
+  public @Nullable Integer getPredictedQuantity() {
     return predictedQuantity;
   }
 
-  public void setPredictedQuantity(Integer predictedQuantity) {
+  @JsonProperty("predictedQuantity")
+  public void setPredictedQuantity(@Nullable Integer predictedQuantity) {
     this.predictedQuantity = predictedQuantity;
   }
 
-  public ForecastResponseForecastInner lowerBound(Integer lowerBound) {
+  public ForecastResponseForecastInner lowerBound(@Nullable Integer lowerBound) {
     this.lowerBound = lowerBound;
     return this;
   }
@@ -85,19 +88,20 @@ public class ForecastResponseForecastInner implements Serializable {
   /**
    * Get lowerBound
    * @return lowerBound
-  */
+   */
   
   @Schema(name = "lowerBound", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("lowerBound")
-  public Integer getLowerBound() {
+  public @Nullable Integer getLowerBound() {
     return lowerBound;
   }
 
-  public void setLowerBound(Integer lowerBound) {
+  @JsonProperty("lowerBound")
+  public void setLowerBound(@Nullable Integer lowerBound) {
     this.lowerBound = lowerBound;
   }
 
-  public ForecastResponseForecastInner upperBound(Integer upperBound) {
+  public ForecastResponseForecastInner upperBound(@Nullable Integer upperBound) {
     this.upperBound = upperBound;
     return this;
   }
@@ -105,15 +109,16 @@ public class ForecastResponseForecastInner implements Serializable {
   /**
    * Get upperBound
    * @return upperBound
-  */
+   */
   
   @Schema(name = "upperBound", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("upperBound")
-  public Integer getUpperBound() {
+  public @Nullable Integer getUpperBound() {
     return upperBound;
   }
 
-  public void setUpperBound(Integer upperBound) {
+  @JsonProperty("upperBound")
+  public void setUpperBound(@Nullable Integer upperBound) {
     this.upperBound = upperBound;
   }
 
@@ -153,11 +158,8 @@ public class ForecastResponseForecastInner implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

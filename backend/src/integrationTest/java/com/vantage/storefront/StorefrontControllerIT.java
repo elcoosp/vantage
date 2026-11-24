@@ -1,4 +1,6 @@
 package com.vantage.storefront;
+
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import tools.jackson.databind.JsonNode;
@@ -13,7 +15,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -34,8 +35,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(StorefrontControllerIT.TestSecurityConfig.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({StorefrontControllerIT.TestSecurityConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 public class StorefrontControllerIT  extends AbstractIntegrationTest {
 
     @TestConfiguration
@@ -50,9 +51,6 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
             return http.build();
         }
     }
-
-
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         baseProperties(registry);
@@ -74,8 +72,12 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         AuthResponse body = vendorRes.getBody();
         return new VendorCredentials(body.token(), body.tenantId());
@@ -88,7 +90,11 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
         headers.setBearerAuth(creds.token);
         headers.set("X-Tenant-ID", creds.tenantId.toString());
 
-        ResponseEntity<String> response = restClient.method(HttpMethod.GET).uri("/api/v1/storefront").body(new HttpEntity<>(headers)).retrieve().toEntity(String.class);
+        ResponseEntity<String> response = restClient.get()
+                .uri("/api/v1/storefront")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode json = objectMapper.readTree(response.getBody());
@@ -113,15 +119,23 @@ public class StorefrontControllerIT  extends AbstractIntegrationTest {
         );
         String payload = objectMapper.writeValueAsString(layout);
 
-        HttpEntity<String> putEntity = new HttpEntity<>(payload, headers);
-        ResponseEntity<String> putResponse = restClient.method(HttpMethod.PUT).uri("/api/v1/storefront").body(putEntity).retrieve().toEntity(String.class);
+        ResponseEntity<String> putResponse = restClient.method(HttpMethod.PUT)
+                .uri("/api/v1/storefront")
+                .headers(h -> h.addAll(headers))
+                .body(payload)
+                .retrieve()
+                .toEntity(String.class);
 
         assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         String putBody = putResponse.getBody();
         System.err.println("PUT response body: " + putBody);
 
         // GET to verify persistence
-        ResponseEntity<String> getResponse = restClient.method(HttpMethod.GET).uri("/api/v1/storefront").body(new HttpEntity<>(headers)).retrieve().toEntity(String.class);
+        ResponseEntity<String> getResponse = restClient.get()
+                .uri("/api/v1/storefront")
+                .headers(h -> h.addAll(headers))
+                .retrieve()
+                .toEntity(String.class);
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         String getBody = getResponse.getBody();
         System.err.println("GET response body: " + getBody);

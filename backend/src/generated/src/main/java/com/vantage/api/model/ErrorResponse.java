@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.time.OffsetDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -21,23 +22,23 @@ import jakarta.annotation.Generated;
  * ErrorResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class ErrorResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-  private OffsetDateTime timestamp;
+  private @Nullable OffsetDateTime timestamp;
 
-  private Integer status;
+  private @Nullable Integer status;
 
-  private String error;
+  private @Nullable String error;
 
-  private String message;
+  private @Nullable String message;
 
-  private String path;
+  private @Nullable String path;
 
-  public ErrorResponse timestamp(OffsetDateTime timestamp) {
+  public ErrorResponse timestamp(@Nullable OffsetDateTime timestamp) {
     this.timestamp = timestamp;
     return this;
   }
@@ -45,19 +46,20 @@ public class ErrorResponse implements Serializable {
   /**
    * Get timestamp
    * @return timestamp
-  */
+   */
   @Valid 
   @Schema(name = "timestamp", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("timestamp")
-  public OffsetDateTime getTimestamp() {
+  public @Nullable OffsetDateTime getTimestamp() {
     return timestamp;
   }
 
-  public void setTimestamp(OffsetDateTime timestamp) {
+  @JsonProperty("timestamp")
+  public void setTimestamp(@Nullable OffsetDateTime timestamp) {
     this.timestamp = timestamp;
   }
 
-  public ErrorResponse status(Integer status) {
+  public ErrorResponse status(@Nullable Integer status) {
     this.status = status;
     return this;
   }
@@ -65,19 +67,20 @@ public class ErrorResponse implements Serializable {
   /**
    * Get status
    * @return status
-  */
+   */
   
   @Schema(name = "status", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("status")
-  public Integer getStatus() {
+  public @Nullable Integer getStatus() {
     return status;
   }
 
-  public void setStatus(Integer status) {
+  @JsonProperty("status")
+  public void setStatus(@Nullable Integer status) {
     this.status = status;
   }
 
-  public ErrorResponse error(String error) {
+  public ErrorResponse error(@Nullable String error) {
     this.error = error;
     return this;
   }
@@ -85,19 +88,20 @@ public class ErrorResponse implements Serializable {
   /**
    * Get error
    * @return error
-  */
+   */
   
   @Schema(name = "error", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("error")
-  public String getError() {
+  public @Nullable String getError() {
     return error;
   }
 
-  public void setError(String error) {
+  @JsonProperty("error")
+  public void setError(@Nullable String error) {
     this.error = error;
   }
 
-  public ErrorResponse message(String message) {
+  public ErrorResponse message(@Nullable String message) {
     this.message = message;
     return this;
   }
@@ -105,19 +109,20 @@ public class ErrorResponse implements Serializable {
   /**
    * Get message
    * @return message
-  */
+   */
   
   @Schema(name = "message", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("message")
-  public String getMessage() {
+  public @Nullable String getMessage() {
     return message;
   }
 
-  public void setMessage(String message) {
+  @JsonProperty("message")
+  public void setMessage(@Nullable String message) {
     this.message = message;
   }
 
-  public ErrorResponse path(String path) {
+  public ErrorResponse path(@Nullable String path) {
     this.path = path;
     return this;
   }
@@ -125,15 +130,16 @@ public class ErrorResponse implements Serializable {
   /**
    * Get path
    * @return path
-  */
+   */
   
   @Schema(name = "path", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("path")
-  public String getPath() {
+  public @Nullable String getPath() {
     return path;
   }
 
-  public void setPath(String path) {
+  @JsonProperty("path")
+  public void setPath(@Nullable String path) {
     this.path = path;
   }
 
@@ -175,11 +181,8 @@ public class ErrorResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

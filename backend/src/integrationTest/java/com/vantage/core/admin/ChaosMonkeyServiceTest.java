@@ -1,4 +1,5 @@
 package com.vantage.core.admin;
+import com.vantage.VantageApplication;
 import com.vantage.AbstractIntegrationTest;
 
 import com.vantage.core.admin.ChaosMonkeyService;
@@ -11,7 +12,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 public class ChaosMonkeyServiceTest extends AbstractIntegrationTest {
 
 

@@ -1,6 +1,6 @@
 package com.vantage.core.chat;
-
 import com.vantage.AbstractIntegrationTest;
+import com.vantage.VantageApplication;
 import com.vantage.core.chat.app.AiGuardrails;
 import com.vantage.core.chat.app.ChatOrchestrator;
 import com.vantage.core.chat.app.LlmStreamEvent;
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Verifies the full SSE streaming pipeline with the stub LLM provider,
  * tenant isolation, RAG retrieval, and conversation persistence.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
 class ChatStreamIT extends AbstractIntegrationTest {
 
     @DynamicPropertySource

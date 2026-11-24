@@ -2,6 +2,8 @@ package com.vantage.core.security;
 
 import com.vantage.core.tenant.TenantContext;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +21,11 @@ import java.util.UUID;
  * whenever a tenant context is present. This complements {@link com.vantage.core.tenant.TenantFilterInterceptor}
  * (which enables them at transaction begin) and guarantees they are active for the very first
  * query of a request.
+ *
+ * <p>Spring Boot 4 dropped {@code @PersistenceContext} injection of the transaction-scoped
+ * {@code EntityManager}, so the {@code EntityManagerFactory} is injected instead and a fresh
+ * manager is obtained per request. The filters are enabled on the Hibernate {@code Session}
+ * obtained from that manager; the manager is closed when the request finishes.</p>
  */
 @Component
 public class TenantFilterActivator extends OncePerRequestFilter {
@@ -39,23 +46,31 @@ public class TenantFilterActivator extends OncePerRequestFilter {
             "tenantFilter_AiUsage",
             "tenantFilter_AiDocument");
 
-    private final EntityManager entityManager;
+    private final EntityManagerFactory entityManagerFactory;
 
-    public TenantFilterActivator(EntityManager entityManager) {
-        this.entityManager = entityManager;
+    public TenantFilterActivator(EntityManagerFactory entityManagerFactory) {
+        this.entityManagerFactory = entityManagerFactory;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId != null) {
-            Session session = entityManager.unwrap(Session.class);
-            for (String filterName : TENANT_FILTER_NAMES) {
-                if (session.getEnabledFilter(filterName) == null) {
-                    session.enableFilter(filterName).setParameter("tenantId", tenantId);
+        EntityManager entityManager = null;
+        try {
+            UUID tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                entityManager = entityManagerFactory.createEntityManager();
+                Session session = entityManager.unwrap(Session.class);
+                for (String filterName : TENANT_FILTER_NAMES) {
+                    if (session.getEnabledFilter(filterName) == null) {
+                        session.enableFilter(filterName).setParameter("tenantId", tenantId);
+                    }
                 }
             }
+            filterChain.doFilter(request, response);
+        } finally {
+            if (entityManager != null) {
+                entityManager.close();
+            }
         }
-        filterChain.doFilter(request, response);
     }
 }

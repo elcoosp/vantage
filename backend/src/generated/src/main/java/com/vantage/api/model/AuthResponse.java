@@ -5,6 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -20,16 +21,16 @@ import jakarta.annotation.Generated;
  * AuthResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class AuthResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private String token;
+  private @Nullable String token;
 
-  private UUID tenantId;
+  private @Nullable UUID tenantId;
 
-  public AuthResponse token(String token) {
+  public AuthResponse token(@Nullable String token) {
     this.token = token;
     return this;
   }
@@ -37,19 +38,20 @@ public class AuthResponse implements Serializable {
   /**
    * HS256 JWT (24h expiry) used as a Bearer token.
    * @return token
-  */
+   */
   
   @Schema(name = "token", description = "HS256 JWT (24h expiry) used as a Bearer token.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("token")
-  public String getToken() {
+  public @Nullable String getToken() {
     return token;
   }
 
-  public void setToken(String token) {
+  @JsonProperty("token")
+  public void setToken(@Nullable String token) {
     this.token = token;
   }
 
-  public AuthResponse tenantId(UUID tenantId) {
+  public AuthResponse tenantId(@Nullable UUID tenantId) {
     this.tenantId = tenantId;
     return this;
   }
@@ -57,15 +59,16 @@ public class AuthResponse implements Serializable {
   /**
    * Get tenantId
    * @return tenantId
-  */
+   */
   @Valid 
   @Schema(name = "tenantId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("tenantId")
-  public UUID getTenantId() {
+  public @Nullable UUID getTenantId() {
     return tenantId;
   }
 
-  public void setTenantId(UUID tenantId) {
+  @JsonProperty("tenantId")
+  public void setTenantId(@Nullable UUID tenantId) {
     this.tenantId = tenantId;
   }
 
@@ -101,11 +104,8 @@ public class AuthResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

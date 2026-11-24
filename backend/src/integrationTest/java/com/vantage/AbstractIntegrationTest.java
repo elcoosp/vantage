@@ -1,18 +1,28 @@
 package com.vantage;
 
+import com.vantage.VantageApplication;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.client.RestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 
 /**
  * Shared base for Docker-dependent integration tests.
  *
- * <p>Before this class existed every {@code @SpringBootTest} integration test started its own
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
  * Postgres + RabbitMQ Testcontainers, which made the full suite take ~22 minutes. The containers
  * are now declared as {@code static} fields started exactly once per JVM (Gradle runs all
  * integration tests in a single worker JVM), so the whole suite reuses one Postgres and one
  * RabbitMQ instance. Each subclass still contributes its own extra {@code @DynamicPropertySource}
  * entries on top of {@link #baseProperties(DynamicPropertyRegistry)}.</p>
+ *
+ * <p>Spring Boot 4 no longer auto-configures a {@link RestClient} bean, so it is declared here
+ * with the random server port injected via {@link LocalServerPort}.</p>
  */
 public abstract class AbstractIntegrationTest {
 
@@ -51,5 +61,14 @@ public abstract class AbstractIntegrationTest {
         // exhausts its connection limit and destabilizes the shared container.
         registry.add("spring.datasource.hikari.maximum-pool-size", () -> "3");
         registry.add("spring.datasource.hikari.minimum-idle", () -> "1");
+    }
+
+    @Configuration
+    public static class TestRestClientConfig {
+        @Bean
+        @Lazy
+        public RestClient restClient(@LocalServerPort int port, RestClient.Builder builder) {
+            return builder.baseUrl("http://localhost:" + port).build();
+        }
     }
 }

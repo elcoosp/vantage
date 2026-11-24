@@ -5,6 +5,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -20,12 +21,12 @@ import jakarta.annotation.Generated;
  * PaymentResponse
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-23T22:28:07.302947+01:00[Europe/Paris]", comments = "Generator version: 7.5.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-24T00:51:38.612077+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class PaymentResponse implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private String transactionId;
+  private @Nullable String transactionId;
 
   /**
    * Gets or Sets status
@@ -35,7 +36,7 @@ public class PaymentResponse implements Serializable {
     
     FAILED("FAILED");
 
-    private String value;
+    private final String value;
 
     StatusEnum(String value) {
       this.value = value;
@@ -62,9 +63,9 @@ public class PaymentResponse implements Serializable {
     }
   }
 
-  private StatusEnum status;
+  private @Nullable StatusEnum status;
 
-  public PaymentResponse transactionId(String transactionId) {
+  public PaymentResponse transactionId(@Nullable String transactionId) {
     this.transactionId = transactionId;
     return this;
   }
@@ -72,19 +73,20 @@ public class PaymentResponse implements Serializable {
   /**
    * Get transactionId
    * @return transactionId
-  */
+   */
   
   @Schema(name = "transactionId", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("transactionId")
-  public String getTransactionId() {
+  public @Nullable String getTransactionId() {
     return transactionId;
   }
 
-  public void setTransactionId(String transactionId) {
+  @JsonProperty("transactionId")
+  public void setTransactionId(@Nullable String transactionId) {
     this.transactionId = transactionId;
   }
 
-  public PaymentResponse status(StatusEnum status) {
+  public PaymentResponse status(@Nullable StatusEnum status) {
     this.status = status;
     return this;
   }
@@ -92,15 +94,16 @@ public class PaymentResponse implements Serializable {
   /**
    * Get status
    * @return status
-  */
+   */
   
   @Schema(name = "status", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
   @JsonProperty("status")
-  public StatusEnum getStatus() {
+  public @Nullable StatusEnum getStatus() {
     return status;
   }
 
-  public void setStatus(StatusEnum status) {
+  @JsonProperty("status")
+  public void setStatus(@Nullable StatusEnum status) {
     this.status = status;
   }
 
@@ -136,11 +139,8 @@ public class PaymentResponse implements Serializable {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
-    }
-    return o.toString().replace("\n", "\n    ");
+  private String toIndentedString(@Nullable Object o) {
+    return o == null ? "null" : o.toString().replace("\n", "\n    ");
   }
 }
 

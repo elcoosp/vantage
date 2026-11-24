@@ -1,6 +1,7 @@
 package com.vantage.core.db;
-
 import com.vantage.core.db.config.TestInterceptorConfig;
+import com.vantage.VantageApplication;
+import com.vantage.AbstractIntegrationTest;
 import com.vantage.core.tenant.TenantContext;
 import com.vantage.inventory.ui.dto.InventoryResponse;
 import com.vantage.inventory.ui.dto.InventoryUpdateRequest;
@@ -25,7 +26,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -47,8 +47,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestInterceptorConfig.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = VantageApplication.class)
+@Import({ReadReplicaRoutingIT.TestSecurityConfig.class, TestInterceptorConfig.class, AbstractIntegrationTest.TestRestClientConfig.class})
 @Testcontainers
 public class ReadReplicaRoutingIT {
     private static final Logger log = LoggerFactory.getLogger(ReadReplicaRoutingIT.class);
@@ -122,8 +122,12 @@ public class ReadReplicaRoutingIT {
         HttpHeaders vendorHeaders = new HttpHeaders();
         vendorHeaders.setContentType(MediaType.APPLICATION_JSON);
         vendorHeaders.set("X-Tenant-ID", UUID.randomUUID().toString());
-        HttpEntity<VendorRegistrationRequest> vendorEntity = new HttpEntity<>(vendorReq, vendorHeaders);
-        ResponseEntity<AuthResponse> vendorRes = restClient.post().uri("/api/v1/vendors/register").body(vendorEntity).retrieve().toEntity(AuthResponse.class);
+        ResponseEntity<AuthResponse> vendorRes = restClient.post()
+                .uri("/api/v1/vendors/register")
+                .headers(h -> h.addAll(vendorHeaders))
+                .body(vendorReq)
+                .retrieve()
+                .toEntity(AuthResponse.class);
         assertThat(vendorRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         token = vendorRes.getBody().token();
         tenantId = vendorRes.getBody().tenantId();
@@ -143,8 +147,12 @@ public class ReadReplicaRoutingIT {
         authHeaders.set("X-Tenant-ID", tenantId.toString());
 
         ProductRequest productReq = new ProductRequest(name, description, price);
-        HttpEntity<ProductRequest> productEntity = new HttpEntity<>(productReq, authHeaders);
-        ResponseEntity<ProductResponse> productRes = restClient.post().uri("/api/v1/products").body(productEntity).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> productRes = restClient.post()
+                .uri("/api/v1/products")
+                .headers(h -> h.addAll(authHeaders))
+                .body(productReq)
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(productRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         return productRes.getBody().id();
     }
@@ -156,8 +164,12 @@ public class ReadReplicaRoutingIT {
         invHeaders.set("X-Tenant-ID", tenantId.toString());
         invHeaders.setIfMatch(String.valueOf(version));
         InventoryUpdateRequest invReq = new InventoryUpdateRequest(quantity);
-        HttpEntity<InventoryUpdateRequest> invEntity = new HttpEntity<>(invReq, invHeaders);
-        ResponseEntity<InventoryResponse> invRes = restClient.method(HttpMethod.PUT).uri("/api/v1/inventory/" + productId).body(invEntity).retrieve().toEntity(InventoryResponse.class);
+        ResponseEntity<InventoryResponse> invRes = restClient.method(HttpMethod.PUT)
+                .uri("/api/v1/inventory/" + productId)
+                .headers(h -> h.addAll(invHeaders))
+                .body(invReq)
+                .retrieve()
+                .toEntity(InventoryResponse.class);
         assertThat(invRes.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -170,7 +182,11 @@ public class ReadReplicaRoutingIT {
         getHeaders.setBearerAuth(token);
         getHeaders.set("X-Tenant-ID", tenantId.toString());
 
-        ResponseEntity<ProductResponse> getRes = restClient.method(HttpMethod.GET).uri("/api/v1/products/" + productId).body(new HttpEntity<>(getHeaders)).retrieve().toEntity(ProductResponse.class);
+        ResponseEntity<ProductResponse> getRes = restClient.get()
+                .uri("/api/v1/products/" + productId)
+                .headers(h -> h.addAll(getHeaders))
+                .retrieve()
+                .toEntity(ProductResponse.class);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Verify the interceptor captured REPLICA
@@ -189,8 +205,12 @@ public class ReadReplicaRoutingIT {
         authHeaders.set("X-Tenant-ID", tenantId.toString());
 
         OrderRequest orderReq = new OrderRequest(productId, 2, "Write Test Product");
-        HttpEntity<OrderRequest> orderEntity = new HttpEntity<>(orderReq, authHeaders);
-        ResponseEntity<OrderResponse> orderRes = restClient.post().uri("/api/v1/orders").body(orderEntity).retrieve().toEntity(OrderResponse.class);
+        ResponseEntity<OrderResponse> orderRes = restClient.post()
+                .uri("/api/v1/orders")
+                .headers(h -> h.addAll(authHeaders))
+                .body(orderReq)
+                .retrieve()
+                .toEntity(OrderResponse.class);
         assertThat(orderRes.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(orderRes.getBody()).isNotNull();
 
