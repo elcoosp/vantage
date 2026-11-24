@@ -37,8 +37,8 @@ jobs:
           pnpm run generate:api
       - name: Check for uncommitted changes
         run: |
-          git status --porcelain | grep -v "^.. backend/src/generated/"
-          test -z "$(git status --porcelain | grep -v "^.. backend/src/generated/")"
+          git status --porcelain | grep -v "^.. backend/src/generated/" | grep -v "^.. frontend/src/api/generated/"
+          test -z "$(git status --porcelain | grep -v "^.. backend/src/generated/" | grep -v "^.. frontend/src/api/generated/")"
       - name: Compile Backend generated code
         run: |
           cd backend
