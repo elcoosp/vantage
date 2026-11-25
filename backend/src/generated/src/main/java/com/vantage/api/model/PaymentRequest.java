@@ -22,7 +22,7 @@ import jakarta.annotation.Generated;
  * PaymentRequest
  */
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-25T00:16:11.974644+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-11-25T01:18:12.645984+01:00[Europe/Paris]", comments = "Generator version: 7.26.0")
 public class PaymentRequest implements Serializable {
 
   private static final long serialVersionUID = 1L;
