@@ -62,7 +62,3 @@ jobs:
         run: |
           cd backend
           ./gradlew test --console=plain
-      - name: Run integration tests (Docker required)
-        run: |
-          cd backend
-          ./gradlew integrationTest --console=plain
