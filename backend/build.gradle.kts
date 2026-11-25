@@ -4,7 +4,7 @@ plugins {
     java
     id("org.springframework.boot") version "4.2.0"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.sonarqube") version "7.3.1.8318"
+    id("org.sonarqube") version "7.5.0.8588"
     id("jacoco")
     id("org.openapi.generator") version "7.26.0"
 }
