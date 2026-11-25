@@ -3,6 +3,17 @@
   "manifest": true,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
+  "changelogSections": [
+    {"type": "feat", "label": "Features"},
+    {"type": "fix", "label": "Bug Fixes"},
+    {"type": "perf", "label": "Performance Improvements"},
+    {"type": "refactor", "label": "Code Refactoring"},
+    {"type": "docs", "label": "Documentation"},
+    {"type": "test", "label": "Tests"},
+    {"type": "build", "label": "Build System"},
+    {"type": "ci", "label": "Continuous Integration"},
+    {"type": "chore", "label": "Miscellaneous"}
+  ],
   "packages": {
     ".": {
       "release-type": "simple"
