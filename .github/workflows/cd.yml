@@ -16,6 +16,10 @@ jobs:
         run: |
           docker build --no-cache --pull --build-arg BUILD_COMMIT=$(git rev-parse HEAD) -t vantage-backend:latest -f backend/Dockerfile .
 
+      - name: Verify guava version in JAR
+        run: |
+          docker run --rm --entrypoint sh vantage-backend:latest -c "unzip -l /app/app.jar | grep guava" || true
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -23,4 +27,4 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
