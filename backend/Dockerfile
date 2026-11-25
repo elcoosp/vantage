@@ -14,7 +14,7 @@ COPY backend/src/ src/
 COPY docs/ /docs/
 
 # Make the wrapper executable and build the boot JAR (no tests: they need Docker).
-RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
+RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon --refresh-dependencies
 
 # Stage 2: Minimal JRE runtime image.
 FROM eclipse-temurin:21-jre-alpine AS runner

@@ -116,9 +116,6 @@ configurations.all {
     resolutionStrategy.force("com.google.guava:guava:33.7.2-jre")
 }
 
-configurations["integrationTestImplementation"].extendsFrom(configurations["testImplementation"])
-configurations["integrationTestRuntimeOnly"].extendsFrom(configurations["runtimeOnly"])
-
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
