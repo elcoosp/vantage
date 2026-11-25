@@ -209,7 +209,9 @@ val generateOpenApiModels by tasks.registering(org.openapitools.generator.gradle
             "interfaceOnly" to "true",
             "useJakartaEe" to "true",
             "dateLibrary" to "java8",
-            "serializableModel" to "true"
+            "serializableModel" to "true",
+            "generateBuildTimestamp" to "false",
+            "generateGeneratedAnnotation" to "false"
         )
     )
 }

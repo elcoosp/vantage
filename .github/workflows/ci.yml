@@ -37,8 +37,14 @@ jobs:
           pnpm run generate:api
       - name: Check for uncommitted changes
         run: |
-          git status --porcelain | grep -v "^.. backend/src/generated/" | grep -v "^.. frontend/src/api/generated/"
-          test -z "$(git status --porcelain | grep -v "^.. backend/src/generated/" | grep -v "^.. frontend/src/api/generated/")"
+          # Check for changes outside of generated directories
+          CHANGES=$(git status --porcelain | grep -vE "^.. (backend/src/generated/|frontend/src/api/generated/)" || true)
+          if [ -n "$CHANGES" ]; then
+            echo "Uncommitted changes detected outside generated directories:"
+            echo "$CHANGES"
+            exit 1
+          fi
+          echo "No uncommitted changes outside generated directories"
       - name: Compile Backend generated code
         run: |
           cd backend
